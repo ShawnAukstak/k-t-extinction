@@ -10,7 +10,7 @@
  * Placement is deterministic (hashed per cell) so every viewer sees the same forest.
  */
 import {
-  BufferGeometry, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, type PerspectiveCamera, Quaternion,
+  BufferAttribute, BufferGeometry, DoubleSide, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, type PerspectiveCamera, Quaternion,
   ShaderMaterial, Vector3,
 } from 'three';
 import { EARTH_RADIUS, IMPACT } from '../config';
@@ -23,7 +23,7 @@ import type { Heightfield } from './heightfield';
 import { simplex3 } from './noise';
 import { plantGeometry, plantMix, type PlantKind } from './plants';
 
-const KINDS: PlantKind[] = ['conifer', 'broadleaf', 'palm', 'treefern', 'cycad', 'shrub'];
+const KINDS: PlantKind[] = ['conifer', 'broadleaf', 'palm', 'treefern', 'cycad', 'shrub', 'fern'];
 const CELL_LEVEL = 14; // ~611 m cells
 
 export interface VegetationOptions {
@@ -91,6 +91,7 @@ const vertexShader = /* glsl */ `
 ${atmosphereChunk}
 ${effectsChunk}
 attribute float part;
+attribute float pioneer;      // 1 for plants that recolonise first (ferns, shrubs, tree ferns, cycads)
 attribute vec4 aInst;         // x variation, y heat exposure / ignition, z blast arrival (s), w blast wind (m/s)
 uniform vec3 uCamPosKm;
 uniform vec3 uFogColor;
@@ -109,29 +110,50 @@ void main() {
   vec3 rel = rel4.xyz - base;
   vec3 nrm = normalize(mat3(instanceMatrix) * normal);
 
-  // Air blast: knock down (or bend) away from the crater once the front has passed.
-  float fall = 0.0;
+  // Fate: killed by the fireball's heat, flattened by the air blast, or by the impact winter (the
+  // scenario's severity sets what fraction). Then dead crowns drop their leaves, standing trunks fall
+  // within decades, the logs rot, and a new plant grows in the same spot, on the fern-spike curve for
+  // pioneers (ferns, shrubs, tree ferns, cycads) and the forest-recovery curve for trees.
+  float yrs = max(0.0, uT) / 31557600.0;
+  float r2 = fract(aInst.x * 97.31 + 0.17), r3 = fract(aInst.x * 31.77 + 0.53);
+  bool foliage = part > 0.5;
+  float burnt = uT > 12.0 ? smoothstep(0.9, 1.3, aInst.y) : 0.0;
+  float flatten = 0.0, bend = 0.0;
   if (uT > aInst.z && aInst.w > 30.0) {
     float k = smoothstep(aInst.z, aInst.z + 4.0 + 3.0 * aInst.x, uT);
-    fall = aInst.w > 62.0 ? k * (1.35 + 0.15 * aInst.x) : k * 0.35 * smoothstep(30.0, 62.0, aInst.w);
+    if (aInst.w > 62.0) flatten = k; else bend = k * 0.35 * smoothstep(30.0, 62.0, aInst.w);
   }
-  if (fall > 0.0) {
-    vec3 away = normalize(up - uImpactDir * dot(up, uImpactDir) + 1e-6);
-    vec3 axis = normalize(cross(up, away));
-    rel = rotateAxis(rel, axis, fall);
-    nrm = rotateAxis(nrm, axis, fall);
-  }
+  float frozen = smoothstep(r2 * 0.85, r2 * 0.85 + 0.15, uLife.x);
+  float dead = max(max(burnt, flatten), frozen);
+  float grow = dead > 0.0 ? smoothstep(r3 * 0.8, r3 * 0.8 + 0.2, mix(uLife.z, uLife.y, pioneer)) : 0.0;
 
-  // Foliage colour: species variation, scorching, winter die-back, recovery.
   vec3 leaf = mix(vec3(0.045, 0.085, 0.035), vec3(0.075, 0.11, 0.04), aInst.x);
   vec3 bark = vec3(0.09, 0.07, 0.05);
-  vec3 c = part > 0.5 ? leaf : bark;
-  float burnt = uT > 12.0 ? smoothstep(0.9, 1.3, aInst.y) : 0.0;
-  c = mix(c, vec3(0.025, 0.022, 0.02), burnt);
-  float dead = part > 0.5 ? uLife.x * (1.0 - uLife.z) : 0.0;
-  c = mix(c, vec3(0.11, 0.085, 0.055), dead * (1.0 - burnt));
-  // Dead or burnt crowns thin out toward the trunk.
-  if (part > 0.5) rel = mix(rel, up * dot(rel, up), 0.55 * max(burnt, dead));
+  vec3 c = foliage ? leaf : bark;
+  if (grow > 0.0) {
+    rel *= grow; // the replacement: upright, green, growing
+  } else {
+    if (foliage) {
+      // Survivors yellow under the veil; the dead brown, thin and lose their leaves within a year or two.
+      c = mix(c, vec3(0.11, 0.085, 0.055), max(dead, 0.4 * uLife.x * (1.0 - uLife.y)));
+      rel = mix(rel, up * dot(rel, up), 0.55 * dead);
+      rel *= 1.0 - max(burnt, dead * smoothstep(0.4, 1.6, yrs));
+    }
+    c = mix(c, vec3(0.025, 0.022, 0.02), burnt);
+    float tFall = 5.0 + 25.0 * r3, tRot = tFall + 20.0 + 60.0 * r2;
+    float snag = dead * (1.0 - flatten) * smoothstep(tFall, tFall * 1.15, yrs);
+    rel *= 1.0 - dead * smoothstep(tRot, tRot * 1.3, yrs);
+    // Blast victims fall away from the crater (bent trees later fall the way they lean); snags fall anywhere.
+    float fall = flatten * (1.35 + 0.15 * aInst.x) + bend + snag * 1.45;
+    if (fall > 0.0) {
+      vec3 dir = flatten + bend > 0.0
+        ? up - uImpactDir * dot(up, uImpactDir)
+        : cross(up, vec3(r2 - 0.5, 0.3, r3 - 0.5));
+      vec3 axis = normalize(cross(up, normalize(dir + 1e-6)));
+      rel = rotateAxis(rel, axis, fall);
+      nrm = rotateAxis(nrm, axis, fall);
+    }
+  }
   vec3 winter = fxWinter(up);
   float snow = smoothstep(-1.0, -8.0, winter.y) * smoothstep(-2.0, -6.0, winter.z) * smoothstep(0.2, 0.8, dot(nrm, up));
   c = mix(c, vec3(0.75, 0.78, 0.82), snow);
@@ -206,10 +228,15 @@ export class Vegetation {
     private readonly opt: VegetationOptions,
   ) {
     this.group.name = 'vegetation';
-    for (const k of KINDS) this.geoms.set(k, plantGeometry(k));
+    for (const k of KINDS) {
+      const g = plantGeometry(k);
+      const pioneer = k === 'shrub' || k === 'treefern' || k === 'cycad' || k === 'fern' ? 1 : 0;
+      g.setAttribute('pioneer', new BufferAttribute(new Float32Array(g.attributes.position.count).fill(pioneer), 1));
+      this.geoms.set(k, g);
+    }
     this.ignition = treeIgnitionMJm2(crater.energyMt);
     this.material = new ShaderMaterial({
-      vertexShader, fragmentShader,
+      vertexShader, fragmentShader, side: DoubleSide, // fronds and palm leaves are single planes
       uniforms: { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) } },
     });
   }
@@ -224,34 +251,43 @@ export class Vegetation {
     const lists = new Map<PlantKind, { m: Matrix4; inst: number[] }[]>();
     const d = new Vector3(), q = new Quaternion(), yaw = new Quaternion(), m = new Matrix4(), pos = new Vector3(), scl = new Vector3();
     const site = IMPACT.site.value;
-    for (let j = 0; j < per; j++) for (let i = 0; i < per; i++) {
-      const s = (cx + (i + rnd()) / per) / n, t = (cy + (j + rnd()) / per) / n;
-      faceDirection(face, s, t, d);
-      const veg = this.map.sample(d);
-      // Clumpy: thin by density, with clearings.
-      const open = clearing(d);
-      if (rnd() > veg.density * (1 - 0.9 * open) * (0.75 + 0.5 * rnd())) continue;
-      const mix = plantMix(veg.cls, veg.tempC);
-      if (!mix.length) continue;
-      let r = rnd() * mix.reduce((a, [, w]) => a + w, 0);
-      let kind = mix[0][0];
-      for (const [k, w] of mix) { if ((r -= w) <= 0) { kind = k; break; } }
-      const h = this.heights.height(d, 30);
-      if (h < 1) continue;
-      pos.copy(d).multiplyScalar(EARTH_RADIUS + h - 0.6).sub(centerPos);
-      q.setFromUnitVectors(new Vector3(0, 1, 0), d);
+    const d2 = new Vector3();
+    const place = (kind: PlantKind, dir: Vector3, sink: number) => {
+      const h = this.heights.height(dir, 30);
+      if (h < 1) return;
+      pos.copy(dir).multiplyScalar(EARTH_RADIUS + h - sink).sub(centerPos);
+      q.setFromUnitVectors(new Vector3(0, 1, 0), dir);
       yaw.setFromAxisAngle(new Vector3(0, 1, 0), rnd() * Math.PI * 2);
       q.multiply(yaw);
       const sc = 0.65 + rnd() * 0.7;
       scl.set(sc, sc * (0.85 + 0.3 * rnd()), sc);
       m.compose(pos, q, scl);
       // Impact exposure at this plant (scaling laws, per instance so the blast front sweeps through).
-      const rKm = centralAngle(site, vecToLatLon(d)) * 6371;
+      const rKm = centralAngle(site, vecToLatLon(dir)) * 6371;
       const fx = atDistance(this.crater, Math.max(1, rKm));
       const heat = fx.fireballVisible ? fx.thermalMJm2 / this.ignition : 0;
       let list = lists.get(kind);
       if (!list) lists.set(kind, (list = []));
       list.push({ m: m.clone(), inst: [rnd(), heat * (0.8 + 0.4 * rnd()), fx.blastArrivalS, fx.windMs * (0.85 + 0.3 * rnd())] });
+    };
+    for (let j = 0; j < per; j++) for (let i = 0; i < per; i++) {
+      const s = (cx + (i + rnd()) / per) / n, t = (cy + (j + rnd()) / per) / n;
+      faceDirection(face, s, t, d);
+      const veg = this.map.sample(d);
+      const mix = plantMix(veg.cls, veg.tempC);
+      if (!mix.length) continue;
+      // Ground ferns: understorey wherever it is wet enough, thicker in clearings.
+      const open = clearing(d);
+      if (veg.cls !== 'arid_shrub' && rnd() < 0.25 + 0.35 * open) {
+        faceDirection(face, (cx + (i + rnd()) / per) / n, (cy + (j + rnd()) / per) / n, d2);
+        place('fern', d2, 0.2);
+      }
+      // Clumpy: thin by density, with clearings.
+      if (rnd() > veg.density * (1 - 0.9 * open) * (0.75 + 0.5 * rnd())) continue;
+      let r = rnd() * mix.reduce((a, [, w]) => a + w, 0);
+      let kind = mix[0][0];
+      for (const [k, w] of mix) { if ((r -= w) <= 0) { kind = k; break; } }
+      place(kind, d, 0.6);
     }
     const g = new Group();
     g.position.copy(centerPos);

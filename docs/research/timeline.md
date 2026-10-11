@@ -153,3 +153,22 @@ EIEP surface-burst scaling (valid to ~10⁴ Mt; "probably overestimates by 2–5
 - The most visually dramatic global effects (ejecta cloud encircling in 4–5 h; tsunami reaching all coasts in 48 h; darkness over 1–2 yr) are all **model outputs that are downloadable** — see `impact-event.md` §6. They should be baked, not simulated.
 - Several effects are **directional**: ejecta and thermal pulse concentrate downrange (SW) and at the antipode; seismic focusing at the antipode. The antipode of 21.3°N 89.5°W at 66 Ma is in the Indian Ocean / near India — worth a POI.
 - Every row in the contested sections (§3, §7, §8) should carry a visible "range / contested" marker in the app.
+
+## 12. How the app shows plants dying and recovering
+
+Each plant near the camera follows its own fate; the globe colours follow the same three curves (`uLife` in `app/src/effects/impact-effects.ts`).
+
+| Stage | When (after impact) | Label | Basis |
+|---|---|---|---|
+| Ignited by the fireball | seconds | model | EIEP ignition threshold (Collins 2005, Table 1), per plant |
+| Flattened by the air blast | arrival of the blast | model | EIEP winds > 62 m/s; bent at 30–62 m/s |
+| Die-off under the veil | 1 week → 6 months; fraction = scenario severity | model / contested | Tabor 2020 darkness; severity differs by soot / sulfate / dust |
+| Dead crowns brown, then drop their leaves | within ~2 years | chosen | Generic tree mortality; no K-Pg-specific data |
+| Standing dead trunks fall | 5–30 years | chosen | Generic snag-fall times |
+| Logs rot away | 25–110 years | chosen | Generic decay; varies hugely with climate |
+| Ferns, shrubs, tree ferns and cycads recolonise | 3 → 30 years | model | Fern spike begins days to months after deposition (Schulte 2010) |
+| Fern-dominated landscape | to ~1 kyr | known | Fern spike ~1 kyr, ≤ 71 kyr (Clyde 2016); global incl. NZ (Vajda 2001) |
+| Forests return | 500 years → 10 kyr | chosen | After the fern spike; the shape of the curve is our choice |
+| Forest make-up keeps changing | to ~1 Myr | known (not shown) | Corral Bluffs: palms, walnuts by 300 kyr, legumes by 700 kyr (Lyson 2019) |
+
+The regrown plants are the same generic shapes as before the impact: the app does not yet show the change in which plants grew (D10-style placeholders).

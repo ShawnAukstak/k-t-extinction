@@ -10,7 +10,7 @@
  */
 import { BufferAttribute, BufferGeometry, ConeGeometry, CylinderGeometry, IcosahedronGeometry, Matrix4, PlaneGeometry, Vector3 } from 'three';
 
-export type PlantKind = 'conifer' | 'broadleaf' | 'palm' | 'treefern' | 'cycad' | 'shrub';
+export type PlantKind = 'conifer' | 'broadleaf' | 'palm' | 'treefern' | 'cycad' | 'shrub' | 'fern';
 
 function withPart(g: BufferGeometry, part: number, m: Matrix4): BufferGeometry {
   const ng = g.index ? g.toNonIndexed() : g;
@@ -108,6 +108,18 @@ export function plantGeometry(kind: PlantKind): BufferGeometry {
         fronds.push(withPart(f, 1, m));
       }
       return merge([trunk, ...fronds]);
+    }
+    case 'fern': {
+      // Ground fern clump, ~1.3 m: understorey before and after, and the colonisers of the fern spike.
+      const fronds: BufferGeometry[] = [];
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2 + (i % 2) * 0.35;
+        const f = new PlaneGeometry(0.5, 1.5, 1, 2);
+        f.translate(0, 0.75, 0);
+        const m = new Matrix4().makeRotationY(a).multiply(new Matrix4().makeRotationX(0.55 + (i % 3) * 0.2));
+        fronds.push(withPart(f, 1, m));
+      }
+      return merge(fronds);
     }
     case 'shrub':
     default: {

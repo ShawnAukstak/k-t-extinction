@@ -269,13 +269,15 @@ export class ImpactEffects {
       this.meanLight = ml[i0] * (1 - f) + (ml[Math.min(i0 + 1, ml.length - 1)] ?? 1) * f;
       if (t > wt[wt.length - 1]) this.meanLight = 1;
     }
-    // Plants: die back over months of darkness and cold, ferns colonise first, forests take millennia
-    // (fern spike: Vajda 2001; recovery: Lyson 2019). Smooth curves through those milestones.
+    // Plants: die back over months of darkness and cold; ferns colonise within years and dominate for
+    // roughly a thousand years (fern spike: Vajda et al. 2001); forests then return over millennia, while
+    // their make-up keeps changing for ~1 Myr (Lyson et al. 2019). Smooth curves through those
+    // milestones; the exact shapes are chosen.
     const sev = WINTER_LOOK[this.scenario].severity;
     const yr = t / YEAR_S;
     const ss = (a: number, b: number, x: number) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
     const life = this.uniforms.uLife.value as Vector3;
-    life.set(sev * ss(7 / 365, 0.5, yr), ss(3, 30, yr), ss(1_000, 100_000, yr));
+    life.set(sev * ss(7 / 365, 0.5, yr), ss(3, 30, yr), ss(500, 10_000, yr));
 
     const times = this.dustTimes;
     if (times.length === 0) return;
