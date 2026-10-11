@@ -1,0 +1,35 @@
+# Edits applied to the PALEOMAP 65 Ma PaleoDEM before anything is rendered.
+#
+# The PaleoDEM is the authors' self-described "first draft"; where a specific, better-constrained
+# observation contradicts it at a place the app looks at closely, we correct it here with a citation.
+# scripts/kt/dem.py applies these in order. Coordinates are in the PALEOMAP 65 Ma frame.
+#
+# confidence: known | model | contested | chosen  (shown in the app's info tooltips)
+
+corrections:
+  - id: yucatan-platform-marine
+    title: The impact site was under the sea
+    type: platform
+    confidence: model
+    description: >-
+      The PaleoDEM shows the Yucatán block as dry land 700–1,000 m high, with a crater-like ring drawn
+      in. Seismic surveys and the IODP-ICDP Expedition 364 cores show the impact hit a marine carbonate
+      platform: the water was about 100 m deep on the western shelf, about 650 m at the crater centre,
+      and more than 1,200 m to the north-east (up to ~2 km in the north-eastern embayment). We replace
+      the crater area with that sloping shelf and lower the rest of the block to a low-lying platform.
+      Before the impact there is no crater.
+    sources: [gulick2008, gulick2019, morgan2016]
+    centre: {lat: 25.1149, lon: -71.5823}
+    # Today's north-east (45°) at the crater is 57.6° in the 65 Ma frame (GPlates Web Service, PALEOMAP).
+    deep_azimuth_deg: 57.6
+    depth_centre_m: 650
+    depth_deep_side_m: 1200
+    depth_shallow_side_m: 100
+    ramp_half_width_km: 140     # shallow → deep over ~280 km across the crater
+    ellipse_ratio: 1.4          # the flooded zone is elongated along the ramp
+    marine_radius_km: 260
+    blend_km: 90
+    noise: 0.15
+    # Beyond the marine zone, flatten anything above `platform_top_m` towards it, fading out by outer_radius_km.
+    platform_top_m: 40
+    outer_radius_km: 600

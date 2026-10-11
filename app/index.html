@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>K–T Extinction Simulator</title>
+    <meta name="description" content="The Chicxulub impact and the end of the dinosaurs, minute by minute, on a scientifically reconstructed 66-million-year-old Earth." />
+    <meta name="theme-color" content="#000000" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+      #app { position: fixed; inset: 0; }
+      #boot { position: fixed; inset: 0; display: grid; place-items: center; color: #8a8f98;
+        font: 500 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; letter-spacing: .08em;
+        text-transform: uppercase; pointer-events: none; transition: opacity .6s; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="boot">Reconstructing Earth, 66 million years ago…</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -57,6 +57,22 @@
 - **Scotese's method** (PaleoDEM report pp. 4–6) [V]: start from modern topo/bathy, rotate cells to paleo-positions, edit as 8-bit greyscale (±10,000 m → 0–255, 40 m steps) using lithofacies/tectonic constraints, "unsubside" ocean floor with an age–depth curve, then colour by elevation: deep ocean dark blue; ridges blue; shelves light blue; coastal lowlands dark green; inland lowlands green; plateaus tan; mountains brown; peaks white.
 - **Ancient Earth** [V]: client-side WebGL globe, Scotese PaleoAtlas JPGs as textures, 26 time slices incl. 66 Ma, clouds not time-adjusted, locations "accurate to ~100 km". The 2015 code is **MIT on GitHub** (`typpo/ancient-earth`) but used older NAU/Blakey textures; the live site uses Scotese.
 
+### 1.8 How we paint the globe (implemented in `scripts/process_globe.py`)
+
+What the app shows, and every place where we departed from a dataset, with the reason:
+
+| Layer | Source | Our processing | Confidence |
+|---|---|---|---|
+| Elevation and sea depth | PaleoDEM 65 Ma, 0.1° (its own metadata calls it "KT_Boundary, 66 Ma") | Cube-face textures; relief shading uses 6× vertical exaggeration so terrain reads from orbit | model |
+| **Yucatán / impact site** | PaleoDEM shows land at +700–1,000 m with a crater ring already drawn in | **Replaced** with a marine carbonate ramp: ~100 m deep on the SW side → ~650 m at the centre → ~1,200 m to the NE (Gulick 2008, 2019; Morgan 2016); the rest of the block is flattened to a low platform. Today's NE is 57.6° in the 65 Ma frame (GWS). `data/curated/dem-corrections.yaml` | model (our correction) |
+| Land vegetation colour | HadCM3L run `texyn` (BRIDGE), annual temperature and precipitation, lapse-rate downscaled to 0.1° | Moisture index *P* / (260 + 32·max(*T*, 0)) mm → desert / arid shrub / fern–shrub savanna / forest (tropical, warm, cool), plus wet lowlands and rocky highlands. **No grassland**: grasses existed but grasslands did not | model |
+| Precipitation calibration | Raw `texyn` is drier than the fossil record: 16 % desert, and Hell Creek (Tanis) at 488 mm/yr would be arid shrubland | **×1.7** → ~6 % desert (Chaboureau et al. 2014 estimate ~4 % for the Maastrichtian) and a wooded Hell Creek, consistent with its humid floodplain floras | model (our calibration) |
+| Polar cover | Model annual means fall below 0 °C in Arctic/Antarctic interiors | Sparse cover only below −7 °C; fossil polar forests (Alaska, Antarctic Peninsula) argue against barren high latitudes | model |
+| Sea colour | Depth from the corrected DEM | Turquoise over shallow carbonate shelves, darkening with depth | chosen (visual) |
+| Atmosphere | Modern Rayleigh/Mie coefficients | Single scattering; haze scaled ×0.4 over the ground for legibility | chosen (visual) |
+
+Licence note: `texyn` has no stated licence, so these vegetation colours are **local development only** until Paul Valdes grants permission or we switch to PhanDA (same HadCM3L family, CC BY 4.0). See `data/catalog.yaml`.
+
 ## 2. Suggested data stack for the globe
 
 1. **Terrain:** `Map16_PALEOMAP_6min_KT_Boundary_65Ma.nc` (0.1°, CC BY 4.0) → hypsometric tint + hillshade → 3600×1800 or 7200×3600 equirectangular; optionally swap the ocean for Dutkiewicz 2019 `paleobathymetry_66.nc` (0.1°, CC BY 4.0). Quick fallback: `Map16a KT Boundary_066.jpg` as-is (has modern political boundaries baked in — prefer re-rendering).

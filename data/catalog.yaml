@@ -38,7 +38,7 @@ sources:
         path: paleogeography/paleodem/Scotese_Wright_2018_Maps_1-88_6minX6min_PaleoDEMS_nc.zip
         size: 207273848
         md5: 89eb50d8645707ab221b023078535bda
-        extract: ["*65Ma*", "*70Ma*"]
+        extract: ["*_65Ma.nc", "*_70Ma.nc"]
       - url: https://zenodo.org/api/records/5460860/files/Scotese_Wright2018_PALEOMAP_PaleoDEMs.pdf/content
         path: paleogeography/paleodem/Scotese_Wright2018_PALEOMAP_PaleoDEMs.pdf
         size: 6840972
@@ -62,7 +62,7 @@ sources:
         path: paleogeography/paleocoastlines/paleocoastlines_v7_shapefiles.zip
         size: 17481632
         md5: acf1a1416a8026511d003220b646f904
-        extract: ["*65Ma*", "*70Ma*"]
+        extract: ["*/65Ma_*", "*/70Ma_*"]
       - url: https://zenodo.org/api/records/7828387/files/Readme.md/content
         path: paleogeography/paleocoastlines/Readme.md
         size: 2515

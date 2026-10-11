@@ -54,9 +54,14 @@ export const IMPACT = {
     sources: ['collins2020'],
   } satisfies Fact<number>,
 
-  /** Direction of travel, degrees clockwise from north. It came from the NE heading SW. */
+  /**
+   * Direction of travel, degrees clockwise from north *in the 65 Ma PALEOMAP frame*. Collins et al.
+   * (2020) give "from the north-east, travelling south-west" in today's geography (bearing 225°);
+   * since then the Yucatán block has rotated, and today's north at the crater maps to 12.6° in
+   * the 65 Ma frame (GPlates Web Service, PALEOMAP, 2026-10-11), so 225° becomes ~238°.
+   */
   headingDeg: {
-    value: 225,
+    value: 237.6,
     confidence: 'model',
     note: 'Approached from the northeast, travelling southwest (from offsets between the crater, peak ring and mantle uplift).',
     sources: ['collins2020'],

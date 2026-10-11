@@ -35,3 +35,7 @@ __pycache__/
 
 # Generated app assets (rebuilt by scripts/ from data/raw)
 app/public/data/
+
+# Test output
+app/test-results/
+app/playwright-report/
