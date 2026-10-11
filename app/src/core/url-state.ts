@@ -9,7 +9,8 @@
  *   s  speed multiplier
  *   p  1 = paused
  *   k  curated camera preset id (overrides c)
- *   q  "what happened here?" location: lat,lon
+ *   q  "what happened here?" location: lat,lon (65 Ma frame)
+ *   qn label for q, e.g. a city name ("Tokyo, Japan")
  *   w  impact-winter scenario: soot | so2 | dust
  *   v  schema version
  *
@@ -37,6 +38,7 @@ export interface ViewState {
   paused?: boolean;
   preset?: string;
   query?: { lat: number; lon: number };
+  queryName?: string;
   scenario?: 'soot' | 'so2' | 'dust';
 }
 
@@ -79,6 +81,9 @@ export function parseHash(hash: string): ViewState {
     if (lat !== undefined && lon !== undefined && Math.abs(lat) <= 90) out.query = { lat, lon };
   }
 
+  const qn = params.get('qn');
+  if (qn && out.query) out.queryName = qn.slice(0, 80);
+
   const w = params.get('w');
   if (w === 'soot' || w === 'so2' || w === 'dust') out.scenario = w;
 
@@ -111,6 +116,7 @@ export function formatHash(v: ViewState): string {
     parts.push(`c=${[fmt(c.lat, 4), fmt(lonWrapped, 4), fmt(c.range, 0), fmt(heading, 1), fmt(c.tilt, 1)].join(',')}`);
   }
   if (v.query) parts.push(`q=${fmt(v.query.lat, 3)},${fmt(((((v.query.lon + 180) % 360) + 360) % 360) - 180, 3)}`);
+  if (v.query && v.queryName) parts.push(`qn=${encodeURIComponent(v.queryName.slice(0, 80))}`);
   if (v.scenario && v.scenario !== 'soot') parts.push(`w=${v.scenario}`);
   if (v.mode) parts.push(`m=${v.mode}`);
   if (v.speed !== undefined && v.speed !== 1) parts.push(`s=${fmt(v.speed, 3)}`);

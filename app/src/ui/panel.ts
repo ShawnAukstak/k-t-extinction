@@ -49,6 +49,11 @@ export class InfoPanel {
   kind: 'event' | 'location' | 'about' | 'place' | 'places' | null = null;
   /** Actions from place cards. */
   onPlaceAction: ((action: 'here' | 'fly', id: string) => void) | null = null;
+  /** City search (Places panel). */
+  cities: { name: string; country: string; pop: number; lat: number; lon: number; paleoLat: number; paleoLon: number }[] = [];
+  onNeedCities: (() => Promise<void>) | null = null;
+  onCity: ((c: InfoPanel['cities'][number]) => void) | null = null;
+  onLocate: (() => void) | null = null;
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('aside');
@@ -79,7 +84,7 @@ export class InfoPanel {
     this.open('event');
   }
 
-  showLocation(h: LocalHistory, now: number): void {
+  showLocation(h: LocalHistory, now: number, label?: string): void {
     const lat = `${Math.abs(h.point.lat).toFixed(1)}°${h.point.lat >= 0 ? 'N' : 'S'}`;
     const lon = `${Math.abs(h.point.lon).toFixed(1)}°${h.point.lon >= 0 ? 'E' : 'W'}`;
     const where = h.elevationM === null ? '' : h.ocean ? `Sea, ${Math.round(-h.elevationM).toLocaleString('en-US')} m deep` : `Land, ${Math.round(h.elevationM).toLocaleString('en-US')} m above sea level`;
@@ -97,7 +102,7 @@ export class InfoPanel {
       .join('');
     const sources = h.rows.flatMap((r) => r.sources);
     this.body.innerHTML = `
-      <div class="kt-kicker">What happened here?</div>
+      <div class="kt-kicker">${label ? `${esc(label)} · 66 million years ago` : 'What happened here?'}</div>
       <h2>${esc(dist)}</h2>
       <div class="kt-coords">${esc(lat)} ${esc(lon)} on the 66-million-year-old map${where ? ` · ${esc(where)}` : ''}</div>
       <ol class="kt-rows">${rows}</ol>
@@ -128,8 +133,33 @@ export class InfoPanel {
     const items = list
       .map((p) => `<li><button type="button" data-place-action="fly" data-place="${esc(p.id)}">${esc(p.name)}<small>${esc(p.note.split('. ')[0])}.</small></button></li>`)
       .join('');
-    this.body.innerHTML = `<div class="kt-kicker">Places</div><h2>Where to look</h2><ul class="kt-place-list">${items}</ul>`;
+    this.body.innerHTML = `
+      <div class="kt-kicker">Where do you live today?</div>
+      <div class="kt-search">
+        <input type="search" placeholder="Search a city…" aria-label="Search a city" autocomplete="off" />
+        <button type="button" class="kt-locate" title="Uses your device's location; nothing is sent anywhere">Use my location</button>
+      </div>
+      <ul class="kt-place-list kt-results"></ul>
+      <div class="kt-kicker" style="margin-top:14px">Places</div><h2>Where to look</h2><ul class="kt-place-list">${items}</ul>`;
     this.open('places');
+    const input = this.body.querySelector<HTMLInputElement>('input')!;
+    const results = this.body.querySelector<HTMLUListElement>('.kt-results')!;
+    const fold = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const render = () => {
+      const q = fold(input.value.trim());
+      if (q.length < 2) { results.innerHTML = ''; return; }
+      const hits = this.cities
+        .filter((c) => fold(c.name).startsWith(q) || fold(`${c.name}, ${c.country}`).includes(q))
+        .slice(0, 8);
+      results.innerHTML = hits.length
+        ? hits.map((c, i) => `<li><button type="button" data-city="${i}">${esc(c.name)}<small>${esc(c.country)}</small></button></li>`).join('')
+        : '<li class="kt-note">No match in the 4,000 largest places.</li>';
+      results.querySelectorAll<HTMLButtonElement>('[data-city]').forEach((b) =>
+        b.addEventListener('click', () => this.onCity?.(hits[Number(b.dataset.city)])));
+    };
+    input.addEventListener('focus', () => { void this.onNeedCities?.().then(render); }, { once: true });
+    input.addEventListener('input', render);
+    this.body.querySelector('.kt-locate')!.addEventListener('click', () => this.onLocate?.());
   }
 
   showHtml(kind: 'about', html: string): void {

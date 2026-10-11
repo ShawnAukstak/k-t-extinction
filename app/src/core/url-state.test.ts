@@ -23,6 +23,11 @@ describe('url state', () => {
     expect(v.scenario).toBe('so2');
     expect(formatHash({ scenario: 'soot' })).not.toContain('w=');
   });
+  it('carries a readable name for the location', () => {
+    const v = parseHash(formatHash({ query: { lat: 45.2, lon: 128.7 }, queryName: 'Tokyo, Japan' }));
+    expect(v.queryName).toBe('Tokyo, Japan');
+    expect(parseHash('#qn=Nowhere').queryName).toBeUndefined(); // needs q
+  });
   it('wraps longitude when formatting', () => {
     expect(formatHash({ camera: { lat: 0, lon: 200, range: 10, heading: -90, tilt: 0 } })).toContain('c=0,-160,10,270,0');
   });

@@ -9,6 +9,7 @@ import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
 import { latLonToVec, vecToLatLon, type LatLon } from './core/geo';
 import { localHistory } from './core/local-history';
+import { Plates, type PlatesData } from './core/plates';
 import { POIS, poiById, type Poi } from './core/pois';
 import { sunDirection } from './core/sun';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
@@ -67,6 +68,7 @@ const panel = new InfoPanel(document.body);
 const markers = new Markers(document.body, POIS);
 const timeline = new TimelineBar(clock, document.body);
 let query: LatLon | null = initial.query ?? null;
+let queryName: string | null = initial.queryName ?? null;
 // Cinematic unless the link pins a free camera.
 let mode: 'cine' | 'free' = initial.mode === 'cine' || (!initial.camera && initial.mode !== 'free') ? 'cine' : 'free';
 let scenario: WinterScenario = initial.scenario ?? 'soot';
@@ -80,7 +82,7 @@ let lastHashWrite = 0;
 function writeHash(): void {
   const hash = formatHash({
     t: clock.t, camera: mode === 'free' ? controls.getPose() : undefined, mode, speed: clock.speed, paused: !clock.playing,
-    query: query ?? undefined, scenario, preset: place ?? undefined,
+    query: query ?? undefined, queryName: queryName ?? undefined, scenario, preset: place ?? undefined,
   });
   lastHashWrite = performance.now();
   if (hash !== lastHash) {
@@ -102,7 +104,7 @@ window.addEventListener('hashchange', () => {
   if (v.t !== undefined) clock.seek(v.t);
   if (v.paused !== undefined) clock.setPlaying(!v.paused);
   if (v.speed !== undefined) clock.setSpeed(v.speed);
-  if (v.query) setQuery(v.query);
+  if (v.query) setQuery(v.query, v.queryName ?? null);
   if (v.preset) { const p = poiById(v.preset); if (p) goToPlace(p); }
   if (v.scenario && v.scenario !== scenario) void setScenario(v.scenario);
 });
@@ -148,11 +150,12 @@ function showQuery(): void {
     dustArrivalAt: (a) => fx.dustArrivalAt(a),
     winterAt: (la, lo) => fx.winterAt(la, lo),
   });
-  panel.showLocation(h, clock.t);
+  panel.showLocation(h, clock.t, queryName ?? undefined);
 }
 
-function setQuery(p: LatLon | null): void {
+function setQuery(p: LatLon | null, name: string | null = null): void {
   query = p;
+  queryName = p ? name : null;
   const u = fx.uniforms.uPick.value as number[];
   if (p) {
     const v = latLonToVec(p.lat, p.lon, 1);
@@ -202,6 +205,31 @@ panel.onPlaceAction = (action, id) => {
 };
 // A selected place stays in the link until the user moves the camera themselves.
 renderer.domElement.addEventListener('pointerdown', () => { place = null; }, { capture: true });
+
+// ── where was my city? ───────────────────────────────────────────────────────
+function showPaleoSpot(paleo: LatLon, name: string): void {
+  place = null;
+  setMode('free');
+  void controls.flyTo({ lat: paleo.lat, lon: paleo.lon, range: 2_800_000, heading: 0, tilt: 25 });
+  setQuery(paleo, name);
+  void ensureEffectData(true).then(() => { if (query === paleo) showQuery(); });
+}
+panel.onNeedCities = async () => {
+  if (panel.cities.length) return;
+  const d = (await (await fetch(`${DATA}/places/cities.json`)).json()) as { cities: [string, string, number, number, number, number, number][] };
+  panel.cities = d.cities.map(([name, country, lat, lon, pop, paleoLat, paleoLon]) => ({ name, country, lat, lon, pop, paleoLat, paleoLon }));
+};
+panel.onCity = (c) => showPaleoSpot({ lat: c.paleoLat, lon: c.paleoLon }, `${c.name}, ${c.country}`);
+let plates: Plates | null = null;
+panel.onLocate = () => {
+  if (!navigator.geolocation) return;
+  // The position never leaves the device: the reconstruction runs here.
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    plates ??= new Plates((await (await fetch(`${DATA}/places/plates65.json`)).json()) as PlatesData);
+    const r = plates.reconstruct(pos.coords.latitude, pos.coords.longitude);
+    if (r) showPaleoSpot(r, 'Where you are');
+  }, () => { /* permission denied: nothing to do */ }, { maximumAge: 600_000, timeout: 15_000 });
+};
 
 // ── scenario, overlay, about ─────────────────────────────────────────────────
 async function setScenario(s: WinterScenario): Promise<void> {
@@ -290,7 +318,7 @@ if (initial.preset) {
 if (initial.query) {
   // Show the shared location once the data it summarises has arrived.
   effectsReady = ensureEffectData(true);
-  void effectsReady.then(() => setTimeout(() => setQuery(initial.query!), 300));
+  void effectsReady.then(() => setTimeout(() => setQuery(initial.query!, initial.queryName ?? null), 300));
 }
 
 // ── lighting ─────────────────────────────────────────────────────────────────

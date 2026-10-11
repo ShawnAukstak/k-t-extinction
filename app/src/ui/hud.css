@@ -390,3 +390,26 @@
 /* Stacking: places under the controls. */
 .kt-markers-layer { z-index: 1; }
 .kt-top-bar, .kt-hud, .kt-panel { z-index: 2; }
+.kt-search { display: flex; gap: 6px; margin-top: 8px; }
+.kt-search input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--kt-faint);
+  border-radius: 8px;
+  color: var(--kt-fg);
+  font: var(--kt-font);
+  font-size: 14px;
+  padding: 7px 10px;
+}
+.kt-search input:focus { outline: 2px solid var(--kt-accent); outline-offset: 1px; }
+.kt-locate {
+  border: 1px solid var(--kt-faint);
+  background: transparent;
+  color: var(--kt-fg);
+  font: var(--kt-font);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
