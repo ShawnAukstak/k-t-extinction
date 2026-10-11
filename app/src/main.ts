@@ -9,6 +9,7 @@ import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
 import { latLonToVec, vecToLatLon, type LatLon } from './core/geo';
 import { localHistory } from './core/local-history';
+import { POIS, poiById, type Poi } from './core/pois';
 import { sunDirection } from './core/sun';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
 import { CRATER_OBSERVED, ImpactEffects, type WinterScenario } from './effects/impact-effects';
@@ -16,6 +17,7 @@ import { Asteroid } from './render/asteroid';
 import { Globe } from './render/globe';
 import { Plume } from './render/plume';
 import { Sky } from './render/sky';
+import { Markers } from './ui/markers';
 import { chip, InfoPanel, sourceLinks } from './ui/panel';
 import { TimelineBar } from './ui/timeline-bar';
 import { TopBar } from './ui/topbar';
@@ -62,6 +64,7 @@ const clock = new Clock(initial.t ?? DEFAULT_T, !(initial.paused ?? false), init
 const controls = new GlobeControls(camera, renderer.domElement, initial.camera ?? DEFAULT_POSE);
 const topbar = new TopBar(document.body);
 const panel = new InfoPanel(document.body);
+const markers = new Markers(document.body, POIS);
 const timeline = new TimelineBar(clock, document.body);
 let query: LatLon | null = initial.query ?? null;
 // Cinematic unless the link pins a free camera.
@@ -77,7 +80,7 @@ let lastHashWrite = 0;
 function writeHash(): void {
   const hash = formatHash({
     t: clock.t, camera: mode === 'free' ? controls.getPose() : undefined, mode, speed: clock.speed, paused: !clock.playing,
-    query: query ?? undefined, scenario,
+    query: query ?? undefined, scenario, preset: place ?? undefined,
   });
   lastHashWrite = performance.now();
   if (hash !== lastHash) {
@@ -100,6 +103,7 @@ window.addEventListener('hashchange', () => {
   if (v.paused !== undefined) clock.setPlaying(!v.paused);
   if (v.speed !== undefined) clock.setSpeed(v.speed);
   if (v.query) setQuery(v.query);
+  if (v.preset) { const p = poiById(v.preset); if (p) goToPlace(p); }
   if (v.scenario && v.scenario !== scenario) void setScenario(v.scenario);
 });
 
@@ -176,6 +180,28 @@ panel.onClose = () => {
   if (query) setQuery(null);
 };
 timeline.onEvent = (e) => panel.showEvent(e);
+
+// ── places ───────────────────────────────────────────────────────────────────
+let place: string | null = null;
+function goToPlace(p: Poi, fly = true): void {
+  place = p.id;
+  setMode('free');
+  const cam = p.camera ?? { range: 400_000, heading: 0, tilt: 45 };
+  const pose = { lat: p.paleo.lat, lon: p.paleo.lon, ...cam };
+  if (fly) void controls.flyTo(pose); else controls.setPose(pose);
+  panel.showPlace(p);
+  scheduleHashUpdate();
+}
+markers.onSelect = (p) => goToPlace(p);
+topbar.onPlaces = () => panel.showPlaces(POIS);
+panel.onPlaceAction = (action, id) => {
+  const p = poiById(id);
+  if (!p) return;
+  if (action === 'fly') goToPlace(p);
+  else { setQuery(p.paleo); void ensureEffectData(true).then(() => showQuery()); }
+};
+// A selected place stays in the link until the user moves the camera themselves.
+renderer.domElement.addEventListener('pointerdown', () => { place = null; }, { capture: true });
 
 // ── scenario, overlay, about ─────────────────────────────────────────────────
 async function setScenario(s: WinterScenario): Promise<void> {
@@ -257,6 +283,10 @@ function ensureEffectData(all = false): Promise<unknown> {
   return Promise.all([earlyEffects, tsunamiLoad, winterLoad]);
 }
 let effectsReady: Promise<unknown> = earlyEffects;
+if (initial.preset) {
+  const p = poiById(initial.preset);
+  if (p) goToPlace(p, false);
+}
 if (initial.query) {
   // Show the shared location once the data it summarises has arrived.
   effectsReady = ensureEffectData(true);
@@ -299,6 +329,8 @@ function renderNow(dt = 0): void {
   if (plume.update(clock.t, camera, sun, fx.meanLight)) plume.render(renderer, camera);
   timeline.update();
   topbar.setTimeLapse(timeLapseLighting > 0.5);
+  const range = mode === 'free' ? controls.pose.range : camera.position.length() - EARTH_RADIUS;
+  markers.update(camera, window.innerWidth, window.innerHeight, range < 6_000_000);
 }
 let last = performance.now();
 let lastPanelRefresh = 0;

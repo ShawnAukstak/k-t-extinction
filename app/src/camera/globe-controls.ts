@@ -81,6 +81,7 @@ export class GlobeControls {
   /** A click/tap that didn't drag: client coordinates. */
   onTap: ((x: number, y: number) => void) | null = null;
   private down = { x: 0, y: 0, t: 0, moved: 0 };
+  private flight: { from: CameraPose; to: CameraPose; elapsed: number; duration: number; bump: number; resolve: () => void } | null = null;
 
   private readonly pointers = new Map<number, PointerInfo>();
   private mode: 'none' | 'pan' | 'orbit' | 'pinch' = 'none';
@@ -119,8 +120,65 @@ export class GlobeControls {
     return { ...this.pose };
   }
 
+  /**
+   * Fly smoothly to a pose: great-circle path, range interpolated in log space with an arc out to
+   * see both ends on long hops. Resolves when it arrives (or immediately if interrupted).
+   */
+  flyTo(to: CameraPose, seconds = 2.8): Promise<void> {
+    this.cancelFlight();
+    const from = this.getPose();
+    const a = latLonToVec(from.lat, from.lon, 1), b = latLonToVec(to.lat, to.lon, 1);
+    const sepM = Math.acos(MathUtils.clamp(a.dot(b), -1, 1)) * EARTH_RADIUS;
+    const peak = Math.max(from.range, to.range, sepM * 1.1);
+    const bump = Math.max(0, Math.log(peak) - Math.max(Math.log(from.range), Math.log(to.range)));
+    return new Promise((resolve) => {
+      this.flight = { from, to: { ...to }, elapsed: 0, duration: Math.max(0.3, seconds), bump, resolve };
+      this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+    });
+  }
+
+  get flying(): boolean {
+    return this.flight !== null;
+  }
+
+  private cancelFlight(): void {
+    if (!this.flight) return;
+    const f = this.flight;
+    this.flight = null;
+    f.resolve();
+  }
+
+  private stepFlight(dt: number): void {
+    const f = this.flight!;
+    f.elapsed += dt;
+    const k = Math.min(1, f.elapsed / f.duration);
+    const e = k * k * (3 - 2 * k);
+    const a = latLonToVec(f.from.lat, f.from.lon, 1), b = latLonToVec(f.to.lat, f.to.lon, 1);
+    const ang = Math.acos(MathUtils.clamp(a.dot(b), -1, 1));
+    let dir: Vector3;
+    if (ang < 1e-9) dir = a;
+    else {
+      const s = Math.sin(ang);
+      dir = a.clone().multiplyScalar(Math.sin((1 - e) * ang) / s).addScaledVector(b, Math.sin(e * ang) / s);
+    }
+    const ll = vecToLatLon(dir);
+    const logR = Math.log(f.from.range) * (1 - e) + Math.log(f.to.range) * e + f.bump * Math.sin(Math.PI * e);
+    const dh = ((f.to.heading - f.from.heading + 540) % 360) - 180;
+    this.pose = {
+      lat: ll.lat, lon: ll.lon, range: Math.exp(logR),
+      heading: f.from.heading + dh * e, tilt: f.from.tilt + (f.to.tilt - f.from.tilt) * e,
+    };
+    this.clamp();
+    this.dirty = true;
+    if (k >= 1) {
+      this.flight = null;
+      f.resolve();
+    }
+  }
+
   /** Apply inertia and write the pose to the camera. Returns true if the camera moved. */
   update(dt: number): boolean {
+    if (this.flight) this.stepFlight(dt);
     const v = this.velocity;
     if (this.mode === 'none') {
       const decay = Math.exp(-dt * 4);
@@ -148,6 +206,7 @@ export class GlobeControls {
 
   private onPointerDown = (e: PointerEvent): void => {
     if (!this.enabled) return;
+    this.cancelFlight();
     this.dom.setPointerCapture(e.pointerId);
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 1) this.down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 };
@@ -214,6 +273,7 @@ export class GlobeControls {
   private onWheel = (e: WheelEvent): void => {
     if (!this.enabled) return;
     e.preventDefault();
+    this.cancelFlight();
     const delta = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY; // lines → pixels
     this.pose.range *= Math.exp(delta * 0.0015);
     this.clamp();

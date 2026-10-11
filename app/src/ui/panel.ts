@@ -5,6 +5,7 @@
 import type { Confidence } from '../config';
 import type { TimelineEvent } from '../core/events';
 import type { LocalHistory } from '../core/local-history';
+import type { Poi } from '../core/pois';
 import { SOURCES } from '../core/sources';
 import { formatRelative } from '../core/timeline';
 
@@ -45,7 +46,9 @@ export class InfoPanel {
   /** Seek requests from rows in the location card. */
   onSeek: ((t: number) => void) | null = null;
   onClose: (() => void) | null = null;
-  kind: 'event' | 'location' | 'about' | null = null;
+  kind: 'event' | 'location' | 'about' | 'place' | 'places' | null = null;
+  /** Actions from place cards. */
+  onPlaceAction: ((action: 'here' | 'fly', id: string) => void) | null = null;
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('aside');
@@ -56,8 +59,11 @@ export class InfoPanel {
     this.body = this.root.querySelector('.kt-panel-body')!;
     this.root.querySelector('.kt-panel-close')!.addEventListener('click', () => this.close());
     this.root.addEventListener('click', (e) => {
-      const row = (e.target as HTMLElement).closest<HTMLElement>('[data-seek]');
+      const target = e.target as HTMLElement;
+      const row = target.closest<HTMLElement>('[data-seek]');
       if (row) this.onSeek?.(Number(row.dataset.seek));
+      const act = target.closest<HTMLElement>('[data-place-action]');
+      if (act) this.onPlaceAction?.(act.dataset.placeAction as 'here' | 'fly', act.dataset.place!);
     });
     parent.append(this.root);
   }
@@ -100,12 +106,38 @@ export class InfoPanel {
     this.open('location');
   }
 
+  showPlace(p: Poi): void {
+    const fmt = (ll: { lat: number; lon: number }) =>
+      `${Math.abs(ll.lat).toFixed(1)}°${ll.lat >= 0 ? 'N' : 'S'} ${Math.abs(ll.lon).toFixed(1)}°${ll.lon >= 0 ? 'E' : 'W'}`;
+    const where = Number.isFinite(p.modern.lat)
+      ? `Today ${esc(fmt(p.modern))}; 66 million years ago ${esc(fmt(p.paleo))} (PALEOMAP plate model)`
+      : `66 million years ago ${esc(fmt(p.paleo))}`;
+    this.body.innerHTML = `
+      <div class="kt-kicker">Place${p.tags.includes('context') ? ' · older than the impact' : ''}</div>
+      <h2>${esc(p.name)}</h2>
+      <div class="kt-coords">${where}</div>
+      <p>${esc(p.note)}</p>
+      <div class="kt-btn-row">
+        <button type="button" data-place-action="here" data-place="${esc(p.id)}">What happened here?</button>
+      </div>
+      <div class="kt-sources"><span>Sources</span>${sourceLinks(p.sources)}</div>`;
+    this.open('place');
+  }
+
+  showPlaces(list: readonly Poi[]): void {
+    const items = list
+      .map((p) => `<li><button type="button" data-place-action="fly" data-place="${esc(p.id)}">${esc(p.name)}<small>${esc(p.note.split('. ')[0])}.</small></button></li>`)
+      .join('');
+    this.body.innerHTML = `<div class="kt-kicker">Places</div><h2>Where to look</h2><ul class="kt-place-list">${items}</ul>`;
+    this.open('places');
+  }
+
   showHtml(kind: 'about', html: string): void {
     this.body.innerHTML = html;
     this.open(kind);
   }
 
-  private open(kind: 'event' | 'location' | 'about'): void {
+  private open(kind: 'event' | 'location' | 'about' | 'place' | 'places'): void {
     this.kind = kind;
     this.root.hidden = false;
     this.root.scrollTop = 0;

@@ -1,0 +1,197 @@
+# Points of interest, from docs/research/points-of-interest.md.
+#
+#   modern       today's coordinates (lat, lon)
+#   paleo        PALEOMAP 65 Ma position, filled by scripts/reconstruct_pois.py (GPlates Web Service);
+#                this is where the point sits on the app's globe
+#   verified     whether the modern coordinate was checked against a source (see the research page)
+#   camera       optional preset: range (m), heading, tilt — applied around the paleo position
+#   tags         impact | terrestrial | marine | fauna | volcanic | context
+#   note         one or two sentences for the card
+#   sources      keys in sources.yaml
+#
+# Records older than the impact are tagged `context` (see decisions.md D12).
+
+reconstruction:
+  model: PALEOMAP
+  time_ma: 65
+  service: https://gws.gplates.org/reconstruct/reconstruct_points/
+
+points:
+  - id: chicxulub
+    name: Chicxulub crater
+    modern: {lat: 21.29, lon: -89.53}
+    verified: true
+    tags: [impact]
+    camera: {range: 900000, heading: 330, tilt: 55}
+    note: The impact site. Today the crater is buried under a kilometre of younger limestone beneath the Yucatán coast.
+    sources: [collins2020, morgan2016]
+
+  - id: tanis
+    name: Tanis, North Dakota
+    modern: {lat: 46.0218, lon: -103.791}
+    verified: true
+    tags: [terrestrial, fauna, impact]
+    camera: {range: 60000, heading: 160, tilt: 60}
+    note: >-
+      A river bank 3,000 km from the crater where a seismic surge buried fish with impact spherules in their gills,
+      minutes to hours after the impact. Their bones record that it was spring.
+    sources: [depalma2019, during2022]
+
+  - id: hell-creek
+    name: Hell Creek, Montana
+    modern: {lat: 47.32, lon: -106.91}
+    verified: false
+    tags: [terrestrial, fauna]
+    camera: {range: 80000, heading: 200, tilt: 60}
+    note: >-
+      The best-known last dinosaur community: Triceratops, Edmontosaurus, Tyrannosaurus and many smaller animals on a
+      warm, wet coastal plain.
+    sources: [horner2011, sprain2018]
+
+  - id: raton
+    name: Raton Basin, Colorado
+    modern: {lat: 37.118, lon: -104.517}
+    verified: true
+    tags: [terrestrial]
+    camera: {range: 80000, heading: 0, tilt: 55}
+    note: A thin boundary clay rich in iridium and shocked quartz, with the fern spike just above it.
+    sources: [schulte2010]
+
+  - id: corral-bluffs
+    name: Corral Bluffs, Colorado
+    modern: {lat: 38.8, lon: -104.6}
+    verified: false
+    tags: [terrestrial, fauna]
+    camera: {range: 80000, heading: 20, tilt: 55}
+    note: Fossils here record how mammals and plants recovered over the first million years after the impact.
+    sources: [lyson2019]
+
+  - id: brazos
+    name: Brazos River, Texas
+    modern: {lat: 31.11, lon: -96.83}
+    verified: true
+    tags: [marine, impact]
+    camera: {range: 150000, heading: 120, tilt: 55}
+    note: Tsunami deposits, and a record of the sea cooling by several degrees after the impact.
+    sources: [vellekoop2014, schulte2010]
+
+  - id: beloc
+    name: Beloc, Haiti
+    modern: {lat: 18.4, lon: -72.65}
+    verified: false
+    tags: [marine, impact]
+    camera: {range: 200000, heading: 300, tilt: 50}
+    note: A thick layer of impact glass (tektites) used to date the impact precisely.
+    sources: [renne2013]
+
+  - id: gorgonilla
+    name: Gorgonilla Island, Colombia
+    modern: {lat: 2.97, lon: -78.18}
+    verified: true
+    tags: [marine, impact]
+    camera: {range: 300000, heading: 0, tilt: 45}
+    note: A deep-sea bed of glass spherules from the impact.
+    sources: [schulte2010]
+
+  - id: el-kef
+    name: El Kef, Tunisia (the boundary's reference section)
+    modern: {lat: 36.1537, lon: 8.6486}
+    verified: true
+    tags: [marine]
+    camera: {range: 300000, heading: 0, tilt: 45}
+    note: The internationally agreed reference point for the base of the Paleogene, with its iridium-rich boundary clay.
+    sources: [schulte2010]
+
+  - id: gubbio
+    name: Gubbio, Italy
+    modern: {lat: 43.3655, lon: 12.5826}
+    verified: true
+    tags: [marine]
+    camera: {range: 300000, heading: 0, tilt: 45}
+    note: Where the Alvarez team found the iridium anomaly in 1980 that pointed to an impact.
+    sources: [alvarez1980]
+
+  - id: stevns-klint
+    name: Stevns Klint, Denmark
+    modern: {lat: 55.2672, lon: 12.4233}
+    verified: true
+    tags: [marine]
+    camera: {range: 300000, heading: 0, tilt: 45}
+    note: A sea cliff exposing the dark, iridium-rich Fish Clay at the boundary; a World Heritage Site.
+    sources: [schulte2010]
+
+  - id: seymour
+    name: Seymour Island, Antarctica
+    modern: {lat: -64.233, lon: -56.617}
+    verified: true
+    tags: [marine, terrestrial]
+    camera: {range: 400000, heading: 180, tilt: 45}
+    note: A polar boundary section. Forests grew near here in a world without ice caps.
+    sources: [schulte2010]
+
+  - id: woodside-creek
+    name: Woodside Creek, New Zealand
+    modern: {lat: -41.9167, lon: 174.0667}
+    verified: true
+    tags: [marine]
+    camera: {range: 400000, heading: 0, tilt: 45}
+    note: The fern spike was found worldwide, including here on the far side of the planet.
+    sources: [vajda2001]
+
+  - id: tremp
+    name: Tremp Basin, Spain
+    modern: {lat: 42.2, lon: 0.9}
+    verified: false
+    tags: [terrestrial, fauna]
+    camera: {range: 150000, heading: 0, tilt: 50}
+    note: Among the last dinosaurs of Europe — hadrosaurs and titanosaurs on an island archipelago.
+    sources: [schulte2010]
+
+  - id: deccan
+    name: Deccan Traps, India
+    modern: {lat: 18.85, lon: 73.72}
+    verified: true
+    tags: [volcanic]
+    camera: {range: 800000, heading: 0, tilt: 40}
+    note: >-
+      Enormous lava eruptions, under way before the impact and for hundreds of thousands of years after. Current
+      evidence says the impact, not the volcanism, triggered the extinction.
+    sources: [hull2020, schoene2019, sprain2019]
+
+  - id: maevarano
+    name: Mahajanga Basin, Madagascar
+    modern: {lat: -15.7, lon: 46.3}
+    verified: false
+    tags: [terrestrial, fauna]
+    camera: {range: 300000, heading: 0, tilt: 45}
+    note: Home of Majungasaurus and the giant frog Beelzebufo.
+    sources: [schulte2010]
+
+  - id: nemegt
+    name: Nemegt Basin, Mongolia
+    modern: {lat: 43.5, lon: 101.0}
+    verified: false
+    tags: [terrestrial, fauna, context]
+    camera: {range: 300000, heading: 0, tilt: 45}
+    note: >-
+      Famous for Tarbosaurus and Deinocheirus. These rocks are probably a few million years older than the impact, so
+      they show what the region was like, not the last day.
+    sources: [schulte2010]
+
+  - id: hateg
+    name: Hațeg Island, Romania
+    modern: {lat: 45.6, lon: 22.9}
+    verified: false
+    tags: [terrestrial, fauna, context]
+    camera: {range: 200000, heading: 0, tilt: 45}
+    note: Dwarf dinosaurs and the giant pterosaur Hatzegopteryx on an island. Mostly older than the impact.
+    sources: [schulte2010]
+
+  - id: boltysh
+    name: Boltysh crater, Ukraine
+    modern: {lat: 48.9, lon: 32.17}
+    verified: false
+    tags: [impact, context]
+    camera: {range: 200000, heading: 0, tilt: 45}
+    note: A 24 km crater from a smaller impact about 650,000 years later; unrelated to the extinction.
+    sources: [pickersgill2021]

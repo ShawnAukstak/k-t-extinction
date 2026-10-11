@@ -47,7 +47,7 @@ sources:
   - id: paleocoastlines
     name: PaleoMAP PaleoCoastlines v7 (Kocsis & Scotese 2021)
     group: core
-    role: Paleo-shorelines and continental margins, land/sea mask check
+    role: Paleo-shorelines and continental margins; the PALEOMAP plate model (rotations + static polygons) for reconstructing points
     licence: CC-BY-4.0
     ship: true
     credit: "Paleo-coastlines: Á. T. Kocsis & C. R. Scotese (CC BY 4.0)"
@@ -63,6 +63,11 @@ sources:
         size: 17481632
         md5: acf1a1416a8026511d003220b646f904
         extract: ["*/65Ma_*", "*/70Ma_*"]
+      - url: https://zenodo.org/api/records/7828387/files/paleomap_global_plate_model_v3.zip/content
+        path: paleogeography/paleocoastlines/paleomap_global_plate_model_v3.zip
+        size: 414657
+        md5: e0575812ef742679b5a41049118a7d14
+        extract: ["*"]
       - url: https://zenodo.org/api/records/7828387/files/Readme.md/content
         path: paleogeography/paleocoastlines/Readme.md
         size: 2515
