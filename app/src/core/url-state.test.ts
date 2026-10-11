@@ -17,6 +17,12 @@ describe('url state', () => {
     expect(parseHash('#c=10,20,1000,0,120').camera?.tilt).toBe(89);
     expect(parseHash('#c=100,20,1000').camera).toBeUndefined();
   });
+  it('round-trips the location query and scenario', () => {
+    const v = parseHash(formatHash({ query: { lat: 48.712, lon: -81.3 }, scenario: 'so2' }));
+    expect(v.query).toEqual({ lat: 48.712, lon: -81.3 });
+    expect(v.scenario).toBe('so2');
+    expect(formatHash({ scenario: 'soot' })).not.toContain('w=');
+  });
   it('wraps longitude when formatting', () => {
     expect(formatHash({ camera: { lat: 0, lon: 200, range: 10, heading: -90, tilt: 0 } })).toContain('c=0,-160,10,270,0');
   });

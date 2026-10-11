@@ -25,6 +25,7 @@ uniform float uWinterLayers;
 uniform float uWinterOn;
 uniform vec3 uVeil;               // colour of the darkening aerosol seen from space
 uniform vec3 uLife;               // x die-off, y fern cover, z forest recovery
+uniform vec4 uPick;               // xyz unit vector of the "what happened here?" point, w = on
 
 float fxRow(float r) { return (r + 0.5) / uFxRows; }
 
@@ -184,6 +185,15 @@ void fxLife(inout vec3 albedo, float water) {
   now = mix(now, ferns, uLife.x * uLife.y * (1.0 - uLife.z));
   now = mix(now, albedo, uLife.z);
   albedo = mix(albedo, now, green);
+}
+
+// A ring marking the picked location, a constant size on screen.
+vec3 fxPickRing(vec3 n, float pxKm) {
+  if (uPick.w < 0.5) return vec3(0.0);
+  float dKm = atan(length(cross(n, uPick.xyz)), dot(n, uPick.xyz)) * PR;
+  float r = 9.0 * pxKm, w = 1.6 * pxKm;
+  float ring = exp(-pow((dKm - r) / w, 2.0)) + 0.8 * exp(-pow(dKm / (2.0 * w), 2.0));
+  return vec3(1.0, 0.75, 0.35) * ring * 4.0;
 }
 
 // Thin rings for the science overlay: air blast, seismic surface waves, ballistic ejecta front.

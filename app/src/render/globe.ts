@@ -20,6 +20,8 @@ import { effectsChunk } from './shaders/effects';
 export interface GlobeManifest {
   /** Available face sizes, smallest first, e.g. [256, 1024]. */
   sizes: number[];
+  /** Coarse elevation grid for CPU queries. */
+  elevationGrid?: { file: string; width: number; height: number; stepDeg: number };
   /** Elevation decode for the 8-bit height faces: metres = (v·255 − offset) · step. */
   height: { offset: number; step: number };
   /** Normal-map vertical exaggeration baked into the normals (for the info panel). */
@@ -137,6 +139,7 @@ void main() {
   radiance += emission * mix(1.0, 0.35, cover);
   float pxKm = length(vViewPos) / 1000.0 * 0.0015;
   radiance += fxOverlay(rKm, fxAng, pxKm) * 3.0;
+  radiance += fxPickRing(n, pxKm);
 
   // Aerial perspective between the camera and this point. End the integral where the view ray
   // meets the true sphere: the flat triangles of a coarse mesh dip up to ~1 km below it, and
@@ -210,6 +213,7 @@ export class Globe {
   readonly group = new Group();
   readonly material: ShaderMaterial;
   manifest: GlobeManifest | null = null;
+  private elevation: Int16Array | null = null;
   loadedSize = 0;
   private readonly viewToWorld = new Matrix3();
   private readonly camKm = new Vector3();
@@ -253,6 +257,12 @@ export class Globe {
     }
     const m = this.manifest;
     this.material.uniforms.uHeightDecode.value = [m.height.offset, m.height.step];
+    if (m.elevationGrid) {
+      fetch(`${baseUrl}/${m.elevationGrid.file}`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.statusText))))
+        .then((b) => { this.elevation = new Int16Array(b); })
+        .catch((e) => console.warn('elevation grid unavailable', e));
+    }
     const sizes = m.sizes.filter((s) => s <= targetSize);
     const first = sizes[0] ?? m.sizes[0];
     await this.loadSize(baseUrl, first);
@@ -289,6 +299,15 @@ export class Globe {
     u.uHeight.value = height;
     u.uHasData.value = 1;
     this.loadedSize = size;
+  }
+
+  /** Paleo-elevation (m, negative = sea depth) from the 0.5° grid, or null before it loads. */
+  elevationAt(lat: number, lon: number): number | null {
+    const g = this.manifest?.elevationGrid;
+    if (!g || !this.elevation) return null;
+    const i = Math.min(g.height - 1, Math.max(0, Math.floor((90 - lat) / g.stepDeg)));
+    const j = Math.floor(((((lon + 180) % 360) + 360) % 360) / g.stepDeg) % g.width;
+    return this.elevation[i * g.width + j];
   }
 
   update(camera: PerspectiveCamera, sunDir: Vector3, sunScale: number, haze: number): void {

@@ -9,6 +9,8 @@
  *   s  speed multiplier
  *   p  1 = paused
  *   k  curated camera preset id (overrides c)
+ *   q  "what happened here?" location: lat,lon
+ *   w  impact-winter scenario: soot | so2 | dust
  *   v  schema version
  *
  * Parsing is forgiving: unknown keys are ignored, bad values fall back to defaults.
@@ -34,6 +36,8 @@ export interface ViewState {
   speed?: number;
   paused?: boolean;
   preset?: string;
+  query?: { lat: number; lon: number };
+  scenario?: 'soot' | 'so2' | 'dust';
 }
 
 export const SCHEMA_VERSION = 1;
@@ -69,6 +73,15 @@ export function parseHash(hash: string): ViewState {
   const p = params.get('p');
   if (p !== null) out.paused = p === '1' || p === 'true';
 
+  const q = params.get('q');
+  if (q) {
+    const [lat, lon] = q.split(',').map((x) => num(x));
+    if (lat !== undefined && lon !== undefined && Math.abs(lat) <= 90) out.query = { lat, lon };
+  }
+
+  const w = params.get('w');
+  if (w === 'soot' || w === 'so2' || w === 'dust') out.scenario = w;
+
   const k = params.get('k');
   if (k && /^[a-z0-9-]{1,40}$/.test(k)) out.preset = k;
 
@@ -97,6 +110,8 @@ export function formatHash(v: ViewState): string {
     const heading = ((c.heading % 360) + 360) % 360;
     parts.push(`c=${[fmt(c.lat, 4), fmt(lonWrapped, 4), fmt(c.range, 0), fmt(heading, 1), fmt(c.tilt, 1)].join(',')}`);
   }
+  if (v.query) parts.push(`q=${fmt(v.query.lat, 3)},${fmt(((((v.query.lon + 180) % 360) + 360) % 360) - 180, 3)}`);
+  if (v.scenario && v.scenario !== 'soot') parts.push(`w=${v.scenario}`);
   if (v.mode) parts.push(`m=${v.mode}`);
   if (v.speed !== undefined && v.speed !== 1) parts.push(`s=${fmt(v.speed, 3)}`);
   if (v.paused) parts.push('p=1');

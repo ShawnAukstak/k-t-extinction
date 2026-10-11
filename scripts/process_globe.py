@@ -204,10 +204,19 @@ def main() -> None:
         kb = sum(p.stat().st_size for p in out.iterdir()) / 1024
         print(f"  {size}: {kb:,.0f} KB")
 
+    # A coarse elevation grid for CPU-side queries ("what happened here?"): 0.5°, Int16 metres,
+    # rows north → south from 89.75°, columns east from −179.75°.
+    lat = 90 - (np.arange(360) + 0.5) * 0.5
+    lon = -180 + (np.arange(720) + 0.5) * 0.5
+    LAT, LON = np.meshgrid(lat, lon, indexing="ij")
+    elev = dem.sample(LAT.ravel(), LON.ravel()).reshape(360, 720)
+    (out_root / "elevation_0p5.bin").write_bytes(np.round(elev).astype("<i2").tobytes())
+
     manifest = {
         "sizes": sizes,
         "height": {"offset": HEIGHT_OFFSET, "step": HEIGHT_STEP_M},
         "normalExaggeration": NORMAL_EXAGGERATION,
+        "elevationGrid": {"file": "elevation_0p5.bin", "width": 720, "height": 360, "stepDeg": 0.5, "type": "int16le", "rows": "north-first"},
         "source": "PALEOMAP PaleoDEM 65 Ma (Scotese & Wright 2018) with data/curated/dem-corrections.yaml; "
                   f"vegetation from {clim.source}",
     }

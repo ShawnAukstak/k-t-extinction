@@ -59,6 +59,9 @@ export class GlobeControls {
   maxRange = 6e7;
   /** Called after any user interaction (for deep-link updates, cinematic interruption, etc.). */
   onUserInput: (() => void) | null = null;
+  /** A click/tap that didn't drag: client coordinates. */
+  onTap: ((x: number, y: number) => void) | null = null;
+  private down = { x: 0, y: 0, t: 0, moved: 0 };
 
   private readonly pointers = new Map<number, PointerInfo>();
   private mode: 'none' | 'pan' | 'orbit' | 'pinch' = 'none';
@@ -128,6 +131,8 @@ export class GlobeControls {
     if (!this.enabled) return;
     this.dom.setPointerCapture(e.pointerId);
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pointers.size === 1) this.down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 };
+    else this.down.moved = Infinity;
     this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
     if (this.pointers.size === 2) {
       this.mode = 'pinch';
@@ -148,6 +153,7 @@ export class GlobeControls {
     if (!prev || !this.enabled) return;
     const dx = e.clientX - prev.x;
     const dy = e.clientY - prev.y;
+    this.down.moved = Math.max(this.down.moved, Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y));
     prev.x = e.clientX;
     prev.y = e.clientY;
     const now = performance.now();
@@ -172,7 +178,13 @@ export class GlobeControls {
   };
 
   private onPointerUp = (e: PointerEvent): void => {
+    const wasTap = this.pointers.size === 1 && this.pointers.has(e.pointerId) && this.down.moved < 6 &&
+      performance.now() - this.down.t < 400 && e.button === 0;
     this.pointers.delete(e.pointerId);
+    if (wasTap && e.type === 'pointerup') {
+      this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+      this.onTap?.(e.clientX, e.clientY);
+    }
     if (this.dom.hasPointerCapture(e.pointerId)) this.dom.releasePointerCapture(e.pointerId);
     // Stop inertia if the pointer rested before release.
     if (performance.now() - this.lastMoveTime > 80) this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };

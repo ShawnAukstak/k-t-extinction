@@ -24,10 +24,10 @@ interface DustFile {
 export type WinterScenario = 'soot' | 'so2' | 'dust';
 
 /** How each darkening agent looks from space, and how hard it hits vegetation. */
-export const WINTER_LOOK: Record<WinterScenario, { veil: [number, number, number]; severity: number; label: string }> = {
-  soot: { veil: [0.02, 0.02, 0.02], severity: 1.0, label: 'Soot (from burning target rock organics)' },
-  so2: { veil: [0.55, 0.55, 0.53], severity: 0.85, label: 'Sulfate haze (from vaporised anhydrite)' },
-  dust: { veil: [0.24, 0.19, 0.13], severity: 0.6, label: 'Fine rock dust' },
+export const WINTER_LOOK: Record<WinterScenario, { veil: [number, number, number]; severity: number; short: string; label: string }> = {
+  soot: { veil: [0.02, 0.02, 0.02], severity: 1.0, short: 'Soot', label: 'Soot (from burning target rock organics)' },
+  so2: { veil: [0.55, 0.55, 0.53], severity: 0.85, short: 'Sulfate haze', label: 'Sulfate haze (from vaporised anhydrite)' },
+  dust: { veil: [0.24, 0.19, 0.13], severity: 0.6, short: 'Rock dust', label: 'Fine rock dust' },
 };
 
 const YEAR_S = 365.25 * 86400;
@@ -40,6 +40,9 @@ export class ImpactEffects {
   readonly table: DataTexture;
   readonly uniforms: Record<string, { value: unknown }>;
   private dustTimes: number[] = [];
+  private dustLog: number[][] = [];
+  private tsunamiRaw: { data: Uint16Array; width: number; height: number; unit: number } | null = null;
+  private winterRaw: { data: Uint8Array; width: number; height: number; layers: number } | null = null;
   private winterTimes: number[] = [];
   private winterMeanLight: number[] = [];
   scenario: WinterScenario = 'soot';
@@ -99,6 +102,7 @@ export class ImpactEffects {
       uWinterOn: { value: 0 },
       uVeil: { value: new Vector3(...WINTER_LOOK.soot.veil) },
       uLife: { value: new Vector3(0, 0, 0) },   // x die-off, y fern cover, z forest recovery
+      uPick: { value: [0, 0, 0, 0] },
     };
   }
 
@@ -116,6 +120,7 @@ export class ImpactEffects {
       const n = Math.min(MAX_DUST_ROWS, d.times.length);
       for (let r = 0; r < n; r++) for (let i = 0; i < BINS; i++) this.set(1 + r, i, [d.log10Column[r][i], 0, 0, 0]);
       this.dustTimes = d.times.slice(0, n);
+      this.dustLog = d.log10Column.slice(0, n);
       this.table.needsUpdate = true;
       this.uniforms.uDustOn.value = 1;
       return true;
@@ -136,6 +141,7 @@ export class ImpactEffects {
       if (!res.ok) return false;
       const raw = new Uint16Array(await res.arrayBuffer());
       const n = meta.width * meta.height;
+      this.tsunamiRaw = { data: raw, width: meta.width, height: meta.height, unit: meta.timeUnitS };
       if (raw.length !== 2 * n) throw new Error('tsunami.bin size mismatch');
       const px = new Uint16Array(2 * n);
       for (let i = 0; i < n; i++) {
@@ -179,6 +185,7 @@ export class ImpactEffects {
       this.uniforms.uWinterOn.value = 1;
       (this.uniforms.uVeil.value as Vector3).set(...WINTER_LOOK[scenario].veil);
       this.winterTimes = meta.times;
+      this.winterRaw = { data, width: meta.width, height: meta.height, layers: meta.layers };
       // Area-weighted global mean light per layer, for the sky.
       const { width: w, height: h } = meta;
       this.winterMeanLight = [];
@@ -196,6 +203,49 @@ export class ImpactEffects {
       console.warn('impact winter data unavailable', e);
       return false;
     }
+  }
+
+  // ── CPU-side queries for "what happened here?" ────────────────────────────
+
+  tsunamiAt(lat: number, lon: number): { arrivalS: number; heightM: number } | null {
+    const r = this.tsunamiRaw;
+    if (!r) return null;
+    const i = Math.min(r.height - 1, Math.max(0, Math.floor(((90 - lat) / 180) * r.height)));
+    const j = Math.floor(((((lon + 180) % 360) + 360) % 360) / 360 * r.width) % r.width;
+    const k = i * r.width + j;
+    const n = r.width * r.height;
+    return { arrivalS: r.data[k] * r.unit, heightM: 10 ** (r.data[n + k] / 1000 - 2) };
+  }
+
+  /** First keyframe time at which the cloud column at this angular distance exceeds 1 kg/m². */
+  dustArrivalAt(angleRad: number): number | null {
+    if (this.dustTimes.length === 0) return null;
+    const b = Math.min(BINS - 1, Math.max(0, Math.floor((angleRad / Math.PI) * BINS)));
+    for (let r = 0; r < this.dustTimes.length; r++) {
+      if (this.dustLog[r][b] >= 0) {
+        if (r === 0) return this.dustTimes[0];
+        // Interpolate in log time between the keyframe before and this one.
+        const a = this.dustLog[r - 1][b], c = this.dustLog[r][b];
+        const f = (0 - a) / Math.max(1e-6, c - a);
+        const t0 = Math.max(1, this.dustTimes[r - 1]), t1 = this.dustTimes[r];
+        return t0 * (t1 / t0) ** Math.min(1, Math.max(0, f));
+      }
+    }
+    return null;
+  }
+
+  winterAt(lat: number, lon: number): { times: number[]; light: number[]; tempC: number[] } | null {
+    const r = this.winterRaw;
+    if (!r) return null;
+    const j = Math.round((((lon % 360) + 360) % 360) / 2.5) % r.width;
+    const i = Math.min(r.height - 1, Math.max(0, Math.round(((lat + 90) / 180) * (r.height - 1))));
+    const light: number[] = [], tempC: number[] = [];
+    for (let l = 0; l < r.layers; l++) {
+      const k = ((l * r.height + i) * r.width + j) * 2;
+      light.push(r.data[k] / 255);
+      tempC.push(r.data[k + 1] / 2.55 - 60);
+    }
+    return { times: this.winterTimes, light, tempC };
   }
 
   update(t: number): void {

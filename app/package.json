@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "K–T Extinction Simulator — the Chicxulub impact, minute by minute",
+  "description": "K\u2013T Extinction Simulator \u2014 the Chicxulub impact, minute by minute",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check": "bash tools/check.sh"
   },
   "dependencies": {
     "three": "0.186.1"
