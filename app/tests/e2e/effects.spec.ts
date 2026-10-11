@@ -41,6 +41,7 @@ test('tsunami data loads and the wave has left the Gulf by two hours', async ({ 
 test('impact winter darkens the planet in the first year (soot scenario)', async ({ page }) => {
   await page.goto('/#t=-10&p=1&c=30,-40,18000000,0,0&v=1');
   await waitForGlobe(page);
+  await page.evaluate(() => (window as any).__kt.effectsReady()); // loaded lazily otherwise
   await page.waitForFunction(() => (window as any).__kt.fx.uniforms.uWinterOn.value === 1);
   const early = lum(await pixelAt(page, 0.5, 0.45)); // before impact, daylit
   await page.evaluate(() => (window as any).__kt.clock.seek(0.9 * 31557600));

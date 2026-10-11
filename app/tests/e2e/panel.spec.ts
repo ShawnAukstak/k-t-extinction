@@ -5,7 +5,7 @@ test('tapping the globe answers "what happened here?" and rows seek the timeline
   const errors = trackErrors(page);
   await page.goto('/#t=0&p=1&c=45,-80,8000000,0,0&v=1');
   await waitForGlobe(page);
-  await page.evaluate(() => (window as any).__kt.effectsReady);
+  await page.evaluate(() => (window as any).__kt.effectsReady());
   const canvas = page.locator('canvas');
   const box = (await canvas.boundingBox())!;
   await canvas.click({ position: { x: box.width / 2, y: box.height / 2 } });
@@ -48,7 +48,7 @@ test('event cards show confidence and link their sources', async ({ page }) => {
 test('switching the darkening agent reloads the winter and is kept in the link', async ({ page }) => {
   await page.goto('/#t=3e7&p=1&v=1');
   await waitForGlobe(page);
-  await page.evaluate(() => (window as any).__kt.effectsReady);
+  await page.evaluate(() => (window as any).__kt.effectsReady());
   const soot = await page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return k.fx.meanLight; });
   await page.getByLabel('Impact winter scenario').selectOption('so2');
   await expect.poll(() => page.evaluate(() => (window as any).__kt.fx.scenario)).toBe('so2');

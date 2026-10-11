@@ -159,7 +159,10 @@ function setQuery(p: LatLon | null): void {
 
 controls.onTap = (x, y) => {
   const p = pick(x, y);
-  if (p) setQuery(p);
+  if (!p) return;
+  setQuery(p);
+  // Rows for the tsunami and impact winter appear once their data arrive.
+  void ensureEffectData(true).then(() => { if (query === p) showQuery(); });
 };
 panel.onSeek = (t) => {
   clock.seek(t);
@@ -175,7 +178,8 @@ timeline.onEvent = (e) => panel.showEvent(e);
 async function setScenario(s: WinterScenario): Promise<void> {
   scenario = s;
   topbar.setScenario(s);
-  await fx.loadWinter(`${DATA}/effects`, s);
+  winterLoad = fx.loadWinter(`${DATA}/effects`, s);
+  await winterLoad;
   if (panel.kind === 'location') showQuery();
   scheduleHashUpdate();
 }
@@ -237,14 +241,20 @@ globe
       setTimeout(() => boot.remove(), 700);
     }
   });
-const effectsReady = Promise.all([
-  fx.loadDust(`${DATA}/effects/dust.json`),
-  fx.loadTsunami(`${DATA}/effects`),
-  fx.loadWinter(`${DATA}/effects`, scenario),
-  plume.load(`${DATA}/effects`),
-]);
+// Small effect data loads up front; the tsunami (~2 MB) and impact winter (~1 MB) load when
+// playback gets near them or someone asks about a location, so the first view stays light.
+const earlyEffects = Promise.all([fx.loadDust(`${DATA}/effects/dust.json`), plume.load(`${DATA}/effects`)]);
+let tsunamiLoad: Promise<boolean> | null = null;
+let winterLoad: Promise<boolean> | null = null;
+function ensureEffectData(all = false): Promise<unknown> {
+  if (!tsunamiLoad && (all || clock.t > -120)) tsunamiLoad = fx.loadTsunami(`${DATA}/effects`);
+  if (!winterLoad && (all || clock.t > 3 * 3600)) winterLoad = fx.loadWinter(`${DATA}/effects`, scenario);
+  return Promise.all([earlyEffects, tsunamiLoad, winterLoad]);
+}
+let effectsReady: Promise<unknown> = earlyEffects;
 if (initial.query) {
   // Show the shared location once the data it summarises has arrived.
+  effectsReady = ensureEffectData(true);
   void effectsReady.then(() => setTimeout(() => setQuery(initial.query!), 300));
 }
 
@@ -291,6 +301,7 @@ function frame(now: number): void {
   const dt = Math.min(0.25, (now - last) / 1000); // cap: no huge jump after a background tab
   last = now;
   clock.tick(dt);
+  void ensureEffectData();
   renderNow(dt);
   // Keep the shareable link current while playing (at most once a second).
   if (clock.playing && now - lastHashWrite > 1000) writeHash();
@@ -310,11 +321,11 @@ declare global {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
       fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid;
       mode: () => 'cine' | 'free';
-      renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: Promise<unknown>;
+      renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
     };
   }
 }
 window.__kt = {
   renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, mode: () => mode,
-  renderNow, setQuery, effectsReady,
+  renderNow, setQuery, effectsReady: () => ensureEffectData(true),
 };

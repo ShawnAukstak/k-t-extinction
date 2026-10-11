@@ -55,3 +55,14 @@ test('dragging takes over the camera without a jump, and the button returns to t
   await page.getByTestId('cinematic-toggle').click();
   expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
 });
+
+test('the first view does not download the large effect files', async ({ page }) => {
+  const big: string[] = [];
+  page.on('request', (r) => { if (/tsunami\.bin|winter_.*\.bin/.test(r.url())) big.push(r.url()); });
+  await page.goto('/#t=-3600&p=1&m=cine&v=1');
+  await waitForGlobe(page);
+  await page.waitForTimeout(1500);
+  expect(big).toEqual([]);
+  await page.evaluate(() => (window as any).__kt.clock.seek(7200));
+  await expect.poll(() => big.some((u) => u.includes('tsunami'))).toBe(true);
+});
