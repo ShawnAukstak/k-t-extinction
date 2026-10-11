@@ -1,8 +1,10 @@
 # Rough plan
 
-> Phases, not dates. Each phase ends with something runnable or shareable. Nothing here is started; see `open-questions.md` for the decisions that gate Phase 1.
+> Phases, not dates. Each phase ends with something runnable or shareable. Decisions are in `decisions.md`.
+>
+> **Status (2026-10-11):** Phase 0 core data fetched and processed; Phase 1 (globe) and Phase 2 (timeline + baked effects + "what happened here?") done and tested locally (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit). Phase 3 (cinematic) in progress. Not deployed (local only, D8).
 
-## Phase 0 — Data foundation *(the big initial task)*
+## Phase 0 — Data foundation *(the big initial task)* — **core done**
 
 Goal: every number and surface the app will show exists as a cited, licensed, processed file.
 
@@ -25,7 +27,7 @@ Goal: every number and surface the app will show exists as a cited, licensed, pr
 
 Exit: a `data/processed/` tree that a renderer can load, and docs with no unverified numbers in the "well-constrained" column.
 
-## Phase 1 — Globe spike *(decide the engine)*
+## Phase 1 — Globe spike *(decide the engine)* — **done** (three.js WebGLRenderer, D5)
 
 Goal: a 66 Ma globe you can orbit on a phone, loading in ≤ 2.5 s, with a shareable URL.
 
@@ -34,9 +36,9 @@ Goal: a 66 Ma globe you can orbit on a phone, loading in ≤ 2.5 s, with a share
 - Try the cubesphere-quadtree LOD with the 8k height map; if it's a slog, prototype the same in Babylon.js 9 (GeospatialCamera + Large World + Atmosphere addon) for comparison.
 - **Decision gate:** three.js vs Babylon; vanilla TS vs React.
 
-Exit: a deployed URL on Cloudflare.
+Exit: a deployed URL (deferred: local only for now, D8).
 
-## Phase 2 — Timeline + baked global effects *(shareable MVP)*
+## Phase 2 — Timeline + baked global effects *(shareable MVP)* — **done**
 
 Goal: scrub from T−1 h to T+20 yr and watch the planet respond.
 
