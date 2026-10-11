@@ -1,0 +1,12 @@
+# Python environment for scripts/ (data fetch + processing).
+#   python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
+numpy>=2.0
+scipy>=1.13
+pillow>=11.0
+pyyaml>=6.0
+netCDF4>=1.7
+h5py>=3.11
+pyshp>=2.3
+xlrd>=2.0
+openpyxl>=3.1
+requests>=2.32

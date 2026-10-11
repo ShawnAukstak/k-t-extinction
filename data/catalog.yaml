@@ -1,0 +1,336 @@
+# Data catalog — every upstream source the project downloads.
+#
+# scripts/fetch.py reads this file and downloads into data/raw/ (gitignored).
+# scripts/build_attribution.py generates ATTRIBUTION.md from it.
+#
+# Fields
+#   id        short key, used by fetch.py --only and by processing scripts
+#   group     core | heavy | reference   (fetch.py fetches `core` by default)
+#   licence   SPDX id where one exists
+#   ship      true  = may appear in the shipped app (CC0 / CC BY / PD)
+#             false = local development only (no stated licence) — see docs/plan/decisions.md D4
+#   credit    the short credit line shown in the app's Credits panel
+#   citation  full citation for ATTRIBUTION.md and the docs
+#   files     url + path (relative to data/raw/) + size/md5 when the host publishes them
+#             extract: glob(s) to unzip/untar next to the archive
+#   queries   (PBDB) API requests saved as files; results change over time, so the fetch date is recorded
+#
+# Verified 2026-10-11 against the Zenodo / Dataverse / PANGAEA APIs (sizes and md5s are the hosts' own).
+
+sources:
+
+  # ── A. Paleogeography ────────────────────────────────────────────────────────
+
+  - id: paleodem
+    name: PALEOMAP PaleoDEMs (Scotese & Wright 2018)
+    group: core
+    role: Terrain and bathymetry for the globe (65 Ma slice, 0.1°)
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Paleo-elevation: C. R. Scotese & N. Wright, PALEOMAP Project (CC BY 4.0)"
+    citation: >-
+      Scotese, C. R., & Wright, N. M. (2018). PALEOMAP Paleodigital Elevation Models (PaleoDEMS)
+      for the Phanerozoic. PALEOMAP Project. Zenodo. https://doi.org/10.5281/zenodo.5460860
+    doi: 10.5281/zenodo.5460860
+    landing: https://zenodo.org/records/5460860
+    files:
+      - url: https://zenodo.org/api/records/5460860/files/Scotese_Wright_2018_Maps_1-88_6minX6min_PaleoDEMS_nc.zip/content
+        path: paleogeography/paleodem/Scotese_Wright_2018_Maps_1-88_6minX6min_PaleoDEMS_nc.zip
+        size: 207273848
+        md5: 89eb50d8645707ab221b023078535bda
+        extract: ["*65Ma*", "*70Ma*"]
+      - url: https://zenodo.org/api/records/5460860/files/Scotese_Wright2018_PALEOMAP_PaleoDEMs.pdf/content
+        path: paleogeography/paleodem/Scotese_Wright2018_PALEOMAP_PaleoDEMs.pdf
+        size: 6840972
+        md5: 3147576853269cbf3bb4481124fc2f35
+
+  - id: paleocoastlines
+    name: PaleoMAP PaleoCoastlines v7 (Kocsis & Scotese 2021)
+    group: core
+    role: Paleo-shorelines and continental margins, land/sea mask check
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Paleo-coastlines: Á. T. Kocsis & C. R. Scotese (CC BY 4.0)"
+    citation: >-
+      Kocsis, Á. T., & Scotese, C. R. (2021). Mapping paleocoastlines and continental flooding during
+      the Phanerozoic. Earth-Science Reviews, 213, 103463. https://doi.org/10.1016/j.earscirev.2020.103463 ;
+      data: https://doi.org/10.5281/zenodo.7828387
+    doi: 10.5281/zenodo.7828387
+    landing: https://zenodo.org/records/7828387
+    files:
+      - url: https://zenodo.org/api/records/7828387/files/paleocoastlines_v7_shapefiles.zip/content
+        path: paleogeography/paleocoastlines/paleocoastlines_v7_shapefiles.zip
+        size: 17481632
+        md5: acf1a1416a8026511d003220b646f904
+        extract: ["*65Ma*", "*70Ma*"]
+      - url: https://zenodo.org/api/records/7828387/files/Readme.md/content
+        path: paleogeography/paleocoastlines/Readme.md
+        size: 2515
+        md5: 0c351e2d47fe514cf21b40ea77e29878
+
+  - id: dutkiewicz2019
+    name: Paleobathymetry 0–120 Ma (Dutkiewicz et al. 2019)
+    group: reference
+    role: "Reference only: ocean depth in the Müller plate frame (not PALEOMAP), so it does not line up with our terrain"
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Paleobathymetry: A. Dutkiewicz et al. 2019 (CC BY 4.0)"
+    citation: >-
+      Dutkiewicz, A., Müller, R. D., Cannon, J., Vaughan, S., & Zahirovic, S. (2019). Sequestration and
+      subduction of deep-sea carbonate in the global ocean since the Early Cretaceous. Geology, 47(1), 91–94.
+      https://doi.org/10.1130/G45424.1
+    landing: https://www.earthbyte.org/webdav/ftp/Data_Collections/Dutkiewicz_etal_2019_Geology/
+    files:
+      - url: https://www.earthbyte.org/webdav/ftp/Data_Collections/Dutkiewicz_etal_2019_Geology/paleobathymetry_grids/paleobathymetry_66.nc
+        path: paleogeography/dutkiewicz2019/paleobathymetry_66.nc
+
+  # ── B. Climate and vegetation ────────────────────────────────────────────────
+
+  - id: bridge_texyn
+    name: BRIDGE HadCM3L 66 Ma simulation `texyn` (Valdes, Scotese & Lunt 2021)
+    group: core
+    role: Pre-impact climate (temperature, precipitation) and BIOME4 vegetation classes for colouring land
+    licence: null            # paper is CC BY 4.0; the data files have no stated terms
+    ship: false              # ask Paul Valdes before shipping derived rasters, or switch to PhanDA (CC BY)
+    credit: "Climate & biomes: P. J. Valdes, C. R. Scotese & D. J. Lunt, BRIDGE, University of Bristol"
+    citation: >-
+      Valdes, P. J., Scotese, C. R., & Lunt, D. J. (2021). Deep ocean temperatures through time.
+      Climate of the Past, 17, 1483–1506. https://doi.org/10.5194/cp-17-1483-2021 ;
+      data: https://www.paleo.bristol.ac.uk/ummodel/data/texyn/standard_new_html/texyn.html
+    landing: https://www.paleo.bristol.ac.uk/ummodel/data/texyn/standard_new_html/texyn.html
+    files:
+      - url: https://www.paleo.bristol.ac.uk/ummodel/data/texyn/climate/texyna.pdclann.nc
+        path: climate/bridge_texyn/texyna.pdclann.nc
+      - url: https://www.paleo.bristol.ac.uk/ummodel/data/texyn/climate/texyna.pcclann.nc
+        path: climate/bridge_texyn/texyna.pcclann.nc
+      - url: https://www.paleo.bristol.ac.uk/ummodel/data/texyn/biome/texyn_biome4out.nc
+        path: climate/bridge_texyn/texyn_biome4out.nc
+
+  - id: scotese2021_gmst
+    name: Global mean surface temperatures for 100 Phanerozoic intervals (Scotese et al. 2021)
+    group: core
+    role: Proxy-adjusted surface-temperature grids (PALEOMAP frame)
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Paleotemperature: C. R. Scotese, H. Song, B. J. W. Mills & D. G. van der Meer (CC BY 4.0)"
+    citation: >-
+      Scotese, C. R., Song, H., Mills, B. J. W., & van der Meer, D. G. (2021). Phanerozoic paleotemperatures:
+      The earth's changing climate during the last 540 million years. Earth-Science Reviews, 215, 103503.
+      https://doi.org/10.1016/j.earscirev.2021.103503 ; data: https://doi.org/10.5281/zenodo.5718392
+    doi: 10.5281/zenodo.5718392
+    landing: https://zenodo.org/records/5718392
+    files:
+      - url: https://zenodo.org/api/records/5718392/files/gmst_scotese02a_v21321_nc.zip/content
+        path: climate/scotese2021/gmst_scotese02a_v21321_nc.zip
+        size: 22110093
+        md5: 70e206d5ad1d3802695b139ef76fba93
+        extract: ["*"]
+      - url: https://zenodo.org/api/records/5718392/files/readme.md/content
+        path: climate/scotese2021/readme.md
+        size: 1785
+        md5: 35ffcbf1f3e50eb1cb4ac0c4581c0079
+
+  - id: pohl2022
+    name: Phanerozoic continental climate and Köppen–Geiger classes (Pohl et al. 2022)
+    group: core
+    role: Licensed climate-zone rasters at 60 and 80 Ma (bracket 66 Ma)
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Köppen classes: A. Pohl et al. 2022 (CC BY 4.0)"
+    citation: >-
+      Pohl, A., Wong Hearing, T., Franc, A., Sepulchre, P., & Scotese, C. R. (2022). Dataset of Phanerozoic
+      continental climate and Köppen–Geiger climate classes. Data in Brief, 43, 108424.
+      https://doi.org/10.1016/j.dib.2022.108424 ; data: https://doi.org/10.5281/zenodo.6620748
+    doi: 10.5281/zenodo.6620748
+    landing: https://zenodo.org/records/6620748
+    files:
+      - url: https://zenodo.org/api/records/6620748/files/60Ma_Pohletal2022_DIB_PhaneroContinentalClimate.nc/content
+        path: climate/pohl2022/60Ma_Pohletal2022_DIB_PhaneroContinentalClimate.nc
+        size: 8261200
+        md5: e63eea1ec689547ace668091e30f7c41
+      - url: https://zenodo.org/api/records/6620748/files/80Ma_Pohletal2022_DIB_PhaneroContinentalClimate.nc/content
+        path: climate/pohl2022/80Ma_Pohletal2022_DIB_PhaneroContinentalClimate.nc
+        size: 8261200
+        md5: d0bad2bb5e8ecd0cf000290b57e95bf7
+
+  # ── C. Impact physics and aftermath ──────────────────────────────────────────
+
+  - id: range2022
+    name: Global Chicxulub tsunami model output (Range et al. 2022)
+    group: core
+    role: Tsunami maximum amplitude; 66 Ma pre-impact bathymetry
+    licence: CC0-1.0
+    ship: true
+    credit: "Tsunami model: M. M. Range, B. K. Arbic et al. 2022 (CC0)"
+    citation: >-
+      Range, M. M., Arbic, B. K., Johnson, B. C., Moore, T. C., Titov, V., Adcroft, A. J., Ansong, J. K.,
+      Hollis, C. J., Ritsema, J., Scotese, C. R., & Wang, H. (2022). The Chicxulub impact produced a powerful
+      global tsunami. AGU Advances, 3, e2021AV000627. https://doi.org/10.1029/2021AV000627 ;
+      data: https://doi.org/10.7910/DVN/GWOFIO
+    doi: 10.7910/DVN/GWOFIO
+    landing: https://doi.org/10.7910/DVN/GWOFIO
+    files:
+      - url: https://dataverse.harvard.edu/api/access/datafile/5245657
+        path: impact/range2022/README_MOM6_RESULTS
+        size: 4621
+        md5: e4ff2b35bd7592f91199f82427dd60cd
+      - url: https://dataverse.harvard.edu/api/access/datafile/5028698
+        path: impact/range2022/MOST_max_output.nc
+        size: 73609704
+        md5: 3ff83299107361cacc8b6a24b6367d95
+      - url: https://dataverse.harvard.edu/api/access/datafile/5245660
+        path: impact/range2022/tarball_pre_impact_bathymetry.tar
+        size: 61617152
+        md5: 0a729f355497920fe4c8d8c9e3bc684c
+        extract: ["*"]
+      - url: https://dataverse.harvard.edu/api/access/datafile/6310141
+        path: impact/range2022/SI_Video1.mp4
+        size: 1271502
+        md5: 93bf8bda99f1ef173364740a7f8efe15
+      - url: https://dataverse.harvard.edu/api/access/datafile/5655128
+        path: impact/range2022/SI_Video4.mp4
+        size: 12595268
+        md5: dc490d9fe3cdf6a4649303138eb43151
+
+  - id: range2022_ssh
+    name: Range et al. 2022 — MOM6 sea-surface height every 10 min for 2 days (split archive)
+    group: heavy
+    role: Animated tsunami front → per-pixel arrival-time raster
+    licence: CC0-1.0
+    ship: true
+    credit: "Tsunami model: M. M. Range, B. K. Arbic et al. 2022 (CC0)"
+    citation: "See range2022."
+    doi: 10.7910/DVN/GWOFIO
+    landing: https://doi.org/10.7910/DVN/GWOFIO
+    files:   # cat xaa xab xac xad > SSH_MOM6_2days_hourlyoutput.nc
+      - {url: https://dataverse.harvard.edu/api/access/datafile/5245653, path: impact/range2022/ssh_split/xaa, size: 2000000000, md5: 342b8040d92fb70555cf7ba5f89e0097}
+      - {url: https://dataverse.harvard.edu/api/access/datafile/5245656, path: impact/range2022/ssh_split/xab, size: 2000000000, md5: f55c4f70945111463ef9755202778937}
+      - {url: https://dataverse.harvard.edu/api/access/datafile/5245659, path: impact/range2022/ssh_split/xac, size: 2000000000, md5: 2ee0931ac5630e181c15d2d677bc53aa}
+      - {url: https://dataverse.harvard.edu/api/access/datafile/5245658, path: impact/range2022/ssh_split/xad, size: 971505112, md5: b2210c3b913aa437f9ae6e0fea4eafcf}
+
+  - id: artemieva2020
+    name: Global K-Pg layer deposited from a dust cloud (Artemieva & Morgan 2020)
+    group: core
+    role: Ejecta/dust-cloud density keyframes at 300–3600 s
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Ejecta cloud: N. Artemieva & J. Morgan 2020 (CC BY 4.0)"
+    citation: >-
+      Artemieva, N., & Morgan, J. (2020). Global K-Pg layer deposited from a dust cloud. Geophysical Research
+      Letters, 47, e2019GL086562. https://doi.org/10.1029/2019GL086562 ; data: https://doi.org/10.5281/zenodo.3677535
+    doi: 10.5281/zenodo.3677535
+    landing: https://zenodo.org/records/3677535
+    files:
+      - url: https://zenodo.org/api/records/3677535/files/FIG_1.zip/content
+        path: impact/artemieva2020/FIG_1.zip
+        size: 3698754
+        md5: ac4f65fd463e044fbcfbf3f7cac02bb3
+        extract: ["*"]
+      - url: https://zenodo.org/api/records/3677535/files/FIG_2.zip/content
+        path: impact/artemieva2020/FIG_2.zip
+        size: 9964055
+        md5: cac9c4f982d4815b368d6ab606852818
+        extract: ["*"]
+
+  - id: tabor2020
+    name: Simulations of the impact winter at the K-Pg boundary (Tabor et al. 2020)
+    group: core
+    role: Post-impact temperature and surface sunlight (darkness), monthly for 20 years
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Impact winter: C. R. Tabor, C. G. Bardeen, B. L. Otto-Bliesner, R. R. Garcia & O. B. Toon 2020 (CC BY 4.0)"
+    citation: >-
+      Tabor, C. R., Bardeen, C. G., Otto-Bliesner, B. L., Garcia, R. R., & Toon, O. B. (2020). Causes and climatic
+      consequences of the impact winter at the Cretaceous-Paleogene boundary. Geophysical Research Letters, 47,
+      e2019GL085572. https://doi.org/10.1029/2019GL085572 ; data: https://doi.org/10.1594/PANGAEA.909529
+    doi: 10.1594/PANGAEA.909529
+    landing: https://doi.org/10.1594/PANGAEA.909529
+    files:
+      - {url: https://hs.pangaea.de/model/Tabor-etal_2019/cntl_mon_30yr.nc.gz, path: impact/tabor2020/cntl_mon_30yr.nc.gz, gunzip: true}
+      - {url: https://hs.pangaea.de/model/Tabor-etal_2019/soot_mon_20yr.nc.gz, path: impact/tabor2020/soot_mon_20yr.nc.gz, gunzip: true}
+      - {url: https://hs.pangaea.de/model/Tabor-etal_2019/SO2_mon_20yr.nc.gz, path: impact/tabor2020/SO2_mon_20yr.nc.gz, gunzip: true}
+      - {url: https://hs.pangaea.de/model/Tabor-etal_2019/dust_mon_20yr.nc.gz, path: impact/tabor2020/dust_mon_20yr.nc.gz, gunzip: true}
+
+  - id: collins2020
+    name: iSALE-3D runs for "A steeply-inclined trajectory for the Chicxulub impact" (Collins et al. 2020)
+    group: reference
+    role: Crater-formation reference (inputs and plotting scripts only; the 300 MB timesteps are fetched on demand)
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Crater formation: G. S. Collins et al. 2020 (CC BY 4.0)"
+    citation: >-
+      Collins, G. S., Patel, N., Davison, T. M., et al. (2020). A steeply-inclined trajectory for the Chicxulub
+      impact. Nature Communications, 11, 1480. https://doi.org/10.1038/s41467-020-15269-x ;
+      data: https://doi.org/10.5281/zenodo.3667833
+    doi: 10.5281/zenodo.3667833
+    landing: https://zenodo.org/records/3667833
+    files:
+      - {url: https://zenodo.org/api/records/3667833/files/inputfiles.tgz/content, path: impact/collins2020/inputfiles.tgz, size: 4226, md5: 596df953b74f749d3dc44b1a24453659}
+      - {url: https://zenodo.org/api/records/3667833/files/plot_frame.py/content, path: impact/collins2020/plot_frame.py, size: 5646, md5: 1f3511e0c56077b39a400502e5488d24}
+
+  - id: collins2005
+    name: Earth Impact Effects Program equations (Collins, Melosh & Marcus 2005)
+    group: reference
+    role: Distance-dependent local effects (ported in scripts/eiep_reference.py and the app)
+    licence: null            # we reimplement the published equations; no data files are redistributed
+    ship: true
+    credit: "Impact-effects scaling: G. S. Collins, H. J. Melosh & R. A. Marcus 2005"
+    citation: >-
+      Collins, G. S., Melosh, H. J., & Marcus, R. A. (2005). Earth Impact Effects Program: A Web-based computer
+      program for calculating the regional environmental consequences of a meteoroid impact on Earth.
+      Meteoritics & Planetary Science, 40(6), 817–840. https://doi.org/10.1111/j.1945-5100.2005.tb00157.x
+    files:
+      - url: https://impact.ese.ic.ac.uk/static/effects.pdf
+        path: impact/collins2005/effects.pdf
+
+  # ── D. Paleontology ──────────────────────────────────────────────────────────
+
+  - id: pbdb
+    name: The Paleobiology Database (data service 1.2)
+    group: core
+    role: Where taxa lived (occurrences with PALEOMAP paleocoordinates)
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Fossil occurrences: The Paleobiology Database, paleobiodb.org (CC BY 4.0)"
+    citation: >-
+      The Paleobiology Database, https://paleobiodb.org, data service v1.2, accessed on the fetch date recorded
+      in data/raw/.fetched.json.
+    landing: https://paleobiodb.org/data1.2/
+    queries:
+      - name: dinosauria_maastrichtian
+        url: https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&interval=Maastrichtian&show=paleoloc,coords,class,strat,loc,abund&pgm=scotese
+        path: paleontology/pbdb/dinosauria_maastrichtian.json
+      - name: mammalia_maastrichtian
+        url: https://paleobiodb.org/data1.2/occs/list.json?base_name=Mammalia&interval=Maastrichtian&show=paleoloc,coords,class,strat,loc,abund&pgm=scotese
+        path: paleontology/pbdb/mammalia_maastrichtian.json
+      - name: marine_reptiles_maastrichtian
+        url: https://paleobiodb.org/data1.2/occs/list.json?base_name=Mosasauridae,Plesiosauria,Chelonioidea&interval=Maastrichtian&show=paleoloc,coords,class,strat,loc,abund&pgm=scotese
+        path: paleontology/pbdb/marine_reptiles_maastrichtian.json
+      - name: pterosauria_maastrichtian
+        url: https://paleobiodb.org/data1.2/occs/list.json?base_name=Pterosauria&interval=Maastrichtian&show=paleoloc,coords,class,strat,loc,abund&pgm=scotese
+        path: paleontology/pbdb/pterosauria_maastrichtian.json
+      - name: crocs_turtles_maastrichtian
+        url: https://paleobiodb.org/data1.2/occs/list.json?base_name=Crocodylomorpha,Choristodera,Testudines&interval=Maastrichtian&show=paleoloc,coords,class,strat,loc,abund&pgm=scotese
+        path: paleontology/pbdb/crocs_turtles_maastrichtian.json
+      - name: plantae_maastrichtian
+        url: https://paleobiodb.org/data1.2/occs/list.json?base_name=Plantae&interval=Maastrichtian&show=paleoloc,coords,class,strat,loc&pgm=scotese
+        path: paleontology/pbdb/plantae_maastrichtian.json
+      - name: collections_maastrichtian
+        url: https://paleobiodb.org/data1.2/colls/list.json?interval=Maastrichtian&show=paleoloc,loc,strat&pgm=scotese
+        path: paleontology/pbdb/collections_maastrichtian.json
+
+  - id: benson2014
+    name: Dinosaur body masses (Benson et al. 2014, supplement S011)
+    group: core
+    role: Species cards — body mass
+    licence: CC0-1.0
+    ship: true
+    credit: "Body masses: R. B. J. Benson et al. 2014 (CC0)"
+    citation: >-
+      Benson, R. B. J., Campione, N. E., Carrano, M. T., et al. (2014). Rates of dinosaur body mass evolution
+      indicate 170 million years of sustained ecological innovation on the avian stem lineage. PLoS Biology,
+      12(5), e1001853. https://doi.org/10.1371/journal.pbio.1001853
+    files:
+      - url: https://journals.plos.org/plosbiology/article/file?type=supplementary&id=10.1371/journal.pbio.1001853.s011
+        path: paleontology/benson2014/journal.pbio.1001853.s011.xls
+        size: 1249792
