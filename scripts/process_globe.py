@@ -116,6 +116,34 @@ def land_colour(dem: D.Dem, clim: C.Climate) -> np.ndarray:
     return np.clip(col, 0, 1)
 
 
+# Vegetation classes for the ground-level renderer (app/src/terrain/vegetation.ts must match).
+VEG_CLASSES = ["water", "desert", "arid_shrub", "fern_savanna", "tropical_forest", "warm_forest",
+               "cool_forest", "wetland", "rock"]
+
+
+def vegetation(dem: D.Dem, clim: C.Climate) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(tree density 0–1, class index, annual temperature °C) on the equirect grid."""
+    z = dem.z
+    T, P = clim.temp_c, clim.precip_mm
+    m = P / (260 + 32 * np.maximum(T, 0))
+    gy, gx = np.gradient(gaussian_filter(np.maximum(z, 0), 1.0))
+    slope = np.hypot(gx, gy) / 11_000.0
+    rocky = np.maximum(smoothstep(1800, 3200, z), smoothstep(0.02, 0.06, slope))
+    density = smoothstep(0.45, 1.15, m) * (1 - 0.8 * rocky) * (1 - smoothstep(-7, -13, T))
+    cls = np.full(z.shape, VEG_CLASSES.index("desert"), np.uint8)
+    cls[m >= 0.40] = VEG_CLASSES.index("arid_shrub")
+    cls[m >= 0.65] = VEG_CLASSES.index("fern_savanna")
+    forest = m >= 1.0
+    cls[forest & (T < 10)] = VEG_CLASSES.index("cool_forest")
+    cls[forest & (T >= 10) & (T < 21)] = VEG_CLASSES.index("warm_forest")
+    cls[forest & (T >= 21)] = VEG_CLASSES.index("tropical_forest")
+    cls[(z < 60) & (m >= 1.2)] = VEG_CLASSES.index("wetland")
+    cls[rocky > 0.6] = VEG_CLASSES.index("rock")
+    cls[z <= 0] = VEG_CLASSES.index("water")
+    density[z <= 0] = 0
+    return density.astype(np.float32), cls, T.astype(np.float32)
+
+
 def sea_colour(z: np.ndarray) -> np.ndarray:
     depth = np.maximum(0, -z)
     col = np.empty(z.shape + (3,), np.float32)
@@ -178,6 +206,7 @@ def main() -> None:
     coast = smoothstep(-25, 25, gaussian_filter(dem.z, 1.2, mode=("nearest", "wrap")))
     colour = sea * (1 - coast[..., None]) + land * coast[..., None]
     normals = world_normals(dem)
+    veg_density, veg_class, veg_temp = vegetation(dem, clim)
 
     prev_dir = PROCESSED / "globe"
     prev_dir.mkdir(parents=True, exist_ok=True)
@@ -201,6 +230,13 @@ def main() -> None:
             z = sample_equirect(dem.z, dem, lat, lon)
             v = np.clip(np.round(HEIGHT_OFFSET + z / HEIGHT_STEP_M), 0, 255).astype(np.uint8)
             Image.fromarray(v, mode="L").save(out / f"height_{name}.png", optimize=True)
+            if size <= 512:
+                # Vegetation for the ground-level renderer: R tree density, G class, B temperature.
+                dens = sample_equirect(veg_density, dem, lat, lon)
+                cls = sample_equirect(veg_class.astype(np.float32), dem, lat, lon, order=0)
+                temp = sample_equirect(veg_temp, dem, lat, lon)
+                rgb = np.stack([np.clip(dens * 255, 0, 255), cls, np.clip((temp + 20) * 4, 0, 255)], -1).round().astype(np.uint8)
+                Image.fromarray(rgb, mode="RGB").save(out / f"veg_{name}.png", optimize=True)
         kb = sum(p.stat().st_size for p in out.iterdir()) / 1024
         print(f"  {size}: {kb:,.0f} KB")
 
@@ -216,6 +252,7 @@ def main() -> None:
         "sizes": sizes,
         "height": {"offset": HEIGHT_OFFSET, "step": HEIGHT_STEP_M},
         "normalExaggeration": NORMAL_EXAGGERATION,
+        "vegetation": {"size": 512, "classes": VEG_CLASSES, "encoding": "R density*255, G class index, B (temperature C + 20) * 4"},
         "elevationGrid": {"file": "elevation_0p5.bin", "width": 720, "height": 360, "stepDeg": 0.5, "type": "int16le", "rows": "north-first"},
         "source": "PALEOMAP PaleoDEM 65 Ma (Scotese & Wright 2018) with data/curated/dem-corrections.yaml; "
                   f"vegetation from {clim.source}",

@@ -12,6 +12,7 @@ import {
   CubeTexture, CubeTextureLoader, DataTexture, Group, LinearFilter, LinearMipmapLinearFilter, Matrix3,
   NoColorSpace, type PerspectiveCamera, RGBAFormat, SRGBColorSpace, ShaderMaterial, Vector3,
 } from 'three';
+import { makeDetailTexture } from '../terrain/detail';
 import { Heightfield } from '../terrain/heightfield';
 import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
 import { FACE_NAMES } from './cube';
@@ -21,6 +22,8 @@ import { effectsChunk } from './shaders/effects';
 export interface GlobeManifest {
   /** Available face sizes, smallest first, e.g. [256, 1024]. */
   sizes: number[];
+  /** Vegetation density/class cube faces for ground-level rendering. */
+  vegetation?: { size: number; classes: string[] };
   /** Coarse elevation grid for CPU queries. */
   elevationGrid?: { file: string; width: number; height: number; stepDeg: number };
   /** Elevation decode for the 8-bit height faces: metres = (v·255 − offset) · step. */
@@ -35,6 +38,8 @@ const vertexShader = /* glsl */ `
 #include <logdepthbuf_pars_vertex>
 attribute vec3 dir;
 attribute float height;
+attribute vec2 detail;
+varying vec2 vDetail;
 varying vec3 vDir;
 varying vec3 vViewPos;
 varying vec3 vGeoNormal;
@@ -43,6 +48,7 @@ void main() {
   vDir = dir;
   vGeoNormal = normal;   // world space (tiles are only translated)
   vHeight = height;
+  vDetail = detail;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vViewPos = mv.xyz;
   gl_Position = projectionMatrix * mv;
@@ -62,6 +68,10 @@ uniform vec2 uHeightDecode;     // (offset, step)
 uniform mat3 uViewToWorld;
 uniform vec3 uCamPosKm;
 uniform float uHasData;
+uniform sampler2D uDetail;
+uniform samplerCube uVeg;
+uniform float uHasVeg;
+varying vec2 vDetail;
 varying vec3 vDir;
 varying vec3 vViewPos;
 varying vec3 vGeoNormal;
@@ -90,6 +100,31 @@ void main() {
     elev = mix(elev, vHeight, close);
   }
   float water = 1.0 - smoothstep(-20.0 * (1.0 - close) - 1.0, 20.0 * (1.0 - close) + 1.0, elev);
+
+  // Ground-level detail: tiling noise at 512 m … 8 m, each scale fading in as it becomes resolvable.
+  if (close > 0.0 && water < 0.5) {
+    float trees = uHasVeg > 0.5 ? textureCube(uVeg, n).r : 0.5;
+    vec3 dn = vec3(0.0);
+    float shade = 0.0;
+    float wsum = 0.0;
+    for (int k = 0; k < 4; k++) {
+      float scale = 512.0 / pow(4.0, float(k));
+      float w = 1.0 - smoothstep(scale * 30.0, scale * 120.0, distKm0 * 1000.0);
+      if (w <= 0.0) continue;
+      vec4 d = texture2D(uDetail, vDetail / scale);
+      shade += (d.r - 0.5) * w * (k == 1 ? 1.4 : 1.0);
+      dn += vec3(d.g - 0.5, d.b - 0.5, 0.0) * w;
+      wsum += w;
+    }
+    // Forest canopy reads as darker clumps; open ground as lighter patches.
+    float canopy = trees * smoothstep(0.45, 0.6, texture2D(uDetail, vDetail / 32.0).a);
+    albedo *= 1.0 + 0.45 * shade - 0.35 * canopy * close;
+    // Perturb the normal in the tangent plane (east/north from the geometry normal).
+    vec3 gn = normalize(vGeoNormal);
+    vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), gn) + vec3(1e-5, 0.0, 0.0));
+    vec3 north = cross(gn, east);
+    nrm = normalize(nrm + (east * dn.x + north * dn.y) * 1.2 * close);
+  }
 
   // Impact effects on the surface (crater, ejecta blanket, flooding).
   float fxAng = fxAngle(n);
@@ -210,6 +245,9 @@ export class Globe {
         uHeight: { value: placeholderCube() },
         uHeightDecode: { value: [128, 40] },
         uHasData: { value: 0 },
+        uDetail: { value: makeDetailTexture() },
+        uVeg: { value: placeholderCube() },
+        uHasVeg: { value: 0 },
         uSunDir: { value: new Vector3(1, 0, 0) },
         uSunScale: { value: 1 },
         uHaze: { value: 0 },
@@ -245,6 +283,15 @@ export class Globe {
     const best = sizes[sizes.length - 1];
     if (best && best > first) {
       void this.loadSize(baseUrl, best).then(() => onUpgrade?.(best));
+    }
+    // Vegetation density/class faces (512) for ground shading.
+    if (m.vegetation) {
+      new CubeTextureLoader().loadAsync(FACE_NAMES.map((f) => `${baseUrl}/${m.vegetation!.size}/veg_${f}.png`)).then((veg) => {
+        veg.colorSpace = NoColorSpace;
+        veg.needsUpdate = true;
+        this.material.uniforms.uVeg.value = veg;
+        this.material.uniforms.uHasVeg.value = 1;
+      }).catch((e) => console.warn('vegetation map unavailable', e));
     }
     // Heights for the terrain mesh (CPU); rebuild tiles once they arrive.
     this.heights.decode.offset = m.height.offset;

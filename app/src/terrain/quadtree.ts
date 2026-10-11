@@ -12,6 +12,7 @@ import {
 } from 'three';
 import { EARTH_RADIUS } from '../config';
 import { faceDirection } from '../render/cube';
+import { DETAIL_PERIOD_M } from './detail';
 import type { Heightfield } from './heightfield';
 
 interface Tile {
@@ -188,6 +189,16 @@ export class Quadtree {
     const P = new Float64Array(m * m * 3);
     const dirs = new Float32Array(row * row * 3 + 4 * n * 3);
     const hgt = new Float32Array(row * row + 4 * n);
+    // Detail coordinates: face-planar metres, offset per tile by whole periods so they stay small
+    // (float32-safe) yet continuous across tiles (shifts are multiples of the texture period).
+    const F = (Math.PI / 2) * EARTH_RADIUS;
+    const u0 = ((s0 * F) % DETAIL_PERIOD_M), v0 = ((t0 * F) % DETAIL_PERIOD_M);
+    const det = new Float32Array((row * row + 4 * n) * 2);
+    for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
+      const k = (j * row + i) * 2;
+      det[k] = u0 + (i / n) * size * F;
+      det[k + 1] = v0 + (j / n) * size * F;
+    }
     let maxH = 0;
     for (let j = -1; j <= n + 1; j++) for (let i = -1; i <= n + 1; i++) {
       faceDirection(t.face, s0 + (i / n) * size, t0 + (j / n) * size, _d);
@@ -235,12 +246,15 @@ export class Quadtree {
       nor[dst] = nor[src]; nor[dst + 1] = nor[src + 1]; nor[dst + 2] = nor[src + 2];
       dirs[dst] = dx; dirs[dst + 1] = dy; dirs[dst + 2] = dz;
       hgt[row * row + e] = hgt[j * row + i];
+      det[(row * row + e) * 2] = det[(j * row + i) * 2];
+      det[(row * row + e) * 2 + 1] = det[(j * row + i) * 2 + 1];
     });
     const g = new BufferGeometry();
     g.setAttribute('position', new BufferAttribute(pos, 3));
     g.setAttribute('normal', new BufferAttribute(nor, 3));
     g.setAttribute('dir', new BufferAttribute(dirs, 3));
     g.setAttribute('height', new BufferAttribute(hgt, 1));
+    g.setAttribute('detail', new BufferAttribute(det, 2));
     g.setIndex(this.indices(n, this.outward[t.face]));
     g.computeBoundingSphere();
     const mesh = new Mesh(g, this.material);

@@ -20,3 +20,15 @@ test('zooming into the paleo-Rockies refines the terrain to fine tiles, camera a
   expect(g).toBeGreaterThan(b * 0.8); // land, not sea
   await expectNoErrors(errors);
 });
+
+test('plants grow near the ground and only there', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/#t=-60&p=1&c=51.674,-79.599,500,150,80&v=1'); // Tanis, Hell Creek floodplain forest
+  await waitForGlobe(page);
+  await expect.poll(() => page.evaluate(() => (window as any).__kt.vegetation.instances), { timeout: 20_000 }).toBeGreaterThan(1000);
+  expect(await page.evaluate(() => (window as any).__kt.vegetation.group.visible)).toBe(true);
+  // From orbit there are no plants to draw.
+  await page.evaluate(() => (window as any).__kt.controls.setPose({ lat: 51.674, lon: -79.599, range: 2_000_000, heading: 0, tilt: 0 }));
+  await expect.poll(() => page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return k.vegetation.group.visible; })).toBe(false);
+  await expectNoErrors(errors);
+});

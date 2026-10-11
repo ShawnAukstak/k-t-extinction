@@ -17,6 +17,7 @@ import { CRATER_OBSERVED, ImpactEffects, type WinterScenario } from './effects/i
 import { Asteroid } from './render/asteroid';
 import { Globe } from './render/globe';
 import { Plume } from './render/plume';
+import { Vegetation } from './terrain/vegetation';
 import { Sky } from './render/sky';
 import { Markers } from './ui/markers';
 import { chip, InfoPanel, sourceLinks } from './ui/panel';
@@ -53,6 +54,11 @@ scene.add(sky.stars, sky.atmosphere);
 const fx = new ImpactEffects();
 const globe = new Globe(settings.terrain, fx.uniforms);
 scene.add(globe.group);
+const gu = globe.material.uniforms;
+const vegetation = new Vegetation(globe.heights, fx.crater, {
+  ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
+}, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
+scene.add(vegetation.group);
 const asteroid = new Asteroid();
 scene.add(asteroid.group, asteroid.light, asteroid.light.target);
 const cine = new Cinematic(asteroid);
@@ -347,6 +353,7 @@ function updateSun(out: Vector3): void {
 
 // ── loop ─────────────────────────────────────────────────────────────────────
 const sun = new Vector3();
+const fogColor = new Vector3();
 /** Bring every time-dependent system up to the clock and draw one frame. */
 function renderNow(dt = 0): void {
   if (mode === 'cine') cine.apply(clock.t, camera);
@@ -356,6 +363,13 @@ function renderNow(dt = 0): void {
   fx.update(clock.t);
   sky.update(camera, sun, fx.meanLight, 0, renderer.getPixelRatio());
   globe.update(camera, sun, 1, 0, renderer.domElement.height);
+  {
+    // Haze colour for plants: sky blue scaled by how high the Sun is here and how much light gets through.
+    const up = camera.position.clone().normalize();
+    const day = Math.min(1, Math.max(0, up.dot(sun) + 0.15));
+    fogColor.set(0.34, 0.44, 0.58).multiplyScalar(day * fx.meanLight);
+  }
+  vegetation.update(camera, fogColor);
   renderer.render(scene, camera);
   if (plume.update(clock.t, camera, sun, fx.meanLight)) plume.render(renderer, camera);
   timeline.update();
@@ -408,13 +422,13 @@ declare global {
   interface Window {
     __kt: {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
-      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid;
+      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid; vegetation: Vegetation;
       mode: () => 'cine' | 'free';
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
     };
   }
 }
 window.__kt = {
-  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, mode: () => mode,
+  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, vegetation, mode: () => mode,
   renderNow, setQuery, effectsReady: () => ensureEffectData(true),
 };
