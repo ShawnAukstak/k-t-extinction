@@ -26,7 +26,12 @@ function xyz(lat: number, lon: number): [number, number, number] {
 
 function inside(ring: Float64Array, p: [number, number, number]): boolean {
   // Winding test on the sphere: sum of signed angles at p subtended by each edge (tangent-plane projection).
+  // Projected that way, a ring around the antipode −p winds around p too, so first require the ring to
+  // be on p's side of the globe (every plate polygon is much smaller than a hemisphere).
   const n = ring.length / 3;
+  let mx = 0, my = 0, mz = 0;
+  for (let i = 0; i < n; i++) { mx += ring[3 * i]; my += ring[3 * i + 1]; mz += ring[3 * i + 2]; }
+  if (mx * p[0] + my * p[1] + mz * p[2] <= 0) return false;
   let total = 0;
   let ax = 0, ay = 0, az = 0;
   const proj = (i: number): [number, number, number] => {

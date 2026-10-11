@@ -122,7 +122,14 @@ class Polygon:
 
 
 def _inside(ring: np.ndarray, p: np.ndarray) -> bool:
-    """Winding test on the sphere: sum of signed angles subtended at p by each edge."""
+    """Winding test on the sphere: sum of signed angles subtended at p by each edge.
+
+    Projected onto the tangent plane at p, a ring around the antipode -p winds around p just the
+    same, so also require the ring to be on p's side of the globe (every plate polygon is much
+    smaller than a hemisphere: |mean of ring| >= 0.66).
+    """
+    if ring.mean(axis=0) @ p <= 0:
+        return False
     a = ring - p * (ring @ p)[:, None]          # project onto the tangent plane at p
     b = np.roll(a, -1, axis=0)
     cross = np.cross(a, b) @ p

@@ -27,4 +27,15 @@ describe.skipIf(!have)('plate reconstruction (needs scripts/process_places.py ou
       expect(r.lon, name).toBeCloseTo(elo, 1);
     }
   });
+
+  it('does not put West Africa on the Pacific plate (its antipode)', () => {
+    const plates = new Plates(JSON.parse(readFileSync(file, 'utf8')) as PlatesData);
+    const lagos = plates.reconstruct(6.52, 3.38)!;
+    for (const [la, lo] of [[5.56, -0.2], [5.36, -4.0], [12.37, -1.52]]) {
+      const r = plates.reconstruct(la, lo)!;
+      expect(r.plate).not.toBe(901);
+      expect(Math.hypot(r.lat - lagos.lat, r.lon - lagos.lon)).toBeLessThan(12);
+    }
+    expect(plates.reconstruct(21.3, -157.86)!.plate).toBe(901); // Honolulu
+  });
 });

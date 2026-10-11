@@ -29,6 +29,18 @@ def test_matches_gws() -> None:
         assert d_km < 1.0, f"{name}: {d_km:.2f} km off"
 
 
+def test_no_antipodal_plate() -> None:
+    """West Africa is antipodal to the Pacific plate polygon; it must reconstruct with Africa."""
+    m = PlateModel()
+    lagos = m.reconstruct(6.52, 3.38, 65)
+    for name, la, lo in [("accra", 5.56, -0.2), ("abidjan", 5.36, -4.0), ("ouagadougou", 12.37, -1.52)]:
+        pla, plo, plate = m.reconstruct(la, lo, 65)
+        assert plate != 901, name
+        assert math.hypot(pla - lagos[0], plo - lagos[1]) < 12, f"{name}: {pla:.1f}, {plo:.1f}"
+    assert m.reconstruct(21.3, -157.86, 65)[2] == 901  # Honolulu stays on the Pacific plate
+
+
 if __name__ == "__main__":
     test_matches_gws()
+    test_no_antipodal_plate()
     print("ok")
