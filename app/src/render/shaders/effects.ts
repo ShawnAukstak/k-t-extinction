@@ -17,6 +17,8 @@ uniform float uDustOn;
 uniform vec4 uCrater;          // x final rim radius, y peak-ring radius, z transient radius, w fireball radius (km)
 uniform float uDeepAzimuth;    // radians, direction the shelf deepens (the resurge comes from there)
 uniform float uOverlay;
+uniform sampler2D uTsunami;     // R arrival (h), G log10 max height (m); equirect, row 0 = 90°N
+uniform float uTsunamiOn;
 
 float fxRow(float r) { return (r + 0.5) / uFxRows; }
 
@@ -131,6 +133,25 @@ float fxDustTau(float ang, vec3 n) {
   return 0.012 * col * structure;                          // visual extinction coefficient, m²/kg
 }
 
+vec2 fxEquirect(vec3 n) {
+  float lat = asin(clamp(n.y, -1.0, 1.0));
+  float lon = atan(n.x, n.z);
+  return vec2(lon / (2.0 * PI) + 0.5, 0.5 - lat / PI);
+}
+
+// Tsunami: a bright crest line where the front is now, and churned, paler water behind it,
+// both scaled by the modelled maximum height. Returns (crest, wake, log10 height, arrived).
+vec4 fxTsunami(vec3 n) {
+  if (uTsunamiOn < 0.5 || uT <= 0.0) return vec4(0.0);
+  vec2 s = textureLod(uTsunami, fxEquirect(n), 0.0).rg;
+  float dt = uT - s.r * 3600.0;
+  float width = clamp(0.03 * uT, 90.0, 2400.0);
+  float crest = exp(-pow(dt / width, 2.0));
+  float wake = step(0.0, dt) * exp(-dt / (6.0 * 3600.0));
+  float amp = smoothstep(-1.0, 2.3, s.g);                   // 0.1 m … 200 m
+  return vec4(crest * amp, wake * amp, s.g, step(0.0, dt));
+}
+
 // Thin rings for the science overlay: air blast, seismic surface waves, ballistic ejecta front.
 vec3 fxOverlay(float rKm, float ang, float pxKm) {
   if (uOverlay < 0.5 || uT <= 0.0) return vec3(0.0);
@@ -144,5 +165,16 @@ vec3 fxOverlay(float rKm, float ang, float pxKm) {
   float lt = log(max(uT, 1e-3)) / 2.302585;
   o += vec3(1.0, 0.5, 0.25) * exp(-pow((lt - ej.r) / 0.01, 2.0));
   return o;
+}
+
+vec3 fxTsunamiOverlay(vec4 ts) {
+  if (uOverlay < 0.5) return vec3(0.0);
+  // Max height behind the front: dark blue 0.1 m → cyan 1 m → yellow 10 m → red ≥ 100 m.
+  float h = clamp((ts.z + 1.0) / 3.0, 0.0, 1.0);
+  vec3 c = h < 0.33 ? mix(vec3(0.05, 0.1, 0.5), vec3(0.1, 0.8, 0.9), h / 0.33)
+         : h < 0.66 ? mix(vec3(0.1, 0.8, 0.9), vec3(1.0, 0.9, 0.2), (h - 0.33) / 0.33)
+         : mix(vec3(1.0, 0.9, 0.2), vec3(1.0, 0.15, 0.1), (h - 0.66) / 0.34);
+  float crest = ts.x / max(0.05, smoothstep(-1.0, 2.3, ts.z));
+  return c * (0.18 * ts.w + 1.2 * crest);
 }
 `;

@@ -99,6 +99,15 @@ void main() {
     radiance += water * sunT * SUN_E * uSunScale * (spec * smoothstep(0.0, 0.1, dot(n, L)) + fres * 0.01 * ndl);
   }
 
+  // Tsunami crest and churned water (only on the sea).
+  vec4 tsu = fxTsunami(n);
+  if (water > 0.5 && tsu.w + tsu.x > 0.0) {
+    vec3 sunlit = sunT * SUN_E * uSunScale * max(0.0, dot(n, L)) / PI;
+    // Crest: foam line. Behind it: sediment-laden water (the wave scours the seafloor; Range 2022).
+    radiance += sunlit * (vec3(0.50, 0.56, 0.56) * tsu.x * 0.22 + vec3(0.075, 0.07, 0.055) * tsu.y * 0.45);
+    radiance += fxTsunamiOverlay(tsu) * water * 1.5;
+  }
+
   // Ejecta/dust cloud above the surface: hides the ground, lit by the Sun where it's day.
   float tau = fxDustTau(fxAng, n);
   float cover = 0.92 * (1.0 - exp(-tau));

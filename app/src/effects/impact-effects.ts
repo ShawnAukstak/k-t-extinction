@@ -7,7 +7,7 @@
  *   B log10(air-blast overpressure, bar)   A effective seismic magnitude
  * Rows 1…N hold the dust-cloud column (log10 kg/m²) at each keyframe time of dust.json.
  */
-import { ClampToEdgeWrapping, DataTexture, DataUtils, HalfFloatType, LinearFilter, RGBAFormat, Vector3 } from 'three';
+import { ClampToEdgeWrapping, DataTexture, DataUtils, HalfFloatType, LinearFilter, RepeatWrapping, RGFormat, RGBAFormat, Vector3 } from 'three';
 import { IMPACT } from '../config';
 import { DEG, enuBasis, latLonToVec } from '../core/geo';
 import { atDistance, crater, type CraterResult } from '../physics/eiep';
@@ -75,6 +75,8 @@ export class ImpactEffects {
       // The resurge enters from the deep (north-east) side of the shelf; 57.6° in the 65 Ma frame.
       uDeepAzimuth: { value: 57.6 * DEG },
       uOverlay: { value: 0 },
+      uTsunami: { value: new DataTexture(new Uint16Array([0, 0]), 1, 1, RGFormat, HalfFloatType) },
+      uTsunamiOn: { value: 0 },
     };
   }
 
@@ -97,6 +99,38 @@ export class ImpactEffects {
       return true;
     } catch (e) {
       console.warn('dust profiles unavailable', e);
+      return false;
+    }
+  }
+
+  /**
+   * Tsunami arrival time (hours) and log10 maximum height (m) on a 0.25° equirectangular grid,
+   * from scripts/process_tsunami.py (travel times on our bathymetry; heights from Range et al. 2022).
+   */
+  async loadTsunami(baseUrl: string): Promise<boolean> {
+    try {
+      const meta = await (await fetch(`${baseUrl}/tsunami.json`)).json() as { width: number; height: number; timeUnitS: number };
+      const res = await fetch(`${baseUrl}/tsunami.bin`);
+      if (!res.ok) return false;
+      const raw = new Uint16Array(await res.arrayBuffer());
+      const n = meta.width * meta.height;
+      if (raw.length !== 2 * n) throw new Error('tsunami.bin size mismatch');
+      const px = new Uint16Array(2 * n);
+      for (let i = 0; i < n; i++) {
+        px[2 * i] = DataUtils.toHalfFloat((raw[i] * meta.timeUnitS) / 3600);
+        px[2 * i + 1] = DataUtils.toHalfFloat(raw[n + i] / 1000 - 2);
+      }
+      const tex = new DataTexture(px, meta.width, meta.height, RGFormat, HalfFloatType);
+      tex.minFilter = tex.magFilter = LinearFilter;
+      tex.wrapS = RepeatWrapping;
+      tex.wrapT = ClampToEdgeWrapping;
+      tex.needsUpdate = true;
+      (this.uniforms.uTsunami.value as DataTexture).dispose();
+      this.uniforms.uTsunami.value = tex;
+      this.uniforms.uTsunamiOn.value = 1;
+      return true;
+    } catch (e) {
+      console.warn('tsunami data unavailable', e);
       return false;
     }
   }

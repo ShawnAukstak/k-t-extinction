@@ -98,6 +98,7 @@ globe
   });
 
 void fx.loadDust(`${import.meta.env.BASE_URL}data/effects/dust.json`);
+void fx.loadTsunami(`${import.meta.env.BASE_URL}data/effects`);
 // Science overlay (fronts of the air blast, seismic waves and ballistic ejecta): press O or ?overlay=1.
 fx.uniforms.uOverlay.value = new URLSearchParams(location.search).get('overlay') === '1' ? 1 : 0;
 window.addEventListener('keydown', (e) => {

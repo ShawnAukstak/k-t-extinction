@@ -26,3 +26,14 @@ test('the dust cloud has spread over North America by one hour', async ({ page }
   const greenness = (p: number[]) => p[1] - p[0];
   expect(greenness(dusty)).toBeLessThan(greenness(clear));
 });
+
+test('tsunami data loads and the wave has left the Gulf by two hours', async ({ page }) => {
+  await page.goto('/?overlay=1#t=7200&p=1&c=27.5,-66.5,1500000,0,0&v=1');
+  await waitForGlobe(page);
+  await page.waitForFunction(() => (window as any).__kt.fx.uniforms.uTsunamiOn.value === 1);
+  const arrived = await pixelAt(page, 0.5, 0.5);
+  await page.evaluate(() => (window as any).__kt.clock.seek(600));
+  const before = await pixelAt(page, 0.5, 0.5);
+  // The overlay tints water the wave has passed; the strait north-east of the crater is reached in < 1 h.
+  expect(arrived[0] + arrived[1]).toBeGreaterThan(before[0] + before[1] + 20);
+});
