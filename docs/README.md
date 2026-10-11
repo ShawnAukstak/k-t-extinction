@@ -29,6 +29,10 @@ Research and planning for the K-Pg (K-T) extinction simulator. Start with the vi
 | [`tech/prior-art.md`](tech/prior-art.md) | What exists, what it's built on, virality lessons |
 | [`tech/ux-timeline-camera-sharing.md`](tech/ux-timeline-camera-sharing.md) | Non-linear timeline model, camera modes, deep-link format, discoveries, load budget |
 
+## Curated data
+
+`data/curated/` holds the hand-edited files the app reads: `timeline.yaml` (events), `dem-corrections.yaml` (cited fixes to the terrain), and `sources.yaml` (93-entry bibliography, every DOI checked against Crossref on 2026-10-11). Research pages cite by author-year; the app cites by the keys in `sources.yaml`.
+
 ## Conventions
 
 - **Verification tags** in research pages: `[V]` verified from the source this session · `[S]` from a search snippet · `[U]` unverified / from memory · `[W]/[M]/[C]` well-constrained / model-dependent / contested. Anything tagged `[U]` must be checked against the paper before it's hard-coded.

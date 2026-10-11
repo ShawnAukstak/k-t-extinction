@@ -32,7 +32,7 @@
 | Central uplift / melt | Central structural uplift > 10 km; Moho uplifted 1–2 km; coherent melt sheet < 3 km thick; melt volume ~4,000–10,000 km³ | [M] | Gulick 2013; Collins 2005 |
 | Present state | Crater buried under ~1 km of Cenozoic sediment; impactites from 617 mbsf at M0077A | [W] | Gulick 2019; Morgan 2016 |
 | Target rocks | **~3 km Mesozoic carbonate platform with 30–50 % evaporites (anhydrite/gypsum) over ~33 km granitic crust** | [W] | Morgan 2016; Collins 2020; Gulick 2019 |
-| Pre-impact water depth | **Asymmetric: ~100 m on the W/SW shelf, > 1200 m to the NE, ~650 m near centre; up to ~2 km in the NE embayment.** "Shallow sea" is only true on one side. | [M] | Gulick 2008 (via secondary — verify); Gulick 2019 |
+| Pre-impact water depth | **Asymmetric: ~100 m on the W/SW shelf, > 1200 m to the NE, ~650 m near centre; up to ~2 km in the NE embayment.** "Shallow sea" is only true on one side. | [M] | Gulick et al. 2008 *Nat. Geosci.* 1:131 [V, Crossref]; Gulick 2019 |
 | IODP-ICDP Exp. 364 | Hole M0077A, **21.45°N, 89.95°W**, ~30 km NW of Progreso, water depth 19.8 m, cored 505.7–1334.7 mbsf, April–May 2016 | [W] | Morgan 2016; IODP Proc. 364 |
 
 ## 3. Date, season, time of day
@@ -43,13 +43,13 @@
 | Hell Creek recalibration | 66.052 ± 0.008/0.043 Ma [U exact] | [W] | Sprain et al. 2018 |
 | U-Pb (Denver Basin) | 66.021 ± 0.024/0.039/0.081 Ma | [W] | Clyde et al. 2016 |
 | **Best value for the UI** | **66.04 ± 0.05 Ma** (inter-lab spread is within systematic error) | [W] | synthesis |
-| Season | **Boreal spring (austral autumn)** from growth-line histology and δ¹³C of sturgeon/paddlefish killed by the Tanis seiche. DePalma 2021 reached "spring/summer" but its raw data were never released and Manchester found research misconduct (poor practice, not fabrication); **During 2022 stands independently.** | [M] | During et al. 2022 Nature 603:91; During, Voeten & Ahlberg 2024 PeerJ |
+| Season | **Boreal spring (austral autumn)** from growth-line histology and δ¹³C of sturgeon/paddlefish killed by the Tanis seiche. DePalma 2021 reached "spring/summer" but its raw data were never released and Manchester found research misconduct (poor practice, not fabrication); **During 2022 stands independently.** | [M] | During et al. 2022 Nature 603:91; During, Voeten, van der Lubbe & Ahlberg 2024 *PeerJ* 12:e18519 |
 | Time of day | **No published constraint exists.** Choose for visual effect and label as unconstrained. | — | absence confirmed |
 
 ## 4. Deccan Traps — current consensus
 
 - ~500,000 km³ erupted in chron C29r, episodically; main phase ~700–800 kyr across the boundary (Hull 2020; Schoene 2021).
-- U-Pb (Schoene 2019): four pulses, one beginning tens of kyr *before* impact. Ar-Ar (Sprain 2019): > 90 % of volume in < 1 Myr, ~75 % *after* the boundary. Joint re-analysis (Schoene 2021): **neither dataset supports an impact-triggered eruption increase.**
+- U-Pb (Schoene 2019): four pulses, one beginning tens of kyr *before* impact. Ar-Ar (Sprain 2019): > 90 % of volume in < 1 Myr, ~75 % *after* the boundary. Re-analysis of both groups' data (Schoene, Eddy, Keller & Samperton 2021, *Geochronology* 3:181): **neither dataset supports an impact-triggered eruption increase.**
 - Hull 2020: major Deccan outgassing began and ended before the impact; only the impact coincides with the extinction. Chiarenza 2020: impact winter alone eliminates dinosaur habitat; Deccan alone does not.
 - **Consensus: the impact caused the extinction; Deccan was a background stressor and post-extinction modulator.** A minority (Keller group) still argues for volcanism. The app should show Deccan as an ongoing feature of the 66 Ma globe (India, ~20°S), not as the cause.
 
@@ -76,7 +76,7 @@
 | **Tabor et al. 2020** climate, PANGAEA 10.1594/PANGAEA.909529, CC BY 4.0 | Monthly surface temperature / shortwave for control + soot/SO₂/dust CESM runs. | Gridded "years after" temperature and darkness. |
 | Bardeen 2017 output | UCAR Data Commons | Soot/darkness climate fields. |
 | Brugger 2017 data, PIK doi:10.5880/PIK.2021.002 | CLIMBER-3α output, 0–1000 yr | Global T / sea-ice time series. |
-| Senel 2023 GCM output, OSF 10.17605/OSF.IO/2CDQG | Fine-dust scenario. | — |
+| Senel 2023 GCM output, OSF 10.17605/OSF.IO/2CDQG (CC BY 4.0 per the registry) | Fine-dust scenario. | — |
 | IODP Expedition 364 Proceedings | Core logs, lithology with depths. | Crater-fill stratigraphy visual. |
 
 ## 7. Well-constrained vs contested — for the UI's "about the numbers" panel

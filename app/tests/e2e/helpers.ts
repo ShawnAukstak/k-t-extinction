@@ -19,7 +19,7 @@ export async function waitForGlobe(page: Page): Promise<void> {
 export async function pixelAt(page: Page, fx: number, fy: number): Promise<number[]> {
   return page.evaluate(([x, y]) => {
     const k = (window as any).__kt;
-    k.renderer.render(k.scene, k.camera);
+    k.renderNow();
     const gl: WebGL2RenderingContext = k.renderer.getContext();
     const px = new Uint8Array(4);
     gl.readPixels(Math.floor(x * gl.drawingBufferWidth), Math.floor((1 - y) * gl.drawingBufferHeight), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);

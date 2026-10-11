@@ -28,7 +28,7 @@
 | B1 | **BRIDGE HadCM3L run `texyn`** (Valdes, Scotese & Lunt 2021) — 66.0 Ma, 576 ppm | Annual/seasonal climatologies (`texyna.pcclann.nc` 4.3 MB), monthly, ocean, **BIOME4 (`texyn_biome4out.nc` 1.7 MB)**, vegetation fractions | NetCDF; 3.75°×2.5° | Paper CC BY 4.0; **data terms not stated** — cite Valdes 2021, contact if shipping | https://www.paleo.bristol.ac.uk/ummodel/data/texyn/standard_new_html/texyn.html (dir listings 403; direct file URLs work) | [V] HEAD-checked | Temperature/precip/sea-ice overlays; **biome raster** |
 | B2 | PhanDA HadCM3L priors (Judd et al.) | Same 109 simulations repackaged (tas, tos, so, pr) | NetCDF zips (to 11.4 GB) | CC BY 4.0 | https://zenodo.org/record/8237751 | [V] | Licensed bulk alternative to B1 |
 | B3 | Scotese et al. 2021 GMST grids | Proxy-adjusted surface temperature, 100 intervals (Maastrichtian = 70 Ma, GMST 21.1 °C) | NetCDF 1°, CSV | CC BY 4.0 | https://zenodo.org/records/5718392 | [V] | Temperature overlay |
-| B4 | Pohl et al. 2022 Köppen–Geiger classes | FOAM runs every 20 Myr — **60 and 80 Ma only** | NetCDF + CSV; 2.8°×1.4° | CC BY 4.0 | https://zenodo.org/records/6620748 | [V] | Climate-zone raster (interpolate) |
+| B4 | Pohl et al. 2022 Köppen–Geiger classes | FOAM runs every 20 Myr — **60 and 80 Ma only** | NetCDF + CSV; 2.8°×1.4° | dataset CC BY 4.0 (the *Data in Brief* article itself is CC BY-NC-ND) | https://zenodo.org/records/6620748 | [V] | Climate-zone raster (interpolate) |
 | B5 | CenCO2PIP 2023 CO₂ compilation | Vetted paleo-CO₂ 66–0 Ma | Spreadsheets (NOAA NCEI) | — | DOI 10.1126/science.adi5177 | [V] PDF | Context number only |
 | B6 | Chaboureau et al. 2014 FOAM-LPJ biomes | 70 Ma biome simulation | Figures only, no grid | — | https://pmc.ncbi.nlm.nih.gov/articles/PMC4191762/ | [V] | Reference |
 
@@ -42,7 +42,7 @@
 | C4 | **Tabor et al. 2020 impact-winter CESM** | Control + 20-yr transient soot / SO₂ / dust: TS, TREFHT, FSDS (darkness proxy), precip… | NetCDF .gz; control 6.7 MB, scenarios ~134 MB each | **CC BY 4.0** | https://doi.pangaea.de/10.1594/PANGAEA.909529 ; files https://hs.pangaea.de/model/Tabor-etal_2019/ | [V] | **Post-impact temperature / darkness time series and rasters** |
 | C5 | Collins et al. 2020 iSALE3D runs | 8 runs (angle × velocity), 5 timesteps (`.npz` pressure/temp/density/tracers), plotting scripts; ~10 GB; Supplementary Movies | npz | Zenodo (CC BY, paper CC BY) | https://zenodo.org/record/3667832 | [V] | Crater-formation cross-sections 0–300 s |
 | C6 | Brugger et al. 2017 CLIMBER-3α | Global T, sea-ice 0–1000 yr | — | PIK doi:10.5880/PIK.2021.002 | https://doi.org/10.5880/PIK.2021.002 | [V] readme | Long-tail climate curve |
-| C7 | Senel et al. 2023 GCM output | Fine-dust scenario | — | OSF | https://osf.io/2cdqg/ (DOI 10.17605/OSF.IO/2CDQG) | [V] | Alternative darkness scenario |
+| C7 | Senel et al. 2023 GCM output | Fine-dust scenario | — | OSF, **CC BY 4.0** | https://osf.io/2cdqg/ (DOI 10.17605/OSF.IO/2CDQG) | [V] | Alternative darkness scenario |
 | C8 | Bardeen et al. 2017 WACCM output | Soot scenarios | — | UCAR Data Commons | https://data.ucar.edu | [S] | Alternative |
 | C9 | Chiarenza et al. 2020 scenarios | Habitat suitability, dimming/Deccan runs | Figshare | check | DOIs 10.6084/m9.figshare.11908179… | [V] | Habitat overlay |
 | C10 | IODP Expedition 364 Proceedings | Core logs, lithology | web | IODP | https://publications.iodp.org/proceedings/364/ | [U] | Crater-fill visual |

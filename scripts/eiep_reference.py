@@ -6,7 +6,7 @@
 # Run `python3 scripts/eiep_reference.py` - the first two blocks reproduce the paper's Table 6.
 # Known deviations (see docs/research/impact-event.md section 6): ejecta thickness and air-blast
 # overpressure at Chicxulub scale differ from the paper's own table by up to ~2x (undocumented
-# program details); eq. 41c's printed constant 6.399 vs 3.399 is flagged in the docs.
+# program details); eq. 41c uses 3.399, not the printed 6.399 (see the comment there).
 # Written by a research agent on 2026-10-11; not yet independently reviewed.
 
 """Re-implementation of the Earth Impact Effects Program scaling equations
@@ -81,7 +81,9 @@ def at_distance(c, r_km, v, theta_deg):
     elif r_km < 700:
         Meff = M - 0.0048 * r_km - 1.1644
     else:
-        Meff = M - 1.66 * math.log10(math.degrees(Delta)) - 6.399
+        # The paper prints 6.399 here, which leaves a 3-magnitude jump at 700 km and contradicts its
+        # Fig. 5; 3.399 is continuous with eq. 41b and reproduces the figure (documented erratum).
+        Meff = M - 1.66 * math.log10(math.degrees(Delta)) - 3.399
     out["M_eff"] = Meff
     out["T_seismic_s"] = r_km / 5
     # --- ejecta (eqs 47, 49-53) ---

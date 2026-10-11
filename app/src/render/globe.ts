@@ -15,6 +15,7 @@ import {
 import { EARTH_RADIUS } from '../config';
 import { faceDirection, FACE_NAMES } from './cube';
 import { atmosphereChunk } from './shaders/atmosphere';
+import { effectsChunk } from './shaders/effects';
 
 export interface GlobeManifest {
   /** Available face sizes, smallest first, e.g. [256, 1024]. */
@@ -45,6 +46,7 @@ const fragmentShader = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_fragment>
 ${atmosphereChunk}
+${effectsChunk}
 uniform samplerCube uColor;
 uniform samplerCube uNormal;
 uniform samplerCube uHeight;
@@ -72,6 +74,11 @@ void main() {
   }
   float water = 1.0 - smoothstep(-20.0, 20.0, elev);
 
+  // Impact effects on the surface (crater, ejecta blanket, flooding).
+  float fxAng = fxAngle(n);
+  float rKm = fxAng * PR;
+  fxSurface(rKm, fxAng, n, albedo, water, nrm);
+
   vec3 L = uSunDir;
   vec3 pKm = n * (PR + max(elev, 0.0) / 1000.0);
   vec3 sunT = sunTransmittance(pKm + n * 0.05, L);
@@ -91,6 +98,19 @@ void main() {
     float fres = 0.02 + 0.98 * pow(1.0 - max(0.0, dot(n, V)), 5.0);
     radiance += water * sunT * SUN_E * uSunScale * (spec * smoothstep(0.0, 0.1, dot(n, L)) + fres * 0.01 * ndl);
   }
+
+  // Ejecta/dust cloud above the surface: hides the ground, lit by the Sun where it's day.
+  float tau = fxDustTau(fxAng, n);
+  float cover = 0.92 * (1.0 - exp(-tau));
+  vec3 emission = fxEmission(rKm, fxAng);
+  if (tau > 0.0) {
+    vec3 dustLit = vec3(0.085, 0.07, 0.055) * (sunTransmittance(n * (PR + 30.0), L) * SUN_E * uSunScale * max(0.0, dot(n, L) + 0.1) / PI);
+    radiance = mix(radiance, dustLit, cover);
+  }
+  // Ground glow is hidden under the cloud; the fireball and re-entry glow are in or above it.
+  radiance += emission * mix(1.0, 0.35, cover);
+  float pxKm = length(vViewPos) / 1000.0 * 0.0015;
+  radiance += fxOverlay(rKm, fxAng, pxKm) * 3.0;
 
   // Aerial perspective between the camera and this point. End the integral where the view ray
   // meets the true sphere: the flat triangles of a coarse mesh dip up to ~1 km below it, and
@@ -167,7 +187,7 @@ export class Globe {
   private readonly viewToWorld = new Matrix3();
   private readonly camKm = new Vector3();
 
-  constructor(segments = 64) {
+  constructor(segments = 64, extraUniforms: Record<string, { value: unknown }> = {}) {
     this.group.name = 'globe';
     this.material = new ShaderMaterial({
       vertexShader,
@@ -183,6 +203,7 @@ export class Globe {
         uHaze: { value: 0 },
         uViewToWorld: { value: this.viewToWorld },
         uCamPosKm: { value: this.camKm },
+        ...extraUniforms,
       },
     });
     for (let f = 0; f < 6; f++) {

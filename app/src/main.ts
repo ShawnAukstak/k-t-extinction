@@ -6,6 +6,7 @@ import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
 import { sunDirection } from './core/sun';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
+import { ImpactEffects } from './effects/impact-effects';
 import { Globe } from './render/globe';
 import { Sky } from './render/sky';
 import { TimelineBar } from './ui/timeline-bar';
@@ -36,7 +37,8 @@ const camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight,
 
 const sky = new Sky(settings.stars);
 scene.add(sky.stars, sky.atmosphere);
-const globe = new Globe(settings.globeSegments);
+const fx = new ImpactEffects();
+const globe = new Globe(settings.globeSegments, fx.uniforms);
 scene.add(globe.group);
 
 // ── state ────────────────────────────────────────────────────────────────────
@@ -95,19 +97,31 @@ globe
     }
   });
 
+void fx.loadDust(`${import.meta.env.BASE_URL}data/effects/dust.json`);
+// Science overlay (fronts of the air blast, seismic waves and ballistic ejecta): press O or ?overlay=1.
+fx.uniforms.uOverlay.value = new URLSearchParams(location.search).get('overlay') === '1' ? 1 : 0;
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'o' || e.key === 'O') fx.uniforms.uOverlay.value = fx.uniforms.uOverlay.value ? 0 : 1;
+});
+
 // ── loop ─────────────────────────────────────────────────────────────────────
 const sun = new Vector3();
+/** Bring every time-dependent system up to the clock and draw one frame. */
+function renderNow(dt = 0): void {
+  controls.update(dt);
+  sunDirection(clock.t, sun);
+  fx.update(clock.t);
+  sky.update(camera, sun, 1, 0, renderer.getPixelRatio());
+  globe.update(camera, sun, 1, 0);
+  renderer.render(scene, camera);
+  timeline.update();
+}
 let last = performance.now();
 function frame(now: number): void {
   const dt = Math.min(0.25, (now - last) / 1000); // cap: no huge jump after a background tab
   last = now;
   clock.tick(dt);
-  controls.update(dt);
-  sunDirection(clock.t, sun);
-  sky.update(camera, sun, 1, 0, renderer.getPixelRatio());
-  globe.update(camera, sun, 1, 0);
-  renderer.render(scene, camera);
-  timeline.update();
+  renderNow(dt);
   // Keep the shareable link current while playing (at most once a second).
   if (clock.playing && now - lastHashWrite > 1000) writeHash();
   requestAnimationFrame(frame);
@@ -117,7 +131,7 @@ requestAnimationFrame(frame);
 // Exposed for end-to-end tests and debugging.
 declare global {
   interface Window {
-    __kt: { renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky; clock: Clock; timeline: TimelineBar; tier: string };
+    __kt: { renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky; fx: ImpactEffects; clock: Clock; timeline: TimelineBar; tier: string; renderNow: (dt?: number) => void };
   }
 }
-window.__kt = { renderer, scene, camera, controls, globe, sky, clock, timeline, tier };
+window.__kt = { renderer, scene, camera, controls, globe, sky, fx, clock, timeline, tier, renderNow };

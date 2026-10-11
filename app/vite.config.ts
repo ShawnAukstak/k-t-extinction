@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, type Plugin } from 'vitest/config';
 import { parse } from 'yaml';
 
 /** Import data/curated/*.yaml as plain JSON modules (parsed at build time, no runtime YAML parser). */
@@ -19,4 +19,5 @@ export default defineConfig({
   server: { port: 5173, strictPort: true, host: '127.0.0.1', fs: { allow: ['..'] } },
   preview: { port: 4173, strictPort: true, host: '127.0.0.1' },
   build: { target: 'es2022', sourcemap: true },
+  test: { include: ['src/**/*.test.ts'] },
 });

@@ -60,7 +60,7 @@ EIEP surface-burst scaling (valid to ~10⁴ Mt; "probably overestimates by 2–5
 
 | Species | Estimates | Source |
 |---|---|---|
-| Sulfur | **325 ± 130 Gt S** (SOVA hydrocode, > 25 km altitude) — Artemieva, Morgan & Exp. 364 2017 · 100–500 Gt (Schulte 2010) · 100 Gt (Pierazzo 1998; used by Brugger 2017) · **67 ± 39 Gt S** from S-isotope mass balance — ~5 × lower, "milder impact winter" (Rodiouchkina 2025). H₂SO₄ aerosol scavenged to surface within days (Ohno 2014). A steep 45–60° impact is the *worst case* for S/CO₂ release (Collins 2020). | |
+| Sulfur | **325 ± 130 Gt S** (SOVA hydrocode, > 25 km altitude) — Artemieva, Morgan & Exp. 364 2017 · 100–500 Gt (Schulte 2010) · 100 Gt (Pierazzo 1998; used by Brugger 2017) · **67 ± 39 Gt S** from S-isotope mass balance — ~5 × lower, "milder impact winter" (Rodiouchkina et al. 2025 *Nat. Commun.* 16:620). H₂SO₄ aerosol scavenged to surface within days (Ohno 2014). A steep 45–60° impact is the *worst case* for S/CO₂ release (Collins 2020). | |
 | CO₂ | 425 ± 160 Gt (Artemieva 2017); Henehan 2019 infer surface pCO₂ ~900 → ~1600 ppm; long-term warming 1–2.6 °C after 1000 yr (Brugger). | |
 | Water vapour | > 200 Gt to the stratosphere (Pope 1997). | |
 | Dust | **Senel 2023**: measured size distribution at a N. Dakota section has a much larger fine (0.8–8 µm) fraction than assumed; stays aloft ~15 yr, cools up to 15 °C, alone shuts down photosynthesis ~2 yr. | |
