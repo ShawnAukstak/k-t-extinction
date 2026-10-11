@@ -1,19 +1,20 @@
 /**
- * The paleo-globe: a cube-sphere whose six faces sample cube-map textures built from the
- * PALEOMAP 65 Ma PaleoDEM by scripts/process_globe.py (colour, normals, elevation).
+ * The paleo-globe: a cube-sphere quadtree (terrain/quadtree.ts) whose tiles sample cube-map textures
+ * built from the PALEOMAP 65 Ma PaleoDEM by scripts/process_globe.py (colour, normals, elevation),
+ * with real heights plus procedural detail close up (terrain/heightfield.ts).
  *
- * Geometry for each face is stored relative to the face's centre so vertex coordinates stay
- * small; three.js composes model-view matrices in float64 on the CPU. Lighting uses world-space
+ * Tile geometry is stored relative to each tile's centre so vertex coordinates stay small; three.js
+ * composes model-view matrices in float64 on the CPU. Lighting uses world-space
  * unit vectors only; the view ray for aerial perspective is rebuilt from the precise view-space
  * position, so the shader never subtracts two large float32 positions.
  */
 import {
-  BufferAttribute, BufferGeometry, CubeTexture, CubeTextureLoader, DataTexture, Group, LinearFilter,
-  LinearMipmapLinearFilter, Matrix3, Mesh, NoColorSpace, type PerspectiveCamera, RGBAFormat, SRGBColorSpace,
-  ShaderMaterial, Vector3,
+  CubeTexture, CubeTextureLoader, DataTexture, Group, LinearFilter, LinearMipmapLinearFilter, Matrix3,
+  NoColorSpace, type PerspectiveCamera, RGBAFormat, SRGBColorSpace, ShaderMaterial, Vector3,
 } from 'three';
-import { EARTH_RADIUS } from '../config';
-import { faceDirection, FACE_NAMES } from './cube';
+import { Heightfield } from '../terrain/heightfield';
+import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
+import { FACE_NAMES } from './cube';
 import { atmosphereChunk } from './shaders/atmosphere';
 import { effectsChunk } from './shaders/effects';
 
@@ -33,10 +34,15 @@ const vertexShader = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_vertex>
 attribute vec3 dir;
+attribute float height;
 varying vec3 vDir;
 varying vec3 vViewPos;
+varying vec3 vGeoNormal;
+varying float vHeight;
 void main() {
   vDir = dir;
+  vGeoNormal = normal;   // world space (tiles are only translated)
+  vHeight = height;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vViewPos = mv.xyz;
   gl_Position = projectionMatrix * mv;
@@ -58,6 +64,8 @@ uniform vec3 uCamPosKm;
 uniform float uHasData;
 varying vec3 vDir;
 varying vec3 vViewPos;
+varying vec3 vGeoNormal;
+varying float vHeight;
 
 void main() {
   #include <logdepthbuf_fragment>
@@ -74,7 +82,14 @@ void main() {
     nrm = n;
     elev = -4000.0;
   }
-  float water = 1.0 - smoothstep(-20.0, 20.0, elev);
+  // Close up, the terrain mesh is finer than the textures: take relief and coastline from geometry.
+  float distKm0 = length(vViewPos) / 1000.0;
+  float close = 1.0 - smoothstep(60.0, 600.0, distKm0);
+  if (close > 0.0) {
+    nrm = normalize(mix(nrm, normalize(vGeoNormal), close));
+    elev = mix(elev, vHeight, close);
+  }
+  float water = 1.0 - smoothstep(-20.0 * (1.0 - close) - 1.0, 20.0 * (1.0 - close) + 1.0, elev);
 
   // Impact effects on the surface (crater, ejecta blanket, flooding).
   float fxAng = fxAngle(n);
@@ -146,7 +161,7 @@ void main() {
   // integrating that far into the densest air draws the mesh grid into the haze.
   float distKm = length(vViewPos) / 1000.0;
   vec2 ts = raySphere(uCamPosKm, rd, PR + max(elev, 0.0) / 1000.0);
-  if (ts.x > 0.0 && ts.x < ts.y) distKm = min(distKm, ts.x);
+  if (close < 0.5 && ts.x > 0.0 && ts.x < ts.y) distKm = min(distKm, ts.x);
   vec2 ta = raySphere(uCamPosKm, rd, AR);
   vec3 T = vec3(1.0);
   vec3 ins = vec3(0.0);
@@ -162,44 +177,6 @@ void main() {
   #include <colorspace_fragment>
 }
 `;
-
-/** One cube face as a grid, with positions relative to the face centre. */
-function buildFace(face: number, segments: number): BufferGeometry {
-  const n = segments + 1;
-  const pos = new Float32Array(n * n * 3);
-  const dirs = new Float32Array(n * n * 3);
-  const centre = faceDirection(face, 0.5, 0.5).multiplyScalar(EARTH_RADIUS);
-  const d = new Vector3();
-  for (let j = 0; j < n; j++) {
-    for (let i = 0; i < n; i++) {
-      faceDirection(face, i / segments, j / segments, d);
-      const k = (j * n + i) * 3;
-      dirs[k] = d.x; dirs[k + 1] = d.y; dirs[k + 2] = d.z;
-      pos[k] = d.x * EARTH_RADIUS - centre.x;
-      pos[k + 1] = d.y * EARTH_RADIUS - centre.y;
-      pos[k + 2] = d.z * EARTH_RADIUS - centre.z;
-    }
-  }
-  // Winding: make the first triangle face outward, then use the same order for all.
-  const a = faceDirection(face, 0, 0), b = faceDirection(face, 1 / segments, 0), c = faceDirection(face, 0, 1 / segments);
-  const outward = b.clone().sub(a).cross(c.clone().sub(a)).dot(a) > 0;
-  const idx = new Uint32Array(segments * segments * 6);
-  let q = 0;
-  for (let j = 0; j < segments; j++) {
-    for (let i = 0; i < segments; i++) {
-      const i0 = j * n + i, i1 = i0 + 1, i2 = i0 + n, i3 = i2 + 1;
-      if (outward) { idx.set([i0, i1, i2, i1, i3, i2], q); } else { idx.set([i0, i2, i1, i1, i2, i3], q); }
-      q += 6;
-    }
-  }
-  const g = new BufferGeometry();
-  g.setAttribute('position', new BufferAttribute(pos, 3));
-  g.setAttribute('dir', new BufferAttribute(dirs, 3));
-  g.setIndex(new BufferAttribute(idx, 1));
-  g.boundingSphere = null;
-  g.computeBoundingSphere();
-  return g;
-}
 
 function placeholderCube(): CubeTexture {
   const px = new Uint8Array([0, 0, 0, 255]);
@@ -217,8 +194,12 @@ export class Globe {
   loadedSize = 0;
   private readonly viewToWorld = new Matrix3();
   private readonly camKm = new Vector3();
+  readonly heights = new Heightfield({ offset: 128, step: 40 });
+  readonly terrain: Quadtree;
+  /** Called once terrain heights are available (e.g. to lift the camera off the ground). */
+  onHeights: (() => void) | null = null;
 
-  constructor(segments = 64, extraUniforms: Record<string, { value: unknown }> = {}) {
+  constructor(terrain: QuadtreeOptions, extraUniforms: Record<string, { value: unknown }> = {}) {
     this.group.name = 'globe';
     this.material = new ShaderMaterial({
       vertexShader,
@@ -237,13 +218,8 @@ export class Globe {
         ...extraUniforms,
       },
     });
-    for (let f = 0; f < 6; f++) {
-      const mesh = new Mesh(buildFace(f, segments), this.material);
-      mesh.position.copy(faceDirection(f, 0.5, 0.5).multiplyScalar(EARTH_RADIUS));
-      mesh.name = `globe-face-${FACE_NAMES[f]}`;
-      mesh.renderOrder = 2;
-      this.group.add(mesh);
-    }
+    this.terrain = new Quadtree(this.material, this.heights, terrain);
+    this.group.add(this.terrain.group);
   }
 
   /** Load the manifest and the smallest face size, then upgrade to `targetSize` in the background. */
@@ -270,6 +246,13 @@ export class Globe {
     if (best && best > first) {
       void this.loadSize(baseUrl, best).then(() => onUpgrade?.(best));
     }
+    // Heights for the terrain mesh (CPU); rebuild tiles once they arrive.
+    this.heights.decode.offset = m.height.offset;
+    this.heights.decode.step = m.height.step;
+    void this.heights.load(baseUrl, best ?? first).then(() => {
+      this.terrain.invalidate();
+      this.onHeights?.();
+    });
     return true;
   }
 
@@ -310,7 +293,8 @@ export class Globe {
     return this.elevation[i * g.width + j];
   }
 
-  update(camera: PerspectiveCamera, sunDir: Vector3, sunScale: number, haze: number): void {
+  update(camera: PerspectiveCamera, sunDir: Vector3, sunScale: number, haze: number, viewportHeight = 800): void {
+    this.terrain.update(camera, viewportHeight);
     const u = this.material.uniforms;
     (u.uSunDir.value as Vector3).copy(sunDir);
     u.uSunScale.value = sunScale;

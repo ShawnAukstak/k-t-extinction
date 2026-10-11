@@ -51,7 +51,7 @@ const camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight,
 const sky = new Sky(settings.stars);
 scene.add(sky.stars, sky.atmosphere);
 const fx = new ImpactEffects();
-const globe = new Globe(settings.globeSegments, fx.uniforms);
+const globe = new Globe(settings.terrain, fx.uniforms);
 scene.add(globe.group);
 const asteroid = new Asteroid();
 scene.add(asteroid.group, asteroid.light, asteroid.light.target);
@@ -63,6 +63,9 @@ plume.setFireballRadiusKm(fx.crater.fireballRadiusKm);
 const initial: ViewState = parseHash(location.hash);
 const clock = new Clock(initial.t ?? DEFAULT_T, !(initial.paused ?? false), initial.speed ?? 1);
 const controls = new GlobeControls(camera, renderer.domElement, initial.camera ?? DEFAULT_POSE);
+controls.terrainHeight = (d) => globe.terrain.heightAt(d);
+// Re-seat the camera on real ground once heights arrive (links can open before they load).
+globe.onHeights = () => controls.setPose(controls.getPose());
 const topbar = new TopBar(document.body);
 const panel = new InfoPanel(document.body);
 const markers = new Markers(document.body, POIS);
@@ -352,7 +355,7 @@ function renderNow(dt = 0): void {
   asteroid.update(clock.t, sun);
   fx.update(clock.t);
   sky.update(camera, sun, fx.meanLight, 0, renderer.getPixelRatio());
-  globe.update(camera, sun, 1, 0);
+  globe.update(camera, sun, 1, 0, renderer.domElement.height);
   renderer.render(scene, camera);
   if (plume.update(clock.t, camera, sun, fx.meanLight)) plume.render(renderer, camera);
   timeline.update();

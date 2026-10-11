@@ -74,12 +74,16 @@ interface PointerInfo {
 export class GlobeControls {
   pose: CameraPose;
   enabled = true;
-  minRange = 1_000;
+  minRange = 40;
   maxRange = 6e7;
   /** Called after any user interaction (for deep-link updates, cinematic interruption, etc.). */
   onUserInput: (() => void) | null = null;
   /** A click/tap that didn't drag: client coordinates. */
   onTap: ((x: number, y: number) => void) | null = null;
+  /** Terrain height (m) under a unit direction; keeps the target on the ground and the camera above it. */
+  terrainHeight: ((dir: Vector3) => number) | null = null;
+  /** Minimum clearance of the camera above the ground, m. */
+  clearance = 12;
   private down = { x: 0, y: 0, t: 0, moved: 0 };
   private flight: { from: CameraPose; to: CameraPose; elapsed: number; duration: number; bump: number; resolve: () => void } | null = null;
 
@@ -194,7 +198,16 @@ export class GlobeControls {
       }
     }
     if (!this.dirty) return false;
-    const f = poseToFrame(this.pose);
+    const th = this.terrainHeight;
+    const targetAlt = th ? th(latLonToVec(this.pose.lat, this.pose.lon, 1)) : 0;
+    const f = poseToFrame(this.pose, targetAlt);
+    if (th) {
+      // Never below the ground: lift the camera along its local vertical if needed.
+      const up = f.position.clone().normalize();
+      const ground = EARTH_RADIUS + th(up);
+      const alt = f.position.length() - ground;
+      if (alt < this.clearance) f.position.addScaledVector(up, this.clearance - alt);
+    }
     this.camera.position.copy(f.position);
     this.camera.quaternion.copy(f.quaternion);
     this.camera.updateMatrixWorld(true);
