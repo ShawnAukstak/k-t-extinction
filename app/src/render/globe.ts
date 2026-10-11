@@ -96,7 +96,7 @@ void main() {
   float ndl = max(0.0, dot(nrm, L));
   // Sky fill: a little blue light on the day side, fading through twilight.
   float dayness = smoothstep(-0.15, 0.25, dot(n, L));
-  vec3 sky = vec3(0.05, 0.075, 0.11) * dayness * uSunScale;
+  vec3 sky = vec3(0.05, 0.075, 0.11) * dayness * uSunScale * winter.x;
   vec3 radiance = albedo * (sunT * SUN_E * uSunScale * ndl / PI + sky) + albedo * 0.0008;
 
   vec3 rd = normalize(uViewToWorld * vViewPos);
