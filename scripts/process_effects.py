@@ -9,7 +9,12 @@ Outputs (app/public/data/effects/):
               later keyframes extrapolated so the cloud encircles Earth in ~4.5 h (Morgan et al. 2022)
               with re-entry concentrated at the antipode (Kring & Durda 2002), then falling out.
 
-Everything here is "model" confidence and documented in docs/research/timeline.md §2.
+  winter_<scenario>.bin/.json
+              Impact winter from Tabor et al. (2020) CESM runs (soot, SO2, dust): per keyframe month,
+              surface sunlight as a fraction of the pre-impact control (same calendar month) and
+              surface temperature (°C). Grid 144 × 96 (2.5° × 1.9°), lon from 0°E, rows south → north.
+
+Everything here is "model" confidence and documented in docs/research/timeline.md §2 and §8.
 """
 from __future__ import annotations
 
@@ -52,7 +57,63 @@ def front_km(x: np.ndarray, col: np.ndarray, thr: float = 1e-3) -> float:
     return float(x[idx[-1]]) if len(idx) else 0.0
 
 
+MONTH_S = 365.25 * 86400 / 12
+WINTER_SCENARIOS = {"soot": "soot_mon_20yr.nc", "so2": "SO2_mon_20yr.nc", "dust": "dust_mon_20yr.nc"}
+
+
+def winter_keyframes() -> list[int]:
+    """Model months to keep: monthly for 3 years, then quarterly to 10 years, then half-yearly."""
+    return list(range(0, 36)) + list(range(36, 120, 3)) + list(range(120, 240, 6))
+
+
+def bake_winter() -> None:
+    import netCDF4
+    base = RAW / "impact/tabor2020"
+    c = netCDF4.Dataset(base / "cntl_mon_30yr.nc")
+    Fc = np.array(c["FSDS"][:, 0], dtype=np.float64)
+    out = APP_DATA / "effects"
+    months = winter_keyframes()
+    for name, fname in WINTER_SCENARIOS.items():
+        d = netCDF4.Dataset(base / fname)
+        F = np.array(d["FSDS"][:, 0], dtype=np.float64)
+        TS = np.array(d["TS"][:, 0], dtype=np.float64) - 273.15
+        layers = []
+        # Layer 0 is the pre-impact state (full light, control temperature in the impact month).
+        Tc = np.array(c["TS"][:, 0], dtype=np.float64) - 273.15
+        layers.append((np.ones_like(Fc[0]), Tc[3]))
+        lat = np.array(c["lat"][:])
+        wlat = np.cos(np.radians(lat))[:, None] * np.ones(Fc.shape[1:])
+        for m in months:
+            fc = Fc[m % 12]
+            lit = fc > 40.0  # W/m²; in polar night the ratio is 0/0
+            frac = np.where(lit, F[m] / np.maximum(fc, 1e-6), np.nan)
+            # Aerosols spread around the globe within days, so where the control is dark use the
+            # month's global mean over sunlit cells.
+            gmean = np.nansum(frac * wlat) / np.sum(wlat[lit])
+            frac = np.clip(np.where(lit, frac, gmean), 0, 1)
+            layers.append((frac, TS[m]))
+        light = np.stack([l for l, _ in layers])
+        temp = np.stack([t for _, t in layers])
+        r = np.clip(np.round(light * 255), 0, 255).astype(np.uint8)
+        g = np.clip(np.round((temp + 60.0) * 2.55), 0, 255).astype(np.uint8)
+        rg = np.stack([r, g], -1)  # [layer, lat(S→N), lon(0→360), 2]
+        (out / f"winter_{name}.bin").write_bytes(rg.tobytes())
+        times = [0.0] + [(m + 0.5) * MONTH_S for m in months]
+        meta = {
+            "scenario": name, "width": int(rg.shape[2]), "height": int(rg.shape[1]), "layers": int(rg.shape[0]),
+            "times": times, "lon0": 0.0, "latSouthFirst": True,
+            "encoding": "R: sunlight fraction ×255; G: surface temperature °C = v/2.55 − 60",
+            "sources": ["tabor2020", "tabor2020data"], "confidence": "contested",
+        }
+        (out / f"winter_{name}.json").write_text(json.dumps(meta))
+        w = np.cos(np.radians(np.array(c["lat"][:])))[:, None] * np.ones(light.shape[1:])
+        w /= w.sum()
+        print(f"winter_{name}: {rg.shape[0]} layers, {rg.nbytes / 1e6:.1f} MB; "
+              f"global light at 1 yr {(light[12] * w).sum():.2f}, 3 yr {(light[36 - 0] * w).sum():.2f}")
+
+
 def main() -> None:
+    bake_winter()
     cols = artemieva_columns()
     bins_km = (np.arange(N_BINS) + 0.5) / N_BINS * ANTIPODE_KM
     rows: dict[float, np.ndarray] = {0.0: np.full(N_BINS, FLOOR)}

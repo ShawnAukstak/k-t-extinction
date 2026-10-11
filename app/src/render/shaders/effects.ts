@@ -19,6 +19,12 @@ uniform float uDeepAzimuth;    // radians, direction the shelf deepens (the resu
 uniform float uOverlay;
 uniform sampler2D uTsunami;     // R arrival (h), G log10 max height (m); equirect, row 0 = 90°N
 uniform float uTsunamiOn;
+uniform highp sampler3D uWinter;   // R sunlight fraction, G surface temperature; 144×96 CESM grid
+uniform float uWinterLayer;
+uniform float uWinterLayers;
+uniform float uWinterOn;
+uniform vec3 uVeil;               // colour of the darkening aerosol seen from space
+uniform vec3 uLife;               // x die-off, y fern cover, z forest recovery
 
 float fxRow(float r) { return (r + 0.5) / uFxRows; }
 
@@ -150,6 +156,34 @@ vec4 fxTsunami(vec3 n) {
   float wake = step(0.0, dt) * exp(-dt / (6.0 * 3600.0));
   float amp = smoothstep(-1.0, 2.3, s.g);                   // 0.1 m … 200 m
   return vec4(crest * amp, wake * amp, s.g, step(0.0, dt));
+}
+
+// Impact winter at this point: (sunlight fraction, surface temperature °C, cooling vs pre-impact °C).
+// Beyond the 20-year run, fade back to the pre-impact layer over the following decade.
+vec3 fxWinter(vec3 n) {
+  if (uWinterOn < 0.5) return vec3(1.0, 99.0, 0.0);
+  float lat = asin(clamp(n.y, -1.0, 1.0)) * 180.0 / PI;
+  float lon = mod(atan(n.x, n.z) * 180.0 / PI + 360.0, 360.0);
+  vec2 uv = vec2(lon / 360.0 + 0.5 / 144.0, (lat + 90.0) / 180.0 * (95.0 / 96.0) + 0.5 / 96.0);
+  float last = uWinterLayers - 1.0;
+  vec2 s = texture(uWinter, vec3(uv, (uWinterLayer + 0.5) / uWinterLayers)).rg;
+  vec2 pre = texture(uWinter, vec3(uv, 0.5 / uWinterLayers)).rg;
+  vec2 v = vec2(s.r, s.g * 100.0 - 60.0);
+  vec2 v0 = vec2(pre.r, pre.g * 100.0 - 60.0);
+  if (uWinterLayer >= last) v = mix(v, v0, smoothstep(20.0, 30.0, uT / 31557600.0));
+  return vec3(v, v.y - v0.y);
+}
+
+// Dead vegetation, fern spike, forest return. Only affects green (vegetated) land.
+void fxLife(inout vec3 albedo, float water) {
+  float green = clamp((albedo.g - albedo.r) * 25.0, 0.0, 1.0) * (1.0 - water);
+  if (green <= 0.0 || uLife.x <= 0.0) return;
+  vec3 dead = vec3(0.075, 0.062, 0.05);
+  vec3 ferns = vec3(0.07, 0.11, 0.035);
+  vec3 now = mix(albedo, dead, uLife.x * (1.0 - uLife.y));
+  now = mix(now, ferns, uLife.x * uLife.y * (1.0 - uLife.z));
+  now = mix(now, albedo, uLife.z);
+  albedo = mix(albedo, now, green);
 }
 
 // Thin rings for the science overlay: air blast, seismic surface waves, ballistic ejecta front.

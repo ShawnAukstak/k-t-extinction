@@ -7,7 +7,7 @@
  *   B log10(air-blast overpressure, bar)   A effective seismic magnitude
  * Rows 1…N hold the dust-cloud column (log10 kg/m²) at each keyframe time of dust.json.
  */
-import { ClampToEdgeWrapping, DataTexture, DataUtils, HalfFloatType, LinearFilter, RepeatWrapping, RGFormat, RGBAFormat, Vector3 } from 'three';
+import { ClampToEdgeWrapping, Data3DTexture, DataTexture, DataUtils, HalfFloatType, LinearFilter, RepeatWrapping, RGFormat, RGBAFormat, UnsignedByteType, Vector3 } from 'three';
 import { IMPACT } from '../config';
 import { DEG, enuBasis, latLonToVec } from '../core/geo';
 import { atDistance, crater, type CraterResult } from '../physics/eiep';
@@ -21,6 +21,17 @@ interface DustFile {
   log10Column: number[][];
 }
 
+export type WinterScenario = 'soot' | 'so2' | 'dust';
+
+/** How each darkening agent looks from space, and how hard it hits vegetation. */
+export const WINTER_LOOK: Record<WinterScenario, { veil: [number, number, number]; severity: number; label: string }> = {
+  soot: { veil: [0.02, 0.02, 0.02], severity: 1.0, label: 'Soot (from burning target rock organics)' },
+  so2: { veil: [0.55, 0.55, 0.53], severity: 0.85, label: 'Sulfate haze (from vaporised anhydrite)' },
+  dust: { veil: [0.24, 0.19, 0.13], severity: 0.6, label: 'Fine rock dust' },
+};
+
+const YEAR_S = 365.25 * 86400;
+
 /** Observed crater dimensions (known), not the scaling-law estimate. */
 export const CRATER_OBSERVED = { rimRadiusKm: 92, peakRingRadiusKm: 42, transientRadiusKm: 47 };
 
@@ -29,6 +40,11 @@ export class ImpactEffects {
   readonly table: DataTexture;
   readonly uniforms: Record<string, { value: unknown }>;
   private dustTimes: number[] = [];
+  private winterTimes: number[] = [];
+  private winterMeanLight: number[] = [];
+  scenario: WinterScenario = 'soot';
+  /** Global mean sunlight fraction right now (for the sky and the HUD). */
+  meanLight = 1;
   private readonly data: Uint16Array;
 
   constructor() {
@@ -77,6 +93,12 @@ export class ImpactEffects {
       uOverlay: { value: 0 },
       uTsunami: { value: new DataTexture(new Uint16Array([0, 0]), 1, 1, RGFormat, HalfFloatType) },
       uTsunamiOn: { value: 0 },
+      uWinter: { value: new Data3DTexture(new Uint8Array([255, 0]), 1, 1, 1) },
+      uWinterLayer: { value: 0 },
+      uWinterLayers: { value: 1 },
+      uWinterOn: { value: 0 },
+      uVeil: { value: new Vector3(...WINTER_LOOK.soot.veil) },
+      uLife: { value: new Vector3(0, 0, 0) },   // x die-off, y fern cover, z forest recovery
     };
   }
 
@@ -135,8 +157,76 @@ export class ImpactEffects {
     }
   }
 
+  /** Impact-winter fields from Tabor et al. 2020 (scripts/process_effects.py). */
+  async loadWinter(baseUrl: string, scenario: WinterScenario): Promise<boolean> {
+    try {
+      const meta = await (await fetch(`${baseUrl}/winter_${scenario}.json`)).json() as { width: number; height: number; layers: number; times: number[] };
+      const res = await fetch(`${baseUrl}/winter_${scenario}.bin`);
+      if (!res.ok) return false;
+      const data = new Uint8Array(await res.arrayBuffer());
+      if (data.length !== meta.width * meta.height * meta.layers * 2) throw new Error('winter file size mismatch');
+      const tex = new Data3DTexture(data, meta.width, meta.height, meta.layers);
+      tex.format = RGFormat;
+      tex.type = UnsignedByteType;
+      tex.minFilter = tex.magFilter = LinearFilter;
+      tex.wrapS = RepeatWrapping;
+      tex.wrapT = tex.wrapR = ClampToEdgeWrapping;
+      tex.unpackAlignment = 1;
+      tex.needsUpdate = true;
+      (this.uniforms.uWinter.value as Data3DTexture).dispose();
+      this.uniforms.uWinter.value = tex;
+      this.uniforms.uWinterLayers.value = meta.layers;
+      this.uniforms.uWinterOn.value = 1;
+      (this.uniforms.uVeil.value as Vector3).set(...WINTER_LOOK[scenario].veil);
+      this.winterTimes = meta.times;
+      // Area-weighted global mean light per layer, for the sky.
+      const { width: w, height: h } = meta;
+      this.winterMeanLight = [];
+      for (let l = 0; l < meta.layers; l++) {
+        let sum = 0, wsum = 0;
+        for (let j = 0; j < h; j++) {
+          const wt = Math.cos(((-90 + (180 * j) / (h - 1)) * Math.PI) / 180);
+          for (let i = 0; i < w; i++) { sum += wt * data[((l * h + j) * w + i) * 2] / 255; wsum += wt; }
+        }
+        this.winterMeanLight.push(sum / wsum);
+      }
+      this.scenario = scenario;
+      return true;
+    } catch (e) {
+      console.warn('impact winter data unavailable', e);
+      return false;
+    }
+  }
+
   update(t: number): void {
     this.uniforms.uT.value = t;
+    // Impact winter layer (fractional, between keyframe months) and global light.
+    const wt = this.winterTimes;
+    if (wt.length > 1) {
+      let layer: number;
+      if (t <= 0) layer = 0;
+      else if (t >= wt[wt.length - 1]) {
+        // Beyond the 20-year run the climate has recovered: fade back to the first (pre-impact) layer.
+        layer = wt.length - 1;
+      } else {
+        let i = 0;
+        while (wt[i + 1] < t) i++;
+        layer = i + (t - wt[i]) / (wt[i + 1] - wt[i]);
+      }
+      this.uniforms.uWinterLayer.value = layer;
+      const i0 = Math.floor(layer), f = layer - i0;
+      const ml = this.winterMeanLight;
+      this.meanLight = ml[i0] * (1 - f) + (ml[Math.min(i0 + 1, ml.length - 1)] ?? 1) * f;
+      if (t > wt[wt.length - 1]) this.meanLight = 1;
+    }
+    // Plants: die back over months of darkness and cold, ferns colonise first, forests take millennia
+    // (fern spike: Vajda 2001; recovery: Lyson 2019). Smooth curves through those milestones.
+    const sev = WINTER_LOOK[this.scenario].severity;
+    const yr = t / YEAR_S;
+    const ss = (a: number, b: number, x: number) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+    const life = this.uniforms.uLife.value as Vector3;
+    life.set(sev * ss(7 / 365, 0.5, yr), ss(3, 30, yr), ss(1_000, 100_000, yr));
+
     const times = this.dustTimes;
     if (times.length === 0) return;
     const dust = this.uniforms.uDust.value as Vector3;

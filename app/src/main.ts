@@ -99,20 +99,42 @@ globe
 
 void fx.loadDust(`${import.meta.env.BASE_URL}data/effects/dust.json`);
 void fx.loadTsunami(`${import.meta.env.BASE_URL}data/effects`);
+void fx.loadWinter(`${import.meta.env.BASE_URL}data/effects`, 'soot');
 // Science overlay (fronts of the air blast, seismic waves and ballistic ejecta): press O or ?overlay=1.
 fx.uniforms.uOverlay.value = new URLSearchParams(location.search).get('overlay') === '1' ? 1 : 0;
 window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') fx.uniforms.uOverlay.value = fx.uniforms.uOverlay.value ? 0 : 1;
 });
 
+// ── lighting ─────────────────────────────────────────────────────────────────
+// Beyond the first days the real day/night cycle is meaningless at playback speed (a frame can
+// skip weeks), so lighting switches to a fixed "time-lapse" sun over the camera's shoulder.
+const DAY_S = 86_400;
+const physicalSun = new Vector3();
+const lapseSun = new Vector3();
+const _right = new Vector3();
+const _up = new Vector3();
+let timeLapseLighting = 0;
+function updateSun(out: Vector3): void {
+  sunDirection(clock.t, physicalSun);
+  const a = Math.abs(clock.t);
+  const k = Math.min(1, Math.max(0, (a - 2 * DAY_S) / (4 * DAY_S)));
+  timeLapseLighting = k * k * (3 - 2 * k);
+  if (timeLapseLighting === 0) { out.copy(physicalSun); return; }
+  _right.setFromMatrixColumn(camera.matrixWorld, 0);
+  _up.setFromMatrixColumn(camera.matrixWorld, 1);
+  lapseSun.copy(camera.position).normalize().addScaledVector(_right, -0.55).addScaledVector(_up, 0.45).normalize();
+  out.copy(physicalSun).lerp(lapseSun, timeLapseLighting).normalize();
+}
+
 // ── loop ─────────────────────────────────────────────────────────────────────
 const sun = new Vector3();
 /** Bring every time-dependent system up to the clock and draw one frame. */
 function renderNow(dt = 0): void {
   controls.update(dt);
-  sunDirection(clock.t, sun);
+  updateSun(sun);
   fx.update(clock.t);
-  sky.update(camera, sun, 1, 0, renderer.getPixelRatio());
+  sky.update(camera, sun, fx.meanLight, 0, renderer.getPixelRatio());
   globe.update(camera, sun, 1, 0);
   renderer.render(scene, camera);
   timeline.update();

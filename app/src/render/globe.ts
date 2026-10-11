@@ -79,9 +79,20 @@ void main() {
   float rKm = fxAng * PR;
   fxSurface(rKm, fxAng, n, albedo, water, nrm);
 
+  // Impact winter: less sunlight under the aerosol veil, snow and sea ice where it freezes,
+  // plants dying back and (much later) recovering.
+  vec3 winter = fxWinter(n);
+  fxLife(albedo, water);
+  // Only the impact's cooling makes snow and ice (the pre-impact world had no ice caps).
+  float cooled = smoothstep(-2.0, -6.0, winter.z);
+  float snow = (1.0 - water) * smoothstep(-1.0, -8.0, winter.y) * cooled;
+  float seaIce = water * smoothstep(-1.8, -6.0, winter.y) * cooled;
+  albedo = mix(albedo, vec3(0.78, 0.80, 0.84), max(snow, seaIce) * 0.9);
+  water *= 1.0 - seaIce;
+
   vec3 L = uSunDir;
   vec3 pKm = n * (PR + max(elev, 0.0) / 1000.0);
-  vec3 sunT = sunTransmittance(pKm + n * 0.05, L);
+  vec3 sunT = sunTransmittance(pKm + n * 0.05, L) * winter.x;
   float ndl = max(0.0, dot(nrm, L));
   // Sky fill: a little blue light on the day side, fading through twilight.
   float dayness = smoothstep(-0.15, 0.25, dot(n, L));
@@ -116,6 +127,12 @@ void main() {
     vec3 dustLit = vec3(0.085, 0.07, 0.055) * (sunTransmittance(n * (PR + 30.0), L) * SUN_E * uSunScale * max(0.0, dot(n, L) + 0.1) / PI);
     radiance = mix(radiance, dustLit, cover);
   }
+  // The stratospheric veil seen from above: black for soot, white for sulfate, tan for dust.
+  float veil = (1.0 - winter.x) * 0.9;
+  if (veil > 0.0) {
+    vec3 veilLit = uVeil * sunTransmittance(n * (PR + 25.0), L) * SUN_E * uSunScale * max(0.0, dot(n, L) + 0.05) / PI;
+    radiance = mix(radiance, veilLit, veil);
+  }
   // Ground glow is hidden under the cloud; the fireball and re-entry glow are in or above it.
   radiance += emission * mix(1.0, 0.35, cover);
   float pxKm = length(vViewPos) / 1000.0 * 0.0015;
@@ -136,7 +153,8 @@ void main() {
     if (t1 > t0) ins = inscatter(uCamPosKm, rd, t0, t1, L, T);
   }
   // Haze is scaled down a little from the physical value so the ground stays readable from orbit.
-  gl_FragColor = vec4(radiance * T + ins * 0.4, 1.0);
+  // Under a soot layer the lower atmosphere is dark too; only the air above it stays lit.
+  gl_FragColor = vec4(radiance * T + ins * 0.4 * mix(0.2, 1.0, winter.x), 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
