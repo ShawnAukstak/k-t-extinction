@@ -6,6 +6,8 @@ export class TopBar {
   onOverlay: ((on: boolean) => void) | null = null;
   onScenario: ((s: WinterScenario) => void) | null = null;
   onAbout: (() => void) | null = null;
+  onCinematic: (() => void) | null = null;
+  private readonly cineBtn: HTMLButtonElement;
   private readonly overlayBtn: HTMLButtonElement;
   private readonly scenarioSel: HTMLSelectElement;
   private readonly lapse: HTMLElement;
@@ -25,6 +27,7 @@ export class TopBar {
           <select aria-label="Impact winter scenario">${options}</select>
           <span class="kt-chip kt-chip-contested">Contested</span>
         </label>
+        <button type="button" class="kt-tool" aria-pressed="true" data-testid="cinematic-toggle" title="Follow the scripted camera; drag the globe to take over">Cinematic</button>
         <button type="button" class="kt-tool" aria-pressed="false" data-testid="overlay-toggle" title="Show fronts: air blast, earthquake, ejecta, tsunami (O)">Overlay</button>
         <button type="button" class="kt-tool" data-testid="about" title="About the data">About</button>
       </div>`;
@@ -32,6 +35,8 @@ export class TopBar {
     this.overlayBtn = this.root.querySelector('[data-testid="overlay-toggle"]')!;
     this.scenarioSel = this.root.querySelector('select')!;
     this.lapse = this.root.querySelector('.kt-lapse')!;
+    this.cineBtn = this.root.querySelector('[data-testid="cinematic-toggle"]')!;
+    this.cineBtn.addEventListener('click', () => this.onCinematic?.());
     this.overlayBtn.addEventListener('click', () => {
       const on = this.overlayBtn.getAttribute('aria-pressed') !== 'true';
       this.setOverlay(on);
@@ -43,6 +48,10 @@ export class TopBar {
 
   setOverlay(on: boolean): void {
     this.overlayBtn.setAttribute('aria-pressed', String(on));
+  }
+
+  setCinematic(on: boolean): void {
+    this.cineBtn.setAttribute('aria-pressed', String(on));
   }
 
   setScenario(s: WinterScenario): void {

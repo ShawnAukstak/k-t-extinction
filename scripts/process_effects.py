@@ -112,7 +112,54 @@ def bake_winter() -> None:
               f"global light at 1 yr {(light[12] * w).sum():.2f}, 3 yr {(light[36 - 0] * w).sum():.2f}")
 
 
+PLUME_R, PLUME_Z = 256, 64
+
+
+def bake_plume() -> None:
+    """Artemieva & Morgan 2020 FIG 2 dust density (x, z) fields → an atlas of normalised tiles.
+
+    Each keyframe becomes a PLUME_R × PLUME_Z tile covering [0, rmax] × [0, zmax] km of that keyframe's
+    model domain, value = (log10 ρ + 8) / 9 in 8 bits (ρ in kg/m³). Tiles are stacked vertically.
+    """
+    from scipy.ndimage import map_coordinates
+    files = sorted((RAW / "impact/artemieva2020/FIG_2/FIG_2").glob("rho_dust_*.dat"))
+    tiles, meta = [], []
+    for f in files:
+        t = float(f.stem.split("_")[-1])
+        a = np.loadtxt(f, skiprows=1)
+        x = np.unique(a[:, 0])
+        z = np.unique(a[:, 1])
+        rho = a[:, 2].reshape(len(x), len(z))
+        rmax, zmax = float(x[-1]), float(z[-1])
+        rr = (np.arange(PLUME_R) + 0.5) / PLUME_R * rmax
+        zz = (np.arange(PLUME_Z) + 0.5) / PLUME_Z * zmax
+        R, Z = np.meshgrid(rr, zz, indexing="xy")  # [z, r]
+        fi = np.interp(R, x, np.arange(len(x)))
+        fj = np.interp(Z, z, np.arange(len(z)))
+        lg = np.log10(np.maximum(rho, 1e-12))
+        v = map_coordinates(lg, [fi, fj], order=1, mode="nearest")
+        # The fields come from tracer particles and are speckled; smooth into clouds (the shader adds
+        # its own small-scale structure).
+        from scipy.ndimage import gaussian_filter
+        dens = gaussian_filter(np.power(10.0, v), sigma=(1.2, 2.0))
+        v = np.log10(np.maximum(dens, 1e-12))
+        enc = np.clip(np.round((v + 8.0) / 9.0 * 255), 0, 255).astype(np.uint8)
+        tiles.append(enc)
+        meta.append({"t": t, "rmaxKm": rmax, "zmaxKm": zmax})
+    atlas = np.concatenate(tiles, axis=0)  # rows: tile0 z0..z63, tile1 …
+    out = APP_DATA / "effects"
+    (out / "plume.bin").write_bytes(atlas.tobytes())
+    (out / "plume.json").write_text(json.dumps({
+        "width": PLUME_R, "tileHeight": PLUME_Z, "tiles": meta,
+        "encoding": "log10(kg/m^3) = v/255*9 - 8",
+        "sources": ["artemieva2020", "artemieva2020data"], "confidence": "model",
+    }, indent=1))
+    print(f"plume atlas: {len(tiles)} tiles, {atlas.nbytes / 1024:.0f} KB; extents " +
+          ", ".join(f"{m['t']:.0f}s {m['rmaxKm']:.0f}×{m['zmaxKm']:.0f} km" for m in meta))
+
+
 def main() -> None:
+    bake_plume()
     bake_winter()
     cols = artemieva_columns()
     bins_km = (np.arange(N_BINS) + 0.5) / N_BINS * ANTIPODE_KM

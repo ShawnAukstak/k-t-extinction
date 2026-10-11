@@ -3,7 +3,7 @@ import { expectNoErrors, pixelAt, trackErrors, waitForGlobe } from './helpers';
 
 test('boots, loads the 66 Ma globe and renders it without errors', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/');
+  await page.goto('/#c=25.1149,-71.5823,16000000,0,0&t=-60&p=1&v=1');
   await waitForGlobe(page);
   // Centre of the screen is the globe (lit, not black); a corner is space (dark).
   const centre = await pixelAt(page, 0.5, 0.5);

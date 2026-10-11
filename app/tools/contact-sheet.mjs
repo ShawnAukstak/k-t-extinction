@@ -1,5 +1,5 @@
 // Dev tool: capture the app at several simulation times and tile them into one image.
-//   node tools/contact-sheet.mjs out.png "lat,lon,range,heading,tilt" t1 t2 t3 ... [--overlay] [--size 640x400] [--webkit]
+//   node tools/contact-sheet.mjs out.png "lat,lon,range,heading,tilt"|cine t1 t2 t3 ... [--overlay] [--size 640x400] [--webkit]
 import { chromium, webkit } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
@@ -17,7 +17,8 @@ const browser = await engine.launch({ args: engine === chromium ? ['--use-angle=
 const page = await browser.newPage({ viewport: { width: w, height: h } });
 page.on('console', (m) => { if (m.type() === 'error') console.log('console error:', m.text()); });
 const q = flags.has('--overlay') ? '?overlay=1' : '';
-await page.goto(`http://127.0.0.1:5173/${q}#t=${times[0]}&p=1&c=${cam}&v=1`);
+const camPart = cam === 'cine' ? 'm=cine' : `c=${cam}`;
+await page.goto(`http://127.0.0.1:5173/${q}#t=${times[0]}&p=1&${camPart}&v=1`);
 await page.waitForFunction(() => window.__kt?.globe?.loadedSize > 0, null, { timeout: 30000 });
 await page.waitForTimeout(800);
 const dir = mkdtempSync(join(tmpdir(), 'kt-sheet-'));

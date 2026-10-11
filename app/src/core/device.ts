@@ -11,6 +11,6 @@ export function detectTier(): Tier {
 }
 
 export const TIER_SETTINGS = {
-  mobile: { maxPixelRatio: 2, faceSize: 512, globeSegments: 48, stars: 3000 },
-  desktop: { maxPixelRatio: 2, faceSize: 1024, globeSegments: 96, stars: 6000 },
+  mobile: { maxPixelRatio: 2, faceSize: 512, globeSegments: 48, stars: 3000, plumeScale: 0.25, plumeSteps: 24 },
+  desktop: { maxPixelRatio: 2, faceSize: 1024, globeSegments: 96, stars: 6000, plumeScale: 0.5, plumeSteps: 40 },
 } as const;

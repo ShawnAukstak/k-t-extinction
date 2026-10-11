@@ -10,9 +10,9 @@
  * The camera position is computed in float64 (three's Vector3 uses JS numbers), which keeps
  * model-view matrices precise near the ground; see docs/plan/decisions.md D5.
  */
-import { MathUtils, Matrix4, type PerspectiveCamera, Quaternion, Vector3 } from 'three';
+import { MathUtils, Matrix4, type PerspectiveCamera, Quaternion, Ray, Sphere, Vector3 } from 'three';
 import { EARTH_RADIUS } from '../config';
-import { DEG, enuBasis, latLonToVec, wrapLon } from '../core/geo';
+import { DEG, enuBasis, latLonToVec, vecToLatLon, wrapLon } from '../core/geo';
 import type { CameraPose } from '../core/url-state';
 
 const _m = new Matrix4();
@@ -41,6 +41,25 @@ export function poseToFrame(p: CameraPose, targetAltitude = 0): PoseFrame {
   _z.copy(forward).negate();
   _m.makeBasis(_x, _y, _z);
   return { position, quaternion: new Quaternion().setFromRotationMatrix(_m), target };
+}
+
+/** The pose that best reproduces a camera's current view (used when leaving the cinematic). */
+export function frameToPose(position: Vector3, quaternion: Quaternion): CameraPose {
+  const forward = new Vector3(0, 0, -1).applyQuaternion(quaternion);
+  const hit = new Vector3();
+  const ray = new Ray(position, forward);
+  if (!ray.intersectSphere(new Sphere(new Vector3(), EARTH_RADIUS), hit)) {
+    // Looking past the planet: orbit the point below the camera instead.
+    hit.copy(position).setLength(EARTH_RADIUS);
+  }
+  const ll = vecToLatLon(hit);
+  const { e, n, u } = enuBasis(ll.lat, ll.lon);
+  const offset = position.clone().sub(hit);
+  const range = offset.length();
+  const tilt = Math.acos(MathUtils.clamp(offset.normalize().dot(u), -1, 1)) / DEG;
+  const h = forward.clone().addScaledVector(u, -forward.dot(u));
+  const heading = h.lengthSq() < 1e-12 ? 0 : Math.atan2(h.dot(e), h.dot(n)) / DEG;
+  return { lat: ll.lat, lon: ll.lon, range, heading: (heading + 360) % 360, tilt };
 }
 
 export function maxTiltFor(range: number): number {

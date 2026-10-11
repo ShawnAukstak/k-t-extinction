@@ -129,7 +129,11 @@ vec3 fxEmission(float rKm, float ang) {
 
 float fxDustTau(float ang, vec3 n) {
   if (uDustOn < 0.5 || uT <= 0.0) return 0.0;
-  float col = pow(10.0, fxDustLog(ang));                  // kg/m²
+  // The 3-D plume volume (render/plume.ts) shows the cloud for the first hour or so; this flat layer
+  // takes over as it spreads around the planet.
+  float handover = smoothstep(1800.0, 5400.0, uT);
+  if (handover <= 0.0) return 0.0;
+  float col = pow(10.0, fxDustLog(ang)) * handover;       // kg/m²
   // Radial ejecta streaks and turbulent patches, drifting outward with time (visual structure only;
   // the column density itself comes from the model).
   float az = fxAzimuth(n);

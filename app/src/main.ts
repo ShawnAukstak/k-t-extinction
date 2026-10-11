@@ -2,7 +2,8 @@ import './ui/hud.css';
 import { ACESFilmicToneMapping, PerspectiveCamera, Ray, Scene, Sphere, Vector2, Vector3, WebGLRenderer, Raycaster } from 'three';
 import catalog from '../../data/catalog.yaml';
 import { EARTH_RADIUS, IMPACT, SKY } from './config';
-import { GlobeControls } from './camera/globe-controls';
+import { Cinematic } from './camera/cinematic';
+import { frameToPose, GlobeControls } from './camera/globe-controls';
 import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
 import { latLonToVec, vecToLatLon, type LatLon } from './core/geo';
@@ -10,7 +11,9 @@ import { localHistory } from './core/local-history';
 import { sunDirection } from './core/sun';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
 import { CRATER_OBSERVED, ImpactEffects, type WinterScenario } from './effects/impact-effects';
+import { Asteroid } from './render/asteroid';
 import { Globe } from './render/globe';
+import { Plume } from './render/plume';
 import { Sky } from './render/sky';
 import { chip, InfoPanel, sourceLinks } from './ui/panel';
 import { TimelineBar } from './ui/timeline-bar';
@@ -23,8 +26,8 @@ const DEFAULT_POSE: CameraPose = {
   heading: 0,
   tilt: 0,
 };
-/** Where playback starts when the link doesn't say: the start of the Impact segment. */
-const DEFAULT_T = -60;
+/** Where playback starts when the link doesn't say: one hour out, riding along with the asteroid. */
+const DEFAULT_T = -3600;
 const DATA = `${import.meta.env.BASE_URL}data`;
 
 const tier = detectTier();
@@ -46,6 +49,11 @@ scene.add(sky.stars, sky.atmosphere);
 const fx = new ImpactEffects();
 const globe = new Globe(settings.globeSegments, fx.uniforms);
 scene.add(globe.group);
+const asteroid = new Asteroid();
+scene.add(asteroid.group, asteroid.light, asteroid.light.target);
+const cine = new Cinematic(asteroid);
+const plume = new Plume(settings.plumeScale, settings.plumeSteps);
+plume.setFireballRadiusKm(fx.crater.fireballRadiusKm);
 
 // ── state and UI ─────────────────────────────────────────────────────────────
 const initial: ViewState = parseHash(location.hash);
@@ -55,8 +63,11 @@ const topbar = new TopBar(document.body);
 const panel = new InfoPanel(document.body);
 const timeline = new TimelineBar(clock, document.body);
 let query: LatLon | null = initial.query ?? null;
+// Cinematic unless the link pins a free camera.
+let mode: 'cine' | 'free' = initial.mode === 'cine' || (!initial.camera && initial.mode !== 'free') ? 'cine' : 'free';
 let scenario: WinterScenario = initial.scenario ?? 'soot';
 topbar.setScenario(scenario);
+topbar.setCinematic(mode === 'cine');
 
 // ── deep links ───────────────────────────────────────────────────────────────
 let lastHash = '';
@@ -64,7 +75,7 @@ let hashTimer = 0;
 let lastHashWrite = 0;
 function writeHash(): void {
   const hash = formatHash({
-    t: clock.t, camera: controls.getPose(), mode: 'free', speed: clock.speed, paused: !clock.playing,
+    t: clock.t, camera: mode === 'free' ? controls.getPose() : undefined, mode, speed: clock.speed, paused: !clock.playing,
     query: query ?? undefined, scenario,
   });
   lastHashWrite = performance.now();
@@ -82,13 +93,28 @@ timeline.onUserInput = scheduleHashUpdate;
 window.addEventListener('hashchange', () => {
   if (location.hash === lastHash) return;
   const v = parseHash(location.hash);
-  if (v.camera) controls.setPose(v.camera);
+  if (v.camera && v.mode !== 'cine') { controls.setPose(v.camera); setMode('free'); }
+  if (v.mode === 'cine') setMode('cine');
   if (v.t !== undefined) clock.seek(v.t);
   if (v.paused !== undefined) clock.setPlaying(!v.paused);
   if (v.speed !== undefined) clock.setSpeed(v.speed);
   if (v.query) setQuery(v.query);
   if (v.scenario && v.scenario !== scenario) void setScenario(v.scenario);
 });
+
+// ── camera mode ──────────────────────────────────────────────────────────────
+function setMode(m: 'cine' | 'free'): void {
+  if (m === mode) return;
+  if (m === 'free') controls.setPose(frameToPose(camera.position, camera.quaternion));
+  mode = m;
+  topbar.setCinematic(m === 'cine');
+  scheduleHashUpdate();
+}
+// Any grab of the globe hands the camera to the user, continuing from the current view.
+for (const type of ['pointerdown', 'wheel'] as const) {
+  renderer.domElement.addEventListener(type, () => { if (mode === 'cine') setMode('free'); }, { capture: true });
+}
+topbar.onCinematic = () => setMode(mode === 'cine' ? 'free' : 'cine');
 
 // ── "what happened here?" ────────────────────────────────────────────────────
 const raycaster = new Raycaster();
@@ -215,6 +241,7 @@ const effectsReady = Promise.all([
   fx.loadDust(`${DATA}/effects/dust.json`),
   fx.loadTsunami(`${DATA}/effects`),
   fx.loadWinter(`${DATA}/effects`, scenario),
+  plume.load(`${DATA}/effects`),
 ]);
 if (initial.query) {
   // Show the shared location once the data it summarises has arrived.
@@ -246,12 +273,15 @@ function updateSun(out: Vector3): void {
 const sun = new Vector3();
 /** Bring every time-dependent system up to the clock and draw one frame. */
 function renderNow(dt = 0): void {
-  controls.update(dt);
+  if (mode === 'cine') cine.apply(clock.t, camera);
+  else controls.update(dt);
   updateSun(sun);
+  asteroid.update(clock.t, sun);
   fx.update(clock.t);
   sky.update(camera, sun, fx.meanLight, 0, renderer.getPixelRatio());
   globe.update(camera, sun, 1, 0);
   renderer.render(scene, camera);
+  if (plume.update(clock.t, camera, sun, fx.meanLight)) plume.render(renderer, camera);
   timeline.update();
   topbar.setTimeLapse(timeLapseLighting > 0.5);
 }
@@ -278,9 +308,13 @@ declare global {
   interface Window {
     __kt: {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
-      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string;
+      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid;
+      mode: () => 'cine' | 'free';
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: Promise<unknown>;
     };
   }
 }
-window.__kt = { renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, renderNow, setQuery, effectsReady };
+window.__kt = {
+  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, mode: () => mode,
+  renderNow, setQuery, effectsReady,
+};
