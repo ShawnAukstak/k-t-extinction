@@ -2,7 +2,7 @@
 
 > Phases, not dates. Each phase ends with something runnable or shareable. Decisions are in `decisions.md`.
 >
-> **Status (2026-10-11):** Phase 0 core data fetched and processed; Phase 1 (globe) and Phase 2 (timeline + baked effects + "what happened here?") done and tested locally (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit). Phase 3 (cinematic) in progress. Not deployed (local only, D8).
+> **Status (2026-10-11):** Phases 0–4 done; Phase 5 (life) first pass done — placeholder bodies, curated rosters in progress. All tested locally (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit; `npm run check`). Not deployed (local only, D8).
 
 ## Phase 0 — Data foundation *(the big initial task)* — **core done**
 
@@ -49,7 +49,9 @@ Goal: scrub from T−1 h to T+20 yr and watch the planet respond.
 
 Exit: the first thing worth posting.
 
-## Phase 3 — Cinematic
+## Phase 3 — Cinematic — **done** (3a, 3b)
+
+Built: asteroid with entry glow, a scripted ride → hold → aftermath → global camera, a raymarched 3-D plume from Artemieva & Morgan 2020, and a procedural soundtrack (Web Audio, delays from distance). Not built: a GSAP keyframe panel (shots are authored in `camera/cinematic.ts`); particle ejecta curtain (the ejecta are a shaded field on the globe instead). Time of day: 10:00 local solar time, boreal spring, labelled "chosen".
 
 Goal: the main event on first load.
 
@@ -58,13 +60,17 @@ Goal: the main event on first load.
 
 Exit: launch candidate.
 
-## Phase 4 — Local detail
+## Phase 4 — Local detail — **done** (4a–4c)
+
+Built: places with offline plate reconstruction (matches GWS) and `k=` links; "where was my city?" (4,000 cities + geolocation); quadtree terrain to level 17 (~5 m) with procedural detail; instanced Cretaceous vegetation that burns, is flattened by the blast and dies in the winter. Not built: impostors (instancing near the camera is enough so far).
 
 - Terrain LOD to ground level with procedural detail below 11 km; biome-driven ground textures and vegetation impostors.
 - Fixed-camera presets at POIs (Tanis, Hell Creek, Yucatán platform, Tremp, Seymour, Deccan, antipode).
 - Free-roam at ground level.
 
-## Phase 5 — Life
+## Phase 5 — Life — **first pass done** (5a, 5b)
+
+Built: procedural low-poly bodies by body plan (D10 placeholders), herds placed at Damuth densities in clearings, simple walk/graze animation, per-animal fate (heat, blast, winter), tap-for-species-card and "Find dinosaurs nearby". Next: curated species and regional rosters (`data/curated/species/`, `fauna-regions.yaml`), survivors and recovery, then better models.
 
 - Herd pipeline: glTF → VAT → InstancedMesh with LOD/impostors; measured on device.
 - 3–6 POIs with curated species lists, group sizes and behaviours from the species cards; densities from Damuth scaling.
