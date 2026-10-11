@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Headless Chromium defaults to software WebGL (SwiftShader, ~8 fps here). On macOS use the real GPU
+// through ANGLE/Metal (~60 fps) so timing-sensitive tests aren't starved; elsewhere fall back.
+const gpuArgs = process.platform === 'darwin'
+  ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
+  : ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
@@ -10,8 +16,6 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
-    // WebGL in headless Chromium: allow software rendering where there is no GPU.
-    launchOptions: { args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] },
   },
   webServer: {
     command: 'npx vite --port 5173 --strictPort',
@@ -20,8 +24,8 @@ export default defineConfig({
     timeout: 60_000,
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
-    { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
+    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, launchOptions: { args: gpuArgs } } },
+    { name: 'mobile-chromium', use: { ...devices['Pixel 7'], launchOptions: { args: gpuArgs } } },
     { name: 'mobile-webkit', use: { ...devices['iPhone 15'] } },
   ],
 });

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "K\u2013T Extinction Simulator \u2014 the Chicxulub impact, minute by minute",
+  "description": "K–T Extinction Simulator — the Chicxulub impact, minute by minute",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
@@ -18,9 +18,11 @@
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
+    "@types/node": "22.15.21",
     "@types/three": "0.186.0",
     "typescript": "6.0.3",
     "vite": "8.3.4",
-    "vitest": "5.0.3"
+    "vitest": "5.0.3",
+    "yaml": "2.9.1"
   }
 }

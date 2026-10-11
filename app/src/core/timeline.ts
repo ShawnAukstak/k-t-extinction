@@ -32,7 +32,7 @@ const MIN = 60, HOUR = 3600, DAY = 86_400;
 export const SEGMENTS: readonly Segment[] = [
   { id: 'approach', label: 'Approach',       t0: -HOUR,    t1: -MIN,        scale: 'log',    width: 0.08, playSeconds: 12 },
   { id: 'impact',   label: 'Impact',         t0: -MIN,     t1: MIN,         scale: 'linear', width: 0.14, playSeconds: 120 },
-  { id: 'crater',   label: 'Crater & blast', t0: MIN,      t1: 15 * MIN,    scale: 'linear', width: 0.10, playSeconds: 42 },
+  { id: 'crater',   label: 'Crater',   t0: MIN,      t1: 15 * MIN,    scale: 'linear', width: 0.10, playSeconds: 42 },
   { id: 'hours',    label: 'First day',      t0: 15 * MIN, t1: DAY,         scale: 'log',    width: 0.18, playSeconds: 45 },
   { id: 'weeks',    label: 'First weeks',    t0: DAY,      t1: 60 * DAY,    scale: 'log',    width: 0.10, playSeconds: 20 },
   { id: 'winter',   label: 'Impact winter',  t0: 60 * DAY, t1: 30 * YEAR_S, scale: 'log',    width: 0.20, playSeconds: 35 },

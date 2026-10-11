@@ -23,7 +23,7 @@ test('a deep link sets the camera, and moving the camera updates the link', asyn
   expect(pose.range).toBeCloseTo(2_500_000, 0);
   expect(pose.heading).toBeCloseTo(15, 5);
   expect(pose.tilt).toBeCloseTo(20, 5);
-  expect(await page.evaluate(() => (window as any).__kt.state.t)).toBe(120);
+  expect(await page.evaluate(() => (window as any).__kt.clock.t)).toBeGreaterThanOrEqual(120);
 
   // Drag the globe; the hash should follow after the debounce.
   const box = (await page.locator('canvas').boundingBox())!;

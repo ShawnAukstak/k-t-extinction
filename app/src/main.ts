@@ -1,11 +1,14 @@
+import './ui/hud.css';
 import { ACESFilmicToneMapping, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { IMPACT } from './config';
 import { GlobeControls } from './camera/globe-controls';
+import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
 import { sunDirection } from './core/sun';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
 import { Globe } from './render/globe';
 import { Sky } from './render/sky';
+import { TimelineBar } from './ui/timeline-bar';
 
 const DEFAULT_POSE: CameraPose = {
   lat: IMPACT.site.value.lat,
@@ -14,6 +17,8 @@ const DEFAULT_POSE: CameraPose = {
   heading: 0,
   tilt: 0,
 };
+/** Where playback starts when the link doesn't say: the start of the Impact segment. */
+const DEFAULT_T = -60;
 
 const tier = detectTier();
 const settings = TIER_SETTINGS[tier];
@@ -36,33 +41,35 @@ scene.add(globe.group);
 
 // ── state ────────────────────────────────────────────────────────────────────
 const initial: ViewState = parseHash(location.hash);
-const state = {
-  t: initial.t ?? 0,
-  paused: initial.paused ?? true,
-  speed: initial.speed ?? 1,
-};
-
+const clock = new Clock(initial.t ?? DEFAULT_T, !(initial.paused ?? false), initial.speed ?? 1);
 const controls = new GlobeControls(camera, renderer.domElement, initial.camera ?? DEFAULT_POSE);
+const timeline = new TimelineBar(clock, document.body);
 
 // ── deep links ───────────────────────────────────────────────────────────────
 let lastHash = '';
 let hashTimer = 0;
+let lastHashWrite = 0;
+function writeHash(): void {
+  const hash = formatHash({ t: clock.t, camera: controls.getPose(), mode: 'free', speed: clock.speed, paused: !clock.playing });
+  lastHashWrite = performance.now();
+  if (hash !== lastHash) {
+    lastHash = hash;
+    history.replaceState(null, '', hash);
+  }
+}
 function scheduleHashUpdate(): void {
   window.clearTimeout(hashTimer);
-  hashTimer = window.setTimeout(() => {
-    const hash = formatHash({ t: state.t, camera: controls.getPose(), mode: 'free', speed: state.speed, paused: state.paused });
-    if (hash !== lastHash) {
-      lastHash = hash;
-      history.replaceState(null, '', hash);
-    }
-  }, 400);
+  hashTimer = window.setTimeout(writeHash, 300);
 }
 controls.onUserInput = scheduleHashUpdate;
+timeline.onUserInput = scheduleHashUpdate;
 window.addEventListener('hashchange', () => {
   if (location.hash === lastHash) return;
   const v = parseHash(location.hash);
   if (v.camera) controls.setPose(v.camera);
-  if (v.t !== undefined) state.t = v.t;
+  if (v.t !== undefined) clock.seek(v.t);
+  if (v.paused !== undefined) clock.setPlaying(!v.paused);
+  if (v.speed !== undefined) clock.setSpeed(v.speed);
 });
 
 // ── resize ───────────────────────────────────────────────────────────────────
@@ -92,13 +99,17 @@ globe
 const sun = new Vector3();
 let last = performance.now();
 function frame(now: number): void {
-  const dt = Math.min(0.1, (now - last) / 1000);
+  const dt = Math.min(0.25, (now - last) / 1000); // cap: no huge jump after a background tab
   last = now;
+  clock.tick(dt);
   controls.update(dt);
-  sunDirection(state.t, sun);
+  sunDirection(clock.t, sun);
   sky.update(camera, sun, 1, 0, renderer.getPixelRatio());
   globe.update(camera, sun, 1, 0);
   renderer.render(scene, camera);
+  timeline.update();
+  // Keep the shareable link current while playing (at most once a second).
+  if (clock.playing && now - lastHashWrite > 1000) writeHash();
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -106,7 +117,7 @@ requestAnimationFrame(frame);
 // Exposed for end-to-end tests and debugging.
 declare global {
   interface Window {
-    __kt: { renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky; state: typeof state; tier: string };
+    __kt: { renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky; clock: Clock; timeline: TimelineBar; tier: string };
   }
 }
-window.__kt = { renderer, scene, camera, controls, globe, sky, state, tier };
+window.__kt = { renderer, scene, camera, controls, globe, sky, clock, timeline, tier };

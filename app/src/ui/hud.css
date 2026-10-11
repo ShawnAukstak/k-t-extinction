@@ -1,0 +1,188 @@
+:root {
+  --kt-fg: #e9ecf1;
+  --kt-dim: #9aa3b2;
+  --kt-faint: rgba(233, 236, 241, 0.14);
+  --kt-glass: rgba(10, 13, 20, 0.62);
+  --kt-glass-strong: rgba(10, 13, 20, 0.82);
+  --kt-accent: #ff8a3d;          /* impact orange */
+  --kt-known: #8fd3a8;
+  --kt-model: #8fb8ff;
+  --kt-contested: #ffb15c;
+  --kt-chosen: #c9a7ff;
+  --kt-radius: 12px;
+  --kt-font: 500 13px/1.35 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --kt-mono: 600 13px/1.2 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --kt-gutter: max(16px, env(safe-area-inset-left));
+}
+
+.kt-hud {
+  position: fixed;
+  left: var(--kt-gutter);
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  color: var(--kt-fg);
+  font: var(--kt-font);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.kt-hud > * { pointer-events: auto; }
+
+.kt-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  pointer-events: none;
+}
+.kt-readout { text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); pointer-events: none; }
+.kt-rel { font: var(--kt-mono); font-size: 22px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.kt-sub { color: var(--kt-dim); margin-top: 2px; }
+.kt-dot { opacity: 0.6; }
+
+.kt-caption {
+  pointer-events: auto;
+  max-width: 50%;
+  border: 1px solid var(--kt-faint);
+  background: var(--kt-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--kt-fg);
+  font: var(--kt-font);
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kt-caption::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--kt-accent); margin-right: 8px; vertical-align: 1px; }
+.kt-caption:hover { border-color: rgba(255, 255, 255, 0.35); }
+
+.kt-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--kt-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--kt-faint);
+  border-radius: var(--kt-radius);
+  padding: 8px 10px;
+}
+
+.kt-transport, .kt-speed { display: flex; align-items: center; gap: 2px; flex: none; }
+.kt-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-fg);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font: 600 18px/1 system-ui, sans-serif;
+}
+.kt-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.kt-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.kt-btn:focus-visible, .kt-track:focus-visible, .kt-caption:focus-visible { outline: 2px solid var(--kt-accent); outline-offset: 2px; }
+.kt-play { background: rgba(255, 255, 255, 0.1); }
+.kt-small { width: 28px; height: 28px; font-size: 18px; }
+.kt-speed-val { font: var(--kt-mono); min-width: 34px; text-align: center; color: var(--kt-dim); }
+
+.kt-track {
+  position: relative;
+  flex: 1;
+  height: 44px;
+  cursor: pointer;
+  touch-action: none;
+  min-width: 0;
+}
+.kt-segs { position: absolute; inset: 0; }
+.kt-seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--kt-faint);
+}
+.kt-seg:first-child { border-left: 0; }
+.kt-seg-label {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  right: 2px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kt-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.kt-seg.kt-current .kt-seg-label { color: var(--kt-fg); }
+.kt-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.kt-fill { height: 100%; background: linear-gradient(90deg, rgba(255, 138, 61, 0.55), var(--kt-accent)); }
+.kt-markers { position: absolute; left: 0; right: 0; bottom: 6px; height: 16px; }
+.kt-marker {
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 16px;
+  margin-left: -7px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.kt-marker::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  bottom: 2px;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--kt-model);
+  opacity: 0.85;
+}
+.kt-marker.kt-c-known::after { background: var(--kt-known); }
+.kt-marker.kt-c-contested::after { background: var(--kt-contested); }
+.kt-marker.kt-c-chosen::after { background: var(--kt-chosen); }
+.kt-marker:hover::after { opacity: 1; height: 15px; }
+.kt-playhead {
+  position: absolute;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 138, 61, 0.45), 0 1px 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.kt-scrubbing .kt-playhead { box-shadow: 0 0 0 5px rgba(255, 138, 61, 0.55), 0 1px 6px rgba(0, 0, 0, 0.6); }
+
+/* Phones: stack the controls, keep only the current segment's label. */
+@media (max-width: 640px) {
+  .kt-rel { font-size: 18px; }
+  .kt-sub { font-size: 12px; }
+  .kt-caption { max-width: 48%; font-size: 12px; padding: 6px 10px; }
+  .kt-bar { flex-wrap: wrap; gap: 4px 6px; padding: 6px 8px; }
+  .kt-track { order: -1; flex-basis: 100%; height: 40px; }
+  .kt-transport { flex: 1; }
+  .kt-seg-label { display: none; }
+  .kt-seg.kt-current .kt-seg-label { display: block; overflow: visible; }
+}

@@ -1,0 +1,354 @@
+# Events on the timeline, from docs/research/timeline.md §10.
+#
+#   t, t_end     seconds since first contact (negative = before). t_end is optional (an interval).
+#   title        short label for the marker tooltip
+#   detail       one or two sentences for the info panel; plain language
+#   confidence   known | model | contested | chosen   (see docs/plan/decisions.md, "Factual-accuracy UX")
+#   sources      keys in data/curated/sources.yaml
+#   marker       true = drawn on the scrubber (keep these sparse: they are the "jump to next event" stops)
+#
+# Change numbers in docs/research/ first, then here.
+
+events:
+  - id: approach
+    t: -3600
+    title: One hour out
+    detail: >-
+      A carbonaceous asteroid roughly 13 km across is 72,000 km away, closing at about 20 km/s. Nothing on Earth
+      can see it coming against the daytime sky.
+    confidence: model
+    sources: [collins2020, fischergodde2024]
+    marker: true
+
+  - id: final-minute
+    t: -60
+    title: The final minute
+    detail: >-
+      The asteroid is about 1,200 km away, higher than the International Space Station orbits today, and
+      brightening fast. In one minute it will hit the sea north of what is now the Yucatán Peninsula.
+    confidence: model
+    sources: [collins2020]
+    marker: true
+
+  - id: entry
+    t: -6
+    t_end: 0
+    title: Atmospheric entry
+    detail: >-
+      The asteroid crosses the whole atmosphere in about six seconds, arriving from the north-east at 45–60°
+      above the horizon. It is too big to slow down or break up.
+    magnitude: ~6 s at 20 km/s
+    confidence: model
+    sources: [collins2020, collins2005]
+    marker: true
+
+  - id: contact
+    t: 0
+    title: Impact
+    detail: >-
+      First contact with the sea and the carbonate seafloor beneath. Shock pressures exceed 100 GPa and the
+      vapour is hotter than 10,000 K. The energy released is roughly 3–8 × 10²³ J, about 100 million megatons of TNT.
+    magnitude: 3–8 × 10²³ J
+    confidence: model
+    sources: [collins2005, collins2020, morgan2022]
+    marker: true
+
+  - id: fireball
+    t: 7
+    t_end: 13
+    title: Fireball at peak brightness
+    detail: >-
+      The vapour plume's fireball reaches its brightest at a radius of roughly 140–240 km. Its direct heat is
+      regional: Earth's curvature hides it beyond about 1,500 km.
+    magnitude: R ≈ 135–240 km
+    confidence: model
+    sources: [collins2005]
+
+  - id: transient-cavity
+    t: 10
+    t_end: 30
+    title: Transient crater
+    detail: >-
+      Within seconds the impact excavates a bowl 80–100 km wide and about 30 km deep, through the sea, 3 km of
+      limestone and anhydrite, and into the granite crust.
+    magnitude: 80–100 km wide, ~30 km deep
+    confidence: model
+    sources: [gulick2013, gulick2019, collins2020]
+    marker: true
+
+  - id: blast-50km
+    t: 150
+    title: Air blast 50 km out
+    detail: >-
+      A shock wave of more than a thousand atmospheres sweeps outward with winds of kilometres per second.
+      (Scaling laws only, uncertain by a factor of 2–5 at this size.)
+    magnitude: ≳1 kbar near the crater
+    confidence: contested
+    sources: [collins2005]
+
+  - id: central-uplift
+    t: 180
+    title: Central peak rises 10 km
+    detail: >-
+      The floor of the crater rebounds, briefly lifting a mountain of shocked granite more than 10 km above the
+      original surface.
+    magnitude: "> 10 km"
+    confidence: model
+    sources: [collins2020]
+
+  - id: ejecta-200km
+    t: 204
+    title: Ejecta lands 200 km away
+    detail: >-
+      Rock thrown out on ballistic arcs comes down in a layer tens of metres thick near the crater, thinning
+      rapidly with distance.
+    magnitude: ~50 m at 200 km
+    confidence: model
+    sources: [collins2005, schulte2010]
+
+  - id: peak-ring
+    t: 300
+    title: Peak ring forms; crater complete
+    detail: >-
+      The central peak collapses outward into a ring of mountains 80–90 km across, inside a crater 180–200 km
+      wide. In about five minutes the crater has reached essentially its final shape.
+    magnitude: 180–200 km crater
+    confidence: known
+    sources: [collins2020, morgan2016, gulick2019]
+    marker: true
+
+  - id: tanis-seismic
+    t: 360
+    t_end: 780
+    title: Earthquake reaches Tanis
+    detail: >-
+      Seismic waves arrive in what is now North Dakota, 3,000 km away: P waves after ~6 min, S after ~10,
+      surface waves after ~13. The quake is magnitude ~10–11, larger than any in recorded history.
+    magnitude: Mw ~9.5–11
+    confidence: model
+    sources: [depalma2019, collins2005]
+
+  - id: blast-200km
+    t: 600
+    title: Air blast 200 km out
+    detail: Roughly 50 atmospheres of overpressure and near-supersonic winds (order of magnitude only).
+    magnitude: ~50 bar
+    confidence: contested
+    sources: [collins2005]
+
+  - id: tanis-seiche
+    t: 780
+    t_end: 7200
+    title: Tanis surge
+    detail: >-
+      Shaking sets up a violent surge in the river at Tanis, at least 10 m high, burying fish that have impact
+      spherules in their gills. This is a seismic seiche, not the ocean tsunami, which could not arrive for 18 hours.
+    magnitude: ≥ 10 m run-up
+    confidence: model
+    sources: [depalma2019, during2022]
+    marker: true
+
+  - id: spherules-distal
+    t: 900
+    t_end: 7200
+    title: Glass rains on North America
+    detail: >-
+      Molten droplets thrown above the atmosphere fall back as glassy spherules thousands of kilometres away,
+      forming the centimetres-thick layer found across North America.
+    magnitude: 2–10 cm at 1,000–5,000 km
+    confidence: known
+    sources: [depalma2019, schulte2010]
+
+  - id: thermal-pulse
+    t: 600
+    t_end: 3600
+    title: The sky glows
+    detail: >-
+      Ejecta re-entering the atmosphere heat the sky. How hot the ground got is contested: enough to ignite
+      forests downrange (south-west) of the crater in some models; below ignition over most of the globe once
+      the falling spherules shield the ground. A global firestorm is not supported.
+    magnitude: 5–15 kW/m² (shielded) to 50–150 × sunlight (unshielded)
+    confidence: contested
+    sources: [goldin2009, melosh1990, morgan2013, belcher2015]
+    marker: true
+
+  - id: resurge
+    t: 1800
+    t_end: 3600
+    title: The sea floods back
+    detail: >-
+      The ocean rushes back into the crater through a gap in its north-eastern rim, cresting the peak ring and
+      laying down metres of sediment within the first hours.
+    confidence: model
+    sources: [gulick2019]
+
+  - id: tsunami-gulf
+    t: 3600
+    title: Tsunami leaves the Gulf
+    detail: >-
+      Waves more than 100 m high in the Gulf of Mexico pour out into the North Atlantic.
+    magnitude: "> 100 m in the Gulf"
+    confidence: model
+    sources: [range2022]
+    marker: true
+
+  - id: blast-1000km
+    t: 3000
+    title: Air blast 1,000 km out
+    detail: Around 1.5 atmospheres of overpressure and hurricane-force winds (order of magnitude only).
+    magnitude: ~1.5 bar
+    confidence: contested
+    sources: [collins2005]
+
+  - id: rim-wave-far-gulf
+    t: 7200
+    t_end: 10800
+    title: Tsunami on the far shores of the Gulf
+    detail: >-
+      The rim wave reaches the far side of the Gulf, leaving tsunami deposits in Texas and 16 m-high ripples now
+      buried under Louisiana.
+    confidence: model
+    sources: [gulick2019, vellekoop2014, kinsland2021]
+
+  - id: tsunami-pacific
+    t: 14400
+    title: Tsunami enters the Pacific
+    detail: >-
+      North and South America were not yet joined. The tsunami passes through the Central American Seaway into
+      the Pacific about four hours after impact.
+    confidence: model
+    sources: [range2022]
+    marker: true
+
+  - id: ejecta-encircles
+    t: 14400
+    t_end: 18000
+    title: The dust cloud circles the planet
+    detail: >-
+      A cloud of rock dust, soot and sulfur, moving at kilometres per second, wraps around the whole Earth within
+      four to five hours.
+    magnitude: thousands of gigatonnes
+    confidence: model
+    sources: [morgan2022, artemieva2020, lyons2020]
+    marker: true
+
+  - id: reaccretion-8h
+    t: 28800
+    title: Most of the fast ejecta is back
+    detail: >-
+      About 55 % of the high-velocity ejecta has re-entered by eight hours, concentrated near the crater and at
+      the far side of the planet.
+    confidence: model
+    sources: [kring2002]
+
+  - id: tsunami-24h
+    t: 86400
+    title: Tsunami crosses the oceans
+    detail: >-
+      After a day the waves have crossed most of the Pacific and Atlantic and are entering the Indian Ocean
+      from both sides. The reflected wave is back in the crater.
+    magnitude: "> 10 m in the open ocean near some coasts"
+    confidence: model
+    sources: [range2022, gulick2019]
+    marker: true
+
+  - id: tsunami-48h
+    t: 172800
+    title: Tsunami reaches almost every coast
+    detail: >-
+      Within two days significant waves have reached most coastlines; currents strong enough to scour the deep
+      seafloor more than 10,000 km away.
+    confidence: model
+    sources: [range2022]
+
+  - id: acid-rain
+    t: 172800
+    t_end: 864000
+    title: Sulfuric acid rain
+    detail: Sulfur vapour from the anhydrite target forms sulfuric acid that rains out within days.
+    confidence: model
+    sources: [ohno2014, pope1997]
+
+  - id: darkness
+    t: 2592000
+    t_end: 63115200
+    title: Darkness
+    detail: >-
+      Soot, dust and sulfate block the Sun. For one to two years light at the surface falls below what plants
+      need; photosynthesis stops on land and in the sea. Which particles mattered most is still debated.
+    magnitude: < 1 % of normal light (soot models)
+    confidence: contested
+    sources: [bardeen2017, senel2023, tabor2020, morgan2022]
+    marker: true
+
+  - id: impact-winter
+    t: 31557600
+    t_end: 94672800
+    title: Impact winter
+    detail: >-
+      Global temperatures fall by something like 15–25 °C, freezing over the continents in a world that had no ice
+      caps. Estimates of how cold, and for how long, differ between models.
+    magnitude: −16 to −27 °C global mean
+    confidence: contested
+    sources: [bardeen2017, brugger2017, tabor2020]
+    marker: true
+
+  - id: subfreezing
+    t: 94672800
+    t_end: 504921600
+    title: Years below freezing
+    detail: Global mean temperature stays below 0 °C for roughly 3 to 16 years, depending on the model.
+    confidence: contested
+    sources: [brugger2017, bardeen2017]
+
+  - id: burrowers
+    t: 189345600
+    title: Life returns to the crater floor
+    detail: Burrowing animals are back on the floor of the crater within about six years.
+    confidence: model
+    sources: [lowery2018]
+
+  - id: light-returns
+    t: 315576000
+    t_end: 946728000
+    title: Light and warmth return
+    detail: Sunlight recovers over 6–20 years; temperatures take decades. The deep ocean stays cold for centuries.
+    confidence: model
+    sources: [brugger2017, bardeen2017]
+    marker: true
+
+  - id: fern-spike
+    t: 3.15576e10
+    title: The fern spike
+    detail: >-
+      Ferns, quick to colonise devastated ground, dominate the pollen record for roughly a thousand years before
+      flowering plants recover.
+    confidence: known
+    sources: [vajda2001, clyde2016]
+    marker: true
+
+  - id: crater-ecosystem
+    t: 9.46728e11
+    title: The crater is alive again
+    detail: A thriving marine ecosystem is established inside the crater by about 30,000 years.
+    confidence: model
+    sources: [lowery2018]
+
+  - id: mammals-100k
+    t: 3.15576e12
+    title: Mammals diversify
+    detail: >-
+      At Corral Bluffs, Colorado, mammal species richness has doubled by 100,000 years; by 300,000 years mammals
+      are three times heavier, and by 700,000 years 50 kg mammals and legumes appear.
+    confidence: known
+    sources: [lyson2019]
+    marker: true
+
+  - id: boltysh
+    t: 2.05e13
+    title: Boltysh impact (unrelated)
+    detail: >-
+      A much smaller asteroid makes the 24 km Boltysh crater in Ukraine about 650,000 years later. It had nothing
+      to do with the extinction.
+    confidence: known
+    sources: [pickersgill2021]
