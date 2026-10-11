@@ -66,3 +66,16 @@ test('the first view does not download the large effect files', async ({ page })
   await page.evaluate(() => (window as any).__kt.clock.seek(7200));
   await expect.poll(() => big.some((u) => u.includes('tsunami'))).toBe(true);
 });
+
+test('sound toggles on and off without errors', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/#t=-3&p=0&m=cine&v=1');
+  await waitForGlobe(page);
+  const btn = page.getByTestId('sound-toggle');
+  await btn.click();
+  await expect(btn).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(3500); // plays through the impact
+  await btn.click();
+  await expect(btn).toHaveAttribute('aria-pressed', 'false');
+  await expectNoErrors(errors);
+});

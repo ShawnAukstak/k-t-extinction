@@ -2,6 +2,7 @@ import './ui/hud.css';
 import { ACESFilmicToneMapping, PerspectiveCamera, Ray, Scene, Sphere, Vector2, Vector3, WebGLRenderer, Raycaster } from 'three';
 import catalog from '../../data/catalog.yaml';
 import { EARTH_RADIUS, IMPACT, SKY } from './config';
+import { Soundscape } from './audio/soundscape';
 import { Cinematic } from './camera/cinematic';
 import { frameToPose, GlobeControls } from './camera/globe-controls';
 import { Clock } from './core/clock';
@@ -115,6 +116,8 @@ for (const type of ['pointerdown', 'wheel'] as const) {
   renderer.domElement.addEventListener(type, () => { if (mode === 'cine') setMode('free'); }, { capture: true });
 }
 topbar.onCinematic = () => setMode(mode === 'cine' ? 'free' : 'cine');
+const sound = new Soundscape();
+topbar.onSound = (on) => { if (on) void sound.enable(); else sound.disable(); };
 
 // ── "what happened here?" ────────────────────────────────────────────────────
 const raycaster = new Raycaster();
@@ -216,7 +219,9 @@ topbar.onAbout = () => {
     <div class="kt-sources"><span>Season and day length</span>${sourceLinks(['during2022', 'dewinter2020'])}</div>
     <p><b>Data</b></p>
     <ul class="kt-credits">${credits}</ul>
-    <p class="kt-note">Vegetation colours, sea colour and atmospheric haze are visual interpretations of the data, documented in the project's research notes.</p>`);
+    <p class="kt-note">Vegetation colours, sea colour, atmospheric haze, the plume's look and the soundtrack are interpretations
+    of the data, documented in the project's research notes. Space is silent; on the ground the quake, the blast and the
+    falling debris would arrive minutes to hours apart depending on distance.</p>`);
 };
 
 // ── resize ───────────────────────────────────────────────────────────────────
@@ -302,6 +307,7 @@ function frame(now: number): void {
   last = now;
   clock.tick(dt);
   void ensureEffectData();
+  sound.update(clock.t, clock.rate(), clock.playing);
   renderNow(dt);
   // Keep the shareable link current while playing (at most once a second).
   if (clock.playing && now - lastHashWrite > 1000) writeHash();

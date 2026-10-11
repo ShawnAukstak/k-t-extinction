@@ -7,6 +7,8 @@ export class TopBar {
   onScenario: ((s: WinterScenario) => void) | null = null;
   onAbout: (() => void) | null = null;
   onCinematic: (() => void) | null = null;
+  onSound: ((on: boolean) => void) | null = null;
+  private readonly soundBtn: HTMLButtonElement;
   private readonly cineBtn: HTMLButtonElement;
   private readonly overlayBtn: HTMLButtonElement;
   private readonly scenarioSel: HTMLSelectElement;
@@ -29,6 +31,7 @@ export class TopBar {
         </label>
         <button type="button" class="kt-tool" aria-pressed="true" data-testid="cinematic-toggle" title="Follow the scripted camera; drag the globe to take over">Cinematic</button>
         <button type="button" class="kt-tool" aria-pressed="false" data-testid="overlay-toggle" title="Show fronts: air blast, earthquake, ejecta, tsunami (O)">Overlay</button>
+        <button type="button" class="kt-tool" aria-pressed="false" data-testid="sound-toggle" title="Sound (an interpretation: space is silent)">Sound</button>
         <button type="button" class="kt-tool" data-testid="about" title="About the data">About</button>
       </div>`;
     parent.append(this.root);
@@ -37,6 +40,12 @@ export class TopBar {
     this.lapse = this.root.querySelector('.kt-lapse')!;
     this.cineBtn = this.root.querySelector('[data-testid="cinematic-toggle"]')!;
     this.cineBtn.addEventListener('click', () => this.onCinematic?.());
+    this.soundBtn = this.root.querySelector('[data-testid="sound-toggle"]')!;
+    this.soundBtn.addEventListener('click', () => {
+      const on = this.soundBtn.getAttribute('aria-pressed') !== 'true';
+      this.soundBtn.setAttribute('aria-pressed', String(on));
+      this.onSound?.(on);
+    });
     this.overlayBtn.addEventListener('click', () => {
       const on = this.overlayBtn.getAttribute('aria-pressed') !== 'true';
       this.setOverlay(on);
