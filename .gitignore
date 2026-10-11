@@ -1,0 +1,30 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node (future)
+node_modules/
+dist/
+.cache/
+*.log
+
+# Rust (future)
+target/
+
+# Large raw downloads live outside git until a storage strategy is decided.
+# See data/README.md.
+data/raw/
+data/processed/
+*.nc
+*.tif
+*.tiff
+*.zip
+*.tar.gz
+
+# Tool artefacts
+.playwright-mcp/
