@@ -1,0 +1,34 @@
+# Decision log
+
+> What we decided, why, and when to revisit. The original questions and answers are in `open-questions.md`. Each entry links back to its question number (Q#). Any decision can be reversed when an experiment shows a better option, but record the reversal here.
+
+| # | Decision | Why | Revisit when |
+|---|---|---|---|
+| D1 (Q1) | **Raw and processed data live on disk, gitignored** (`data/raw/`, `data/processed/`, `app/public/data/`). `data/catalog.yaml` + `scripts/fetch.py` re-create them. Nothing large goes into git history. | Answer: start outside git; move to cloud storage later. | We deploy anywhere (then: object storage such as R2/S3, or Render's disk/CDN). |
+| D2 (Q2) | **PALEOMAP is the canonical plate model.** Terrain = Scotese & Wright 2018 PaleoDEM **65 Ma** slice. POIs are reconstructed with GPlates Web Service `model=PALEOMAP&time=65`, the same slice as the raster, so points sit on the features drawn in the DEM. PBDB occurrences use `pgm=scotese`. | Terrain is Scotese's. A 65 vs 66 Ma point reconstruction differs by ~0.5° (~50 km), which is visible against the coastline, so we match the raster's age. Chicxulub → **25.11°N, 71.58°W** (PALEOMAP, 65 Ma) `[V GWS 2026-10-11]`. | Different terrain source. |
+| D3 (Q3) | Species cards and other curated data are **YAML**, validated by a small schema script. | Hand-editable; diffable. | — |
+| D4 (Q4) | **Code: MIT. Our curated data and docs: CC BY 4.0.** Repo stays private for now. Every upstream source is CC0, CC BY 4.0, or public domain; CC BY requires attribution, so `ATTRIBUTION.md` and the in-app Credits panel are **generated from `data/catalog.yaml`**. Sources without a stated licence (BRIDGE climate files, PaleoAtlas JPGs) may be used **locally for development only** and are flagged `ship: false` in the catalog until permission is granted or a licensed substitute exists. **No NC/ND sources.** | No source restricts monetisation. CC BY only requires credit and noting changes. | We add a source with different terms. |
+| D5 (Q5) | **three.js, `WebGLRenderer` + GLSL as the baseline.** WebGPU is a later progressive enhancement, not the foundation. Own cubesphere-quadtree terrain. Precision: camera-relative tile rendering (positions computed in float64 on the CPU, camera at the origin) plus a logarithmic depth buffer. | "Must work on phones" makes WebGL2 the path most users will actually run, and the research itself said to ship WebGL2 as the tested baseline (stack-options §10 risk 1). Smaller bundle (~135 KB gz vs ~216 KB). Playwright's headless Chromium renders WebGL2 reliably, so every step can be tested. Shaders are plain GLSL, so porting to TSL later is mechanical. | Phase 5, if GPU-driven culling or compute particles for herds need WebGPU compute. |
+| D6 (Q6) | **Vanilla TypeScript + Vite.** No UI framework. Vitest for unit tests, Playwright for end-to-end and visual checks. | The UI is one canvas and a few panels. | UI grows enough to need components (then: Preact). |
+| D7 (Q7) | **Mobile is a launch requirement.** Two device tiers (mobile/desktop) pick texture sizes, LOD depth, effect quality and life density. Animals and plants appear only when zoomed in. | Answer: "must work on phone too". | Measured on real devices. |
+| D8 (Q8) | **Local only for now.** No hosting, domain or backend decisions yet. Keep the build a static site so it can go anywhere (the user normally uses Render). | Answer. | Product is worth sharing. |
+| D9 (Q9) | **Time of day: mid-morning at the impact site (10:00 local solar time). Season: boreal spring; sun declination +10° (≈ late April).** Both are labelled in the UI as chosen, not known. | The impact site is lit (sun ~58° up), so the crater and tsunami are visible. A camera following the asteroid in from the NE has the sun behind it, so the target is front-lit. The antipode is on the night side, where the re-entry glow of ejecta, which concentrates at the antipode (Kring & Durda 2002), shows up. No evidence constrains the hour; During et al. 2022 constrains the season. | Cinematic review. |
+| D10 (Q10) | **Low-poly placeholders with correct proportions first**; detailed, accurate models are tracked as later work. Integument follows current evidence (e.g. *T. rex* scaly per Bell 2017; ornithomimids and oviraptorosaurs feathered). | Answer. | Hero species work. |
+| D11 (Q11) | **Long-term goal: life everywhere on land and in the sea**, placed from a density field (biome × fossil presence × body-mass density scaling), so effects such as the air blast visibly sweep through herds. Start with the four curated sites (Hell Creek, Tanis, the Yucatán sea, one southern site). Behaviours start as idle, graze and short roams. | Answer. Architect the fauna system as a global data layer from day one, not as hand-placed scenes. | — |
+| D12 (Q12) | **Representative fauna and vegetation everywhere.** Where a region has no latest-Maastrichtian (~66 Ma) fossil record, use the closest-age record from the same region and **label it "representative / older record"** in the tooltip. Nemegt and Hațeg animals appear this way. | Q12 was about accuracy, not performance: those faunas lived 1–6 Myr before the impact. Showing them with a label keeps the world populated and honest. | — |
+| D13 (Q13) | Working title: **"K–T Extinction Simulator"**; subtitle "The Chicxulub impact, minute by minute". Mention the modern name K–Pg in About. No domain yet. | Answer: name it what it is. | Launch. |
+| D14 (Q14) | Both hooks: the main event plays on load; clicking anywhere gives "what happened *here*". | Recommendation accepted. | — |
+| D15 (Q15) | **Audio: yes, later (Phase 3).** Prefer procedural Web Audio (filtered-noise rumble, delayed arrivals tied to distance) over sound files to keep the download small. | Answer. | — |
+| D16 (Q16) | Discoveries moderation: admin token. Deferred with hosting. | — | Phase 6. |
+| D17 (Q17) | Contacting scientists: deferred until we're close to shipping. Draft the emails then (Valdes for the BRIDGE licence, Scotese for the PaleoAtlas, Range/Arbic for hourly tsunami output). | Not answered; nothing ships yet. | Before the first public share. |
+
+## Factual-accuracy UX principle (from Q9's answer)
+
+Everything on screen that is a **choice, assumption, or model output** gets an info marker. Tooltips state one of:
+
+- **Known** — well-constrained, with source links (wiki-style references).
+- **Model / range** — the number shown and the published range.
+- **Contested** — the competing estimates.
+- **Chosen** — not known; we picked a value, and why (for example, time of day).
+
+The source of truth for these labels is the confidence tag on each item in `data/curated/*.yaml`.

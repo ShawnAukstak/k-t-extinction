@@ -1,13 +1,14 @@
 # Docs
 
-Research and planning for the K-Pg (K-T) extinction simulator. **Nothing is built yet.** Start with the vision, then the feasibility verdict, then the plan.
+Research and planning for the K-Pg (K-T) extinction simulator. Start with the vision, then the feasibility verdict, then the plan and the decision log.
 
 | Page | What |
 |---|---|
 | [`00-vision.md`](00-vision.md) | What we're making and why — the original brain-dump, lightly structured |
 | [`01-feasibility.md`](01-feasibility.md) | Verdict: feasible, phased; what's hard; what the research changed |
 | [`plan/roadmap.md`](plan/roadmap.md) | Phases 0–6, each ending in something runnable |
-| [`plan/open-questions.md`](plan/open-questions.md) | Decisions that are yours, with recommendations |
+| [`plan/open-questions.md`](plan/open-questions.md) | The questions that gated the build, with your answers |
+| [`plan/decisions.md`](plan/decisions.md) | **Decision log**: what we chose, why, and when to revisit |
 
 ## research/ — the science
 
