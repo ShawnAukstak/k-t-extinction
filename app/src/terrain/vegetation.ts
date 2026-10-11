@@ -16,7 +16,7 @@ import {
 import { EARTH_RADIUS, IMPACT } from '../config';
 import { centralAngle, vecToLatLon } from '../core/geo';
 import { atDistance, type CraterResult } from '../physics/eiep';
-import { directionToFace, faceDirection, FACE_NAMES } from '../render/cube';
+import { cellsAround, directionToFace, faceDirection, FACE_NAMES } from '../render/cube';
 import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
 import type { Heightfield } from './heightfield';
@@ -288,15 +288,13 @@ export class Vegetation {
     const cx = Math.floor(s * n), cy = Math.floor(t * n);
     let builds = 0;
     const R = this.opt.radiusCells;
-    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-      const x = cx + dx, y = cy + dy;
-      if (x < 0 || y < 0 || x >= n || y >= n) continue; // (cells across cube-face edges are skipped)
-      const key = `${face}/${x}/${y}`;
+    for (const c of cellsAround(face, cx, cy, R, n)) {
+      const key = `${c.face}/${c.x}/${c.y}`;
       let cell = this.cells.get(key);
       if (!cell) {
         if (builds >= this.opt.buildsPerFrame) continue;
         builds++;
-        cell = { key, group: this.buildCell(face, x, y), lastUsed: this.frame };
+        cell = { key, group: this.buildCell(c.face, c.x, c.y), lastUsed: this.frame };
         this.cells.set(key, cell);
         this.group.add(cell.group);
       }

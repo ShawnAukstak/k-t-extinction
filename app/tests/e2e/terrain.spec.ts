@@ -44,3 +44,14 @@ test('dinosaurs live around Tanis before the impact and are gone within the impa
   expect(later).toBe(0); // the fallback roster is all non-avian dinosaurs
   await expectNoErrors(errors);
 });
+
+test('plant cells continue across a cube-face edge', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/#t=-60&p=1&c=-10,-45,400,0,75&v=1'); // Amazonian forest on the +Z/−X face edge
+  await waitForGlobe(page);
+  await expect.poll(() => page.evaluate(() => {
+    const k = (window as any).__kt;
+    return new Set([...k.vegetation.cells.keys()].map((key: string) => key.split('/')[0])).size;
+  }), { timeout: 20_000 }).toBe(2);
+  await expectNoErrors(errors);
+});

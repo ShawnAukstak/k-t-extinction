@@ -17,7 +17,7 @@ import {
 import { EARTH_RADIUS, IMPACT } from '../config';
 import { bearing, centralAngle, DEG, enuBasis, vecToLatLon, type LatLon } from '../core/geo';
 import { atDistance, type CraterResult } from '../physics/eiep';
-import { directionToFace, faceDirection } from '../render/cube';
+import { cellsAround, directionToFace, faceDirection } from '../render/cube';
 import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
 import type { Heightfield } from '../terrain/heightfield';
@@ -356,15 +356,13 @@ export class Herds {
     const cx = Math.floor(s * n), cy = Math.floor(tt * n);
     let builds = 0;
     const R = this.opt.radiusCells;
-    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-      const x = cx + dx, y = cy + dy;
-      if (x < 0 || y < 0 || x >= n || y >= n) continue;
-      const key = `${face}/${x}/${y}`;
+    for (const c of cellsAround(face, cx, cy, R, n)) {
+      const key = `${c.face}/${c.x}/${c.y}`;
       let cell = this.cells.get(key);
       if (!cell) {
         if (builds >= this.opt.buildsPerFrame) continue;
         builds++;
-        cell = this.buildCell(face, x, y);
+        cell = this.buildCell(c.face, c.x, c.y);
         this.cells.set(key, cell);
         this.group.add(cell.group);
       }

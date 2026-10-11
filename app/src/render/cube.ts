@@ -40,3 +40,29 @@ export function directionToFace(d: Vector3): { face: number; s: number; t: numbe
   }
   return { face, s: (sc / ma + 1) / 2, t: (tc / ma + 1) / 2 };
 }
+
+/**
+ * The (2R+1)² cells of a 2^level grid around cell (cx, cy) on a face, continuing onto the
+ * neighbouring faces where the window crosses an edge (by extrapolating the face plane and
+ * re-projecting each cell centre). Near edges the neighbouring grid is rotated, so the window
+ * there is approximate; duplicates are removed.
+ */
+export function cellsAround(face: number, cx: number, cy: number, R: number, n: number): { face: number; x: number; y: number }[] {
+  const out: { face: number; x: number; y: number }[] = [];
+  const seen = new Set<string>();
+  const d = new Vector3();
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    let f = face, x = cx + dx, y = cy + dy;
+    if (x < 0 || y < 0 || x >= n || y >= n) {
+      const g = directionToFace(faceDirection(face, (x + 0.5) / n, (y + 0.5) / n, d));
+      f = g.face;
+      x = Math.min(n - 1, Math.max(0, Math.floor(g.s * n)));
+      y = Math.min(n - 1, Math.max(0, Math.floor(g.t * n)));
+    }
+    const key = `${f}/${x}/${y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ face: f, x, y });
+  }
+  return out;
+}
