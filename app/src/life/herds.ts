@@ -11,7 +11,7 @@
  * Carcasses remain for about a month.
  */
 import {
-  type BufferGeometry, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, type PerspectiveCamera, Quaternion,
+  type BufferGeometry, Group, InstancedBufferAttribute, InstancedMesh, type Raycaster, Matrix4, type PerspectiveCamera, Quaternion,
   ShaderMaterial, Vector3,
 } from 'three';
 import { EARTH_RADIUS, IMPACT } from '../config';
@@ -421,6 +421,39 @@ export class Herds {
       mesh.instanceMatrix.needsUpdate = true;
       anim.needsUpdate = true;
     }
+  }
+
+  /** Current world position (metres, feet on the ground) of an animal, from its instance matrix. */
+  private livePosition(cell: Cell, meshId: string, index: number): Vector3 | null {
+    const m = cell.meshes.get(meshId);
+    if (!m || index >= m.mesh.count) return null;
+    m.mesh.getMatrixAt(index, this._m);
+    return this._p.setFromMatrixPosition(this._m).add(cell.centerPos).clone();
+  }
+
+  /** The nearest living herd of large animals (mass ≥ minMass) to a direction, or null. */
+  nearestHerd(dir: Vector3, t: number, minMassKg = 500): { dir: Vector3; pos: Vector3; species: SpeciesDef; size: number } | null {
+    let best: { dir: Vector3; pos: Vector3; species: SpeciesDef; size: number } | null = null, bestDot = -2;
+    for (const c of this.cells.values()) for (const [id, m] of c.meshes) {
+      const sp = this.speciesById.get(id)!;
+      if (sp.massKg < minMassKg) continue;
+      const i = m.items.findIndex((it) => t < it.a.dieAt);
+      if (i < 0) continue;
+      const pos = this.livePosition(c, id, i);
+      if (!pos) continue;
+      const p = pos.clone().normalize();
+      const d = p.dot(dir);
+      if (d > bestDot) { bestDot = d; best = { dir: p, pos, species: sp, size: m.items[i].herd.animals.length }; }
+    }
+    return best;
+  }
+
+  /** The species under a ray, if any. Instance bounds are recomputed first: animals move every frame. */
+  pick(raycaster: Raycaster): SpeciesDef | undefined {
+    if (!this.group.visible) return undefined;
+    for (const c of this.cells.values()) for (const m of c.meshes.values()) m.mesh.boundingSphere = null;
+    const hit = raycaster.intersectObject(this.group, true)[0];
+    return hit ? this.speciesById.get(hit.object.name.replace(/^herd-/, '')) : undefined;
   }
 
   /** How many of the animals around the camera are alive at sim time t (tests, HUD). */

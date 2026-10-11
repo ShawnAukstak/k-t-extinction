@@ -6,6 +6,7 @@ import type { Confidence } from '../config';
 import type { TimelineEvent } from '../core/events';
 import type { LocalHistory } from '../core/local-history';
 import type { Poi } from '../core/pois';
+import type { SpeciesDef } from '../life/fauna';
 import { SOURCES } from '../core/sources';
 import { formatRelative } from '../core/timeline';
 
@@ -46,9 +47,9 @@ export class InfoPanel {
   /** Seek requests from rows in the location card. */
   onSeek: ((t: number) => void) | null = null;
   onClose: (() => void) | null = null;
-  kind: 'event' | 'location' | 'about' | 'place' | 'places' | null = null;
+  kind: 'event' | 'location' | 'about' | 'place' | 'places' | 'species' | null = null;
   /** Actions from place cards. */
-  onPlaceAction: ((action: 'here' | 'fly', id: string) => void) | null = null;
+  onPlaceAction: ((action: 'here' | 'fly' | 'animals', id: string) => void) | null = null;
   /** City search (Places panel). */
   cities: { name: string; country: string; pop: number; lat: number; lon: number; paleoLat: number; paleoLon: number }[] = [];
   onNeedCities: (() => Promise<void>) | null = null;
@@ -68,7 +69,7 @@ export class InfoPanel {
       const row = target.closest<HTMLElement>('[data-seek]');
       if (row) this.onSeek?.(Number(row.dataset.seek));
       const act = target.closest<HTMLElement>('[data-place-action]');
-      if (act) this.onPlaceAction?.(act.dataset.placeAction as 'here' | 'fly', act.dataset.place!);
+      if (act) this.onPlaceAction?.(act.dataset.placeAction as 'here' | 'fly' | 'animals', act.dataset.place!);
     });
     parent.append(this.root);
   }
@@ -124,6 +125,7 @@ export class InfoPanel {
       <p>${esc(p.note)}</p>
       <div class="kt-btn-row">
         <button type="button" data-place-action="here" data-place="${esc(p.id)}">What happened here?</button>
+        ${p.tags.includes('fauna') ? `<button type="button" data-place-action="animals" data-place="${esc(p.id)}">Find dinosaurs nearby</button>` : ''}
       </div>
       <div class="kt-sources"><span>Sources</span>${sourceLinks(p.sources)}</div>`;
     this.open('place');
@@ -162,12 +164,26 @@ export class InfoPanel {
     this.body.querySelector('.kt-locate')!.addEventListener('click', () => this.onLocate?.());
   }
 
+  showSpecies(sp: SpeciesDef, extra = ''): void {
+    const mass = sp.massKg >= 1000 ? `${(sp.massKg / 1000).toFixed(sp.massKg >= 10_000 ? 0 : 1)} t` : `${Math.round(sp.massKg)} kg`;
+    const group = sp.groupSize[1] > 1 ? `usually ${sp.groupSize[0]}–${sp.groupSize[1]} together` : 'usually alone';
+    this.body.innerHTML = `
+      <div class="kt-kicker">Animal</div>
+      <h2>${esc(sp.name)}</h2>
+      <div class="kt-chips">${chip('model')}<span class="kt-mag">${sp.lengthM} m long · ${mass} · ${esc(group)}</span></div>
+      ${sp.notes ? `<p>${esc(sp.notes)}</p>` : ''}
+      ${extra}
+      <p class="kt-note">${chip('chosen')} The 3-D model is a simplified stand-in with the right overall proportions; colours are unknown for these animals and are a guess.</p>
+      <div class="kt-sources"><span>Sources</span>${sourceLinks(sp.sources)}</div>`;
+    this.open('species');
+  }
+
   showHtml(kind: 'about', html: string): void {
     this.body.innerHTML = html;
     this.open(kind);
   }
 
-  private open(kind: 'event' | 'location' | 'about' | 'place' | 'places'): void {
+  private open(kind: NonNullable<InfoPanel['kind']>): void {
     this.kind = kind;
     this.root.hidden = false;
     this.root.scrollTop = 0;
