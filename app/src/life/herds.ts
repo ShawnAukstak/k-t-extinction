@@ -30,6 +30,11 @@ const SWIMMERS = new Set(['mosasaur', 'plesiosaur']);
 const distKm = (a: LatLon, b: LatLon) => centralAngle(a, b) * 6371;
 /** Share of individuals of surviving lineages (crocodylians, turtles, some mammals and birds) that live through the winter: chosen. */
 const SURVIVOR_FRACTION = 0.3;
+const YEAR = 31_557_600;
+
+function isAlive(a: Animal, t: number): boolean {
+  return t >= a.bornAt && (t < a.dieAt || (a.rebornAt !== undefined && t >= a.rebornAt));
+}
 const DAY = 86_400;
 
 export interface HerdOptions {
@@ -46,6 +51,8 @@ interface Animal {
   scale: number;
   look: [number, number, number, number];
   dieAt: number;                // sim seconds; Infinity = survives
+  bornAt: number;               // sim seconds; −Infinity = already there (recovery species arrive later)
+  rebornAt?: number;            // surviving lineages: a new individual takes its place (population rebound)
   fallAway: boolean;            // knocked down by the blast (vs died in place)
   /** Ground height cache: last sampled position (e, n) and its height, m. */
   gE?: number; gN?: number; gH?: number;
@@ -85,7 +92,7 @@ attribute float part;
 attribute vec3 pivot;
 attribute float tint;
 attribute vec4 aAnim;   // x gait phase (cycles), y walk amount 0–1, z graze 0–1, w fallen 0–1
-attribute vec4 aLook;   // xyz base colour, w burnt
+attribute vec4 aLook;   // xyz base colour, w time it burnt (s; 0 = never)
 uniform vec3 uFogColor;
 varying vec3 vColor;
 varying float vFade;
@@ -131,7 +138,7 @@ void main() {
   // Colour: chosen (skin colours are unknown) — countershaded, lighter belly; frills/horns/clubs paler.
   vec3 c = aLook.xyz * mix(0.75, 1.25, smoothstep(0.6, -0.4, dot(wn, up)));
   c = mix(c, vec3(0.42, 0.38, 0.30), tint * 0.6);
-  c = mix(c, vec3(0.03, 0.025, 0.02), aLook.w);
+  c = mix(c, vec3(0.03, 0.025, 0.02), aLook.w > 0.0 ? step(aLook.w, uT) * step(uT, aLook.w + 31557600.0) : 0.0);
   vec3 winter = fxWinter(up);
   vec3 L = uSunDir;
   vec3 pKm = (cellWorld + base) / 1000.0;
@@ -255,82 +262,96 @@ export class Herds {
       // Abundances compare within a guild, so normalise each guild by its commonest member. Biggest
       // first, so the animals you can see are never crowded out by the small and numerous; animals
       // under ~1 kg are too small to show at all.
+      // The Cretaceous fauna and the recovery fauna never live side by side, so each is normalised and
+      // budgeted on its own.
       const fauna: { f: FaunaEntry; sp: SpeciesDef; rel: number }[] = [];
       for (const region of regions) {
+        const key = (f: FaunaEntry) => (this.speciesById.get(f.species)?.recovery ? 'p/' : 'k/') + (f.guild ?? '');
         const maxAb = new Map<string, number>();
-        for (const f of region.fauna) maxAb.set(f.guild ?? '', Math.max(maxAb.get(f.guild ?? '') ?? 1e-6, f.abundance));
+        for (const f of region.fauna) maxAb.set(key(f), Math.max(maxAb.get(key(f)) ?? 1e-6, f.abundance));
         for (const f of region.fauna) {
           const sp = this.speciesById.get(f.species);
           if (!sp || sp.massKg < 1 || fauna.some((x) => x.sp === sp)) continue;
-          fauna.push({ f, sp, rel: f.abundance / maxAb.get(f.guild ?? '')! });
+          fauna.push({ f, sp, rel: f.abundance / maxAb.get(key(f))! });
         }
       }
       fauna.sort((a, b) => b.sp.massKg - a.sp.massKg);
-      // Numbers: Damuth density for the body mass × relative abundance within the guild (with the
-      // census this puts T. rex at ~0.7 per 100 km², close to Marshall et al. 2021). Large animals
-      // (≥ 100 kg) are drawn at full density; smaller ones are thinned to fit the per-cell budget
-      // (chosen: you could not see them all anyway, and many lived in trees, burrows or water).
-      const veg = this.veg.sample(center);
-      const expect = fauna.map(({ sp, rel }) => {
-        const habitat = SWIMMERS.has(sp.group) ? 1 : 0.3 + 0.7 * veg.density;
-        return densityPerKm2(sp.massKg, sp.diet) * rel * habitat * area;
-      });
-      const bigSum = expect.reduce((a, e, i) => a + (fauna[i].sp.massKg >= 100 ? e : 0), 0);
-      const smallSum = expect.reduce((a, e, i) => a + (fauna[i].sp.massKg < 100 ? e : 0), 0);
-      const smallBudget = Math.max(0, this.opt.maxPerCell - bigSum);
-      const smallScale = Math.min(1, smallBudget / Math.max(1e-9, smallSum));
-      let total = 0;
-      for (const [k, { f, sp }] of fauna.entries()) {
-        const swims = SWIMMERS.has(sp.group);
-        const lowland = f.guild === 'freshwater';
-        // No one small species takes more than a quarter of the small animals' share.
-        const expected = sp.massKg >= 100 ? expect[k] : Math.min(expect[k] * smallScale, 0.25 * smallBudget);
-        entries.set(sp.id, f);
-        const g = f.group ?? sp.groupSize;
-        const meanGroup = (g[0] + g[1]) / 2;
-        const herdsN = poisson(expected / Math.max(1, meanGroup), r);
-        const cap = this.opt.maxPerCell;
-        for (let h = 0; h < herdsN && total < cap; h++) {
-          // Home point: random in the cell; land animals on land, preferring open ground (grazers
-          // favour clearings); freshwater animals on the lowest-lying ground (where rivers and swamps
-          // would be: we have no rivers); sea creatures in water at least 20 m deep.
-          let dir: Vector3 | null = null, best = -Infinity;
-          for (let tries = 0; tries < 10; tries++) {
-            const d = faceDirection(face, (cx + r()) / n, (cy + r()) / n, new Vector3());
-            const hd = this.heights.height(d, 200);
-            if (swims ? hd > -20 : hd <= 2) continue;
-            const o = swims ? 1 : lowland ? -hd : clearing(d);
-            if (o > best) { best = o; dir = d; }
-            if (!lowland && o > 0.7) break;
-          }
-          if (!dir) continue;
-          const size = Math.max(1, Math.round(g[0] + r() * (g[1] - g[0])));
-          const ll = vecToLatLon(dir);
-          const { e, n: nn, u } = enuBasis(ll.lat, ll.lon);
-          const rKm = centralAngle(site, ll) * 6371;
-          const fx = atDistance(this.crater, Math.max(1, rKm));
-          const spread = Math.sqrt(size) * sp.lengthM * 1.6;
-          const animals: Animal[] = [];
-          for (let i = 0; i < size && total < cap; i++, total++) {
-            const pal = PALETTES[Math.floor(r() * PALETTES.length)];
-            const v = 0.85 + 0.3 * r();
-            const burnt = fx.fireballVisible && fx.thermalMJm2 > this.burnLethal;
-            // Fate: heat (near), blast (regional), or the impact winter (everywhere else).
-            let dieAt = Infinity, fallAway = false;
-            if (burnt) dieAt = 10 + r() * 20;
-            else if (fx.windMs > 50) { dieAt = fx.blastArrivalS + r() * 3; fallAway = true; }
-            // Lineages that survived still lost most individuals (the fraction is chosen, not measured).
-            else if (!sp.survives || r() > SURVIVOR_FRACTION) dieAt = 14 * DAY + r() ** 1.5 * 540 * DAY;
-            animals.push({
-              offE: (r() - 0.5) * spread, offN: (r() - 0.5) * spread, phase: r(), scale: 0.85 + 0.3 * r(),
-              look: [pal[0] * v, pal[1] * v, pal[2] * v, burnt ? 1 : 0], dieAt, fallAway,
+      for (const era of [fauna.filter((x) => !x.sp.recovery), fauna.filter((x) => x.sp.recovery)]) {
+        // Numbers: Damuth density for the body mass × relative abundance within the guild (with the
+        // census this puts T. rex at ~0.7 per 100 km², close to Marshall et al. 2021). Large animals
+        // (≥ 100 kg) are drawn at full density; smaller ones are thinned to fit the per-cell budget
+        // (chosen: you could not see them all anyway, and many lived in trees, burrows or water).
+        const veg = this.veg.sample(center);
+        const expect = era.map(({ sp, rel }) => {
+          const habitat = SWIMMERS.has(sp.group) ? 1 : 0.3 + 0.7 * veg.density;
+          return densityPerKm2(sp.massKg, sp.diet) * rel * habitat * area;
+        });
+        const bigSum = expect.reduce((a, e, i) => a + (era[i].sp.massKg >= 100 ? e : 0), 0);
+        const smallSum = expect.reduce((a, e, i) => a + (era[i].sp.massKg < 100 ? e : 0), 0);
+        const smallBudget = Math.max(0, this.opt.maxPerCell - bigSum);
+        const smallScale = Math.min(1, smallBudget / Math.max(1e-9, smallSum));
+        let total = 0;
+        for (const [k, { f, sp }] of era.entries()) {
+          const swims = SWIMMERS.has(sp.group);
+          const lowland = f.guild === 'freshwater';
+          // No one small species takes more than a quarter of the small animals' share.
+          const expected = sp.massKg >= 100 ? expect[k] : Math.min(expect[k] * smallScale, 0.25 * smallBudget);
+          entries.set(sp.id, f);
+          const g = f.group ?? sp.groupSize;
+          const meanGroup = (g[0] + g[1]) / 2;
+          const herdsN = poisson(expected / Math.max(1, meanGroup), r);
+          const cap = this.opt.maxPerCell;
+          for (let h = 0; h < herdsN && total < cap; h++) {
+            // Home point: random in the cell; land animals on land, preferring open ground (grazers
+            // favour clearings); freshwater animals on the lowest-lying ground (where rivers and swamps
+            // would be: we have no rivers); sea creatures in water at least 20 m deep.
+            let dir: Vector3 | null = null, best = -Infinity;
+            for (let tries = 0; tries < 10; tries++) {
+              const d = faceDirection(face, (cx + r()) / n, (cy + r()) / n, new Vector3());
+              const hd = this.heights.height(d, 200);
+              if (swims ? hd > -20 : hd <= 2) continue;
+              const o = swims ? 1 : lowland ? -hd : clearing(d);
+              if (o > best) { best = o; dir = d; }
+              if (!lowland && o > 0.7) break;
+            }
+            if (!dir) continue;
+            const size = Math.max(1, Math.round(g[0] + r() * (g[1] - g[0])));
+            const ll = vecToLatLon(dir);
+            const { e, n: nn, u } = enuBasis(ll.lat, ll.lon);
+            const rKm = centralAngle(site, ll) * 6371;
+            const fx = atDistance(this.crater, Math.max(1, rKm));
+            const spread = Math.sqrt(size) * sp.lengthM * 1.6;
+            const animals: Animal[] = [];
+            for (let i = 0; i < size && total < cap; i++, total++) {
+              const pal = PALETTES[Math.floor(r() * PALETTES.length)];
+              const v = 0.85 + 0.3 * r();
+              const burnt = fx.fireballVisible && fx.thermalMJm2 > this.burnLethal;
+              let dieAt = Infinity, fallAway = false, bornAt = -Infinity, rebornAt: number | undefined;
+              if (sp.recovery) {
+                // Arrives after the impact: its first appearance (within the published uncertainty), then
+                // numbers build up over a further ~30 % of that time (chosen).
+                const [y0, y1] = sp.recovery.rangeYears ?? [sp.recovery.appearsYears, sp.recovery.appearsYears];
+                bornAt = YEAR * (y0 + r() * (y1 - y0)) * (1 + 0.3 * r());
+              } else {
+                // Fate: heat (near), blast (regional), or the impact winter (everywhere else).
+                if (burnt) dieAt = 10 + r() * 20;
+                else if (fx.windMs > 50) { dieAt = fx.blastArrivalS + r() * 3; fallAway = true; }
+                // Lineages that survived still lost most individuals (the fraction is chosen, not measured).
+                else if (!sp.survives || r() > SURVIVOR_FRACTION) dieAt = 14 * DAY + r() ** 1.5 * 540 * DAY;
+                // ...and their numbers rebuilt within centuries once the light returned (chosen).
+                if (sp.survives && dieAt < Infinity) rebornAt = YEAR * (30 + r() * 470);
+              }
+              animals.push({
+                offE: (r() - 0.5) * spread, offN: (r() - 0.5) * spread, phase: r(), scale: 0.85 + 0.3 * r(),
+                look: [pal[0] * v, pal[1] * v, pal[2] * v, burnt ? dieAt : 0], dieAt, fallAway, bornAt, rebornAt,
+              });
+            }
+            herds.push({
+              species: sp, base: dir, e, n: nn, u,
+              wander: [40 + r() * sp.lengthM * 25, 0.002 + r() * 0.004, r() * 6.28, 0.002 + r() * 0.004, r() * 6.28],
+              animals, blastAt: fx.blastArrivalS, wind: fx.windMs, away: bearing(site, ll) * DEG,
             });
           }
-          herds.push({
-            species: sp, base: dir, e, n: nn, u,
-            wander: [40 + r() * sp.lengthM * 25, 0.002 + r() * 0.004, r() * 6.28, 0.002 + r() * 0.004, r() * 6.28],
-            animals, blastAt: fx.blastArrivalS, wind: fx.windMs, away: bearing(site, ll) * DEG,
-          });
         }
       }
     }
@@ -428,8 +449,9 @@ export class Herds {
       items.forEach(({ herd, a }, i) => {
         const sp = herd.species;
         const [A, w1, p1, w2, p2] = herd.wander;
-        const dead = t >= a.dieAt;
-        const carcassGone = t > a.dieAt + 30 * DAY;
+        const reborn = a.rebornAt !== undefined && t >= a.rebornAt;
+        const dead = t >= a.dieAt && !reborn;
+        const hidden = t < a.bornAt || (dead && t > a.dieAt + 30 * DAY);
         const tm = dead ? Math.min(ta, a.dieAt) : ta;
         const ce = A * Math.sin(w1 * tm + p1), cn = A * Math.sin(w2 * tm + p2);
         const ve = A * w1 * Math.cos(w1 * tm + p1), vn = A * w2 * Math.cos(w2 * tm + p2);
@@ -457,7 +479,7 @@ export class Herds {
         const yaw = dead && a.fallAway ? Math.PI / 2 - herd.away : -heading;
         this._yaw.setFromAxisAngle(this._up, yaw);
         this._q.multiply(this._yaw);
-        const sc = carcassGone ? 0.0001 : a.scale;
+        const sc = hidden ? 0.0001 : a.scale;
         this._s.set(sc, sc, sc);
         this._m.compose(this._p, this._q, this._s);
         mesh.setMatrixAt(i, this._m);
@@ -485,7 +507,7 @@ export class Herds {
     for (const c of this.cells.values()) for (const [id, m] of c.meshes) {
       const sp = this.speciesById.get(id)!;
       if (sp.massKg < minMassKg) continue;
-      const i = m.items.findIndex((it) => t < it.a.dieAt);
+      const i = m.items.findIndex((it) => isAlive(it.a, t));
       if (i < 0) continue;
       const pos = this.livePosition(c, id, i);
       if (!pos) continue;
@@ -514,14 +536,14 @@ export class Herds {
   /** How many of the animals around the camera are alive at sim time t (tests, HUD). */
   aliveAt(t: number): number {
     let n = 0;
-    for (const c of this.cells.values()) for (const h of c.herds) for (const a of h.animals) if (t < a.dieAt) n++;
+    for (const c of this.cells.values()) for (const h of c.herds) for (const a of h.animals) if (isAlive(a, t)) n++;
     return n;
   }
   /** Living animals around the camera at sim time t, split by whether their lineage survived the K-Pg. */
   census(t: number): { lineagesSurvived: number; lineagesDied: number } {
     let a = 0, b = 0;
     for (const c of this.cells.values()) for (const h of c.herds) for (const x of h.animals) {
-      if (t >= x.dieAt) continue;
+      if (!isAlive(x, t)) continue;
       if (h.species.survives) a++; else b++;
     }
     return { lineagesSurvived: a, lineagesDied: b };

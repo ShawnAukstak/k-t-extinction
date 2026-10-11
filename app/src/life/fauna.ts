@@ -22,6 +22,8 @@ export interface SpeciesDef {
   survival?: { note?: string; source?: string };
   /** Set for D12 'representative / older record' cards: why the record is older than the impact. */
   olderRecord?: string;
+  /** Recovery fauna: first present this many years after the impact. */
+  recovery?: { appearsYears: number; rangeYears?: [number, number]; confidence?: string; source?: string; note?: string };
   notes?: string;
   sources: string[];
 }
@@ -105,6 +107,7 @@ export function fromCurated(species: Record<string, unknown>[], regions: Record<
       survives: typeof skv === 'boolean' ? skv : !dinoLike.includes(group),
       survival: typeof sk === 'object' && sk ? { note: str(sk.note), source: str(sk.source) } : undefined,
       olderRecord: age.context_only === true ? str(age.why) ?? 'An older record, shown as representative.' : undefined,
+      recovery: recoveryOf(s.recovery),
       notes: str(s.notes),
       sources: Array.isArray(s.sources) ? (s.sources as string[]) : [],
     };
@@ -132,6 +135,15 @@ export function fromCurated(species: Record<string, unknown>[], regions: Record<
     };
   });
   return { species: sp, regions: rg };
+}
+
+function recoveryOf(v: unknown): SpeciesDef['recovery'] {
+  const r = v as { appears_years?: unknown; range_years?: unknown; confidence?: unknown; source?: unknown; note?: unknown } | undefined;
+  if (!r || typeof r.appears_years !== 'number') return undefined;
+  const rg = Array.isArray(r.range_years) && r.range_years.length === 2 && r.range_years.every((x) => typeof x === 'number')
+    ? (r.range_years as [number, number]) : undefined;
+  const s = (x: unknown) => (typeof x === 'string' && x.trim() ? x.trim() : undefined);
+  return { appearsYears: r.appears_years, rangeYears: rg, confidence: s(r.confidence), source: s(r.source), note: s(r.note) };
 }
 
 /**

@@ -26,6 +26,11 @@ export function chip(c: Confidence): string {
   return `<span class="kt-chip kt-chip-${c}" title="${esc(t.title)}">${t.label}</span>`;
 }
 
+/** "100,000 years", "1.2 million years". */
+function formatYears(y: number): string {
+  return y >= 1e6 ? `${(y / 1e6).toFixed(y % 1e6 ? 1 : 0)} million years` : `${Math.round(y).toLocaleString('en-US')} years`;
+}
+
 export function sourceLinks(keys: string[]): string {
   const uniq = [...new Set(keys)];
   return uniq
@@ -171,7 +176,10 @@ export class InfoPanel {
     const title = proxy ? proxy[0].toUpperCase() + proxy.slice(1) : sp.name;
     const conf = (c?: string) => (c === 'known' || c === 'model' || c === 'contested' || c === 'chosen' ? c : 'model');
     const note = sp.survival?.note ? sp.survival.note.replace(/^(yes|no)\b[.;,:]?\s*/i, '') : '';
-    const survived = `<p><strong>Survived the extinction:</strong> ${sp.survives ? 'yes' : 'no'}${note ? ` — ${esc(note[0].toUpperCase() + note.slice(1)).replace(/\.?$/, '.')}` : '.'}</p>`;
+    const rec = sp.recovery;
+    const survived = rec
+      ? `<p class="kt-note">${chip(conf(rec.confidence))} <strong>After the extinction:</strong> first appears about ${esc(formatYears(rec.appearsYears))} after the impact${rec.note ? ` — ${esc(rec.note)}` : ''}.</p>`
+      : `<p><strong>Survived the extinction:</strong> ${sp.survives ? 'yes' : 'no'}${note ? ` — ${esc(note[0].toUpperCase() + note.slice(1)).replace(/\.?$/, '.')}` : '.'}</p>`;
     this.body.innerHTML = `
       <div class="kt-kicker">Animal${proxy ? ' · stand-in' : ''}</div>
       <h2>${esc(title)}</h2>
@@ -183,7 +191,7 @@ export class InfoPanel {
       ${survived}
       ${extra}
       <p class="kt-note">${chip('chosen')} The 3-D model is a simplified stand-in with the right overall proportions; colours are unknown for these animals and are a guess.</p>
-      <div class="kt-sources"><span>Sources</span>${sourceLinks([...sp.sources, ...(sp.survival?.source ? [sp.survival.source] : [])])}</div>`;
+      <div class="kt-sources"><span>Sources</span>${sourceLinks([...sp.sources, ...[sp.survival?.source, rec?.source].filter((x): x is string => !!x)])}</div>`;
     this.open('species');
   }
 

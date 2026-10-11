@@ -38,12 +38,18 @@ test('dinosaurs live around Tanis before the impact and are gone within the impa
   await page.goto('/#t=-60&p=1&c=51.686,-79.748,2500,150,60&v=1');
   await waitForGlobe(page);
   await expect.poll(() => page.evaluate(() => (window as any).__kt.herds.animals), { timeout: 30_000 }).toBeGreaterThan(50);
-  const before = await page.evaluate(() => (window as any).__kt.herds.census(-60));
-  const later = await page.evaluate(() => (window as any).__kt.herds.census(2 * 31_557_600));
+  // (One evaluate, so all three counts see the same cells.)
+  const [before, later, recovered] = await page.evaluate(() => {
+    const h = (window as any).__kt.herds;
+    return [h.census(-60), h.census(2 * 31_557_600), h.census(1000 * 31_557_600)];
+  });
   expect(before.lineagesDied).toBeGreaterThan(50);
   expect(later.lineagesDied).toBe(0); // every non-avian dinosaur (and pterosaur, and Didelphodon) is gone
   // Crocodylians and champsosaurs whose lineages survived: some individuals are still here.
   if (before.lineagesSurvived > 20) expect(later.lineagesSurvived).toBeGreaterThan(0);
+  // Within centuries their numbers are back; the dinosaurs are not.
+  expect(recovered.lineagesSurvived).toBe(before.lineagesSurvived);
+  expect(recovered.lineagesDied).toBe(0);
   await expectNoErrors(errors);
 });
 

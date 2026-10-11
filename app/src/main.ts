@@ -232,7 +232,8 @@ async function findAnimals(p: Poi): Promise<void> {
   await controls.flyTo({ lat: p.paleo.lat, lon: p.paleo.lon, range: 3000, heading: 0, tilt: 55 }, 2.5);
   const here = latLonToVec(p.paleo.lat, p.paleo.lon, 1);
   for (let i = 0; i < 40; i++) {
-    const h = herds.nearestHerd(here, clock.t);
+    // Large animals first; after the extinction, whatever lives here.
+    const h = herds.nearestHerd(here, clock.t) ?? herds.nearestHerd(here, clock.t, 1);
     if (h) {
       const ll = vecToLatLon(h.dir);
       await controls.flyTo({ lat: ll.lat, lon: ll.lon, range: Math.max(12, h.species.lengthM * 5), heading: 30, tilt: 70 }, 2.5);
@@ -241,7 +242,7 @@ async function findAnimals(p: Poi): Promise<void> {
     }
     await new Promise((r) => setTimeout(r, 250));
   }
-  panel.showHtml('about', `<div class="kt-kicker">Animals</div><h2>None in view</h2><p>No large animals are modelled near ${p.name} yet.</p>`);
+  panel.showHtml('about', `<div class="kt-kicker">Animals</div><h2>None in view</h2><p>No animals are modelled near ${p.name} at this time.</p>`);
 }
 // A selected place stays in the link until the user moves the camera themselves.
 renderer.domElement.addEventListener('pointerdown', () => { place = null; }, { capture: true });
