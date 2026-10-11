@@ -1,0 +1,39 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: dryptosaurus
+name: Dryptosaurus
+species: [D. aquilunguis]
+group: tyrannosaurid
+body_plan: biped
+age:
+  formation: New Egypt Fm (New Jersey); also reported from the Navesink Fm
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+  note: "Benson 2014 lists the holotype as late Maastrichtian; the exact level within the Maastrichtian is uncertain."
+taxonomy:
+  status: known
+  note: "A tyrannosauroid but not a tyrannosaurid (Brusatte et al. 2011); it uses the tyrannosaurid renderer type."
+regions: [appalachia]
+size:
+  length_m: {typical: 7.0, range: [6.0, 7.5], confidence: model}
+  hip_height_m: 1.8
+  hip_height_note: "estimated from ANSP 9995 femur (0.80 m) + tibia (0.76 m) in the Benson 2014 data plus a metatarsus allowance, flexed"
+  mass_kg:
+    value: 1000
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: 1,027 kg for the holotype ANSP 9995"
+appearance:
+  integument: unknown; scaly with possible filaments assumed (no skin known)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: chosen
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: carnivore
+  activity: [walk, roam, hunt, scavenge, rest]
+  speed_m_s: {walk: 1.3, max: 8.0, source: null, confidence: chosen}
+abundance:
+  appalachia: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon; every Appalachian dinosaur is rare, mostly carcasses washed out to sea"}
+sources: [brusatte2011, benson2014, pbdb]
+notes: >-
+  The top predator of Appalachia, the eastern North American landmass that an inland sea separated from T. rex's
+  west for most of the Late Cretaceous. Unlike T. rex it had short arms but large, clawed hands.

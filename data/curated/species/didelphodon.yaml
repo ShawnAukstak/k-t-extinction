@@ -1,0 +1,37 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: didelphodon
+name: Didelphodon
+species: [D. vorax]
+group: mammal_small
+body_plan: quadruped
+age:
+  formation: Hell Creek, Lance, Frenchman Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+size:
+  length_m: {typical: 0.6, range: [0.4, 0.7], confidence: chosen, note: "head and body; scaled from an opossum-to-badger-sized mammal"}
+  hip_height_m: 0.15
+  hip_height_note: "estimated"
+  mass_kg:
+    value: 5.2
+    range: [2.4, 5.2]
+    source: wilson2016
+    confidence: model
+    note: "Wilson et al. 2016: 2.4 kg (young adult) to 5.2 kg (older adult), from skull and tooth-row length"
+appearance:
+  integument: fur
+  colour: unknown; the app uses dark brown
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: carnivore (predator–scavenger with a powerful, shell- and bone-crushing bite)
+  activity: [walk, hunt, scavenge, swim, rest]
+  speed_m_s: {walk: 0.5, max: 3.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.20, source: wilson2013, confidence: chosen, note: "ordinal common among mammals; PBDB lists ~90 occurrences"}
+survived_kpg: {value: false, source: wilson2013, note: "all Hell Creek metatherians disappear at the boundary in NE Montana"}
+sources: [wilson2016, wilson2013, pbdb]
+notes: >-
+  One of the largest mammals of its time, about the size of an opossum or badger, with a bite strong enough to
+  crush shells and bones. A semi-aquatic life has been suggested but is debated.

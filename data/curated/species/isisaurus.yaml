@@ -1,0 +1,39 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: isisaurus
+name: Isisaurus
+species: [I. colberti]
+group: sauropod
+body_plan: quadruped
+age:
+  formation: Lameta Fm (central India); also reported from the Vitakri Fm (Pakistan)
+  ma_range: [67.0, 66.0]
+  latest_maastrichtian: true
+  note: "The Lameta Fm lies beneath and between the first Deccan Trap lava flows, which erupted in pulses around the boundary (Schoene et al. 2019; Sprain et al. 2019)."
+taxonomy:
+  status: known
+  note: "Described as Titanosaurus colberti by Jain & Bandyopadhyay 1997, later given its own genus."
+regions: [india]
+size:
+  length_m: {typical: 18.0, range: [15.0, 18.0], confidence: model}
+  hip_height_m: 2.5
+  hip_height_note: "estimated from the Jainosaurus femur (1.29 m) + tibia (0.81 m) in the Benson 2014 data"
+  mass_kg:
+    value: 12000
+    source: benson2014
+    confidence: chosen
+    note: "No Benson 2014 estimate for Isisaurus (no hindlimb). We use the value for the co-occurring Lameta titanosaur Jainosaurus septentrionalis (11,946 kg)."
+appearance:
+  integument: scaly; osteoderms possible (known in other titanosaurs)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen}
+  diet: herbivore
+  activity: [browse_high, browse_low, walk, roam, rest]
+  speed_m_s: {walk: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  india: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common (titanosaurs as a group; titanosaur nesting grounds are widespread in the Lameta)"}
+sources: [jain1997, benson2014, schoene2019, sprain2019, pbdb]
+notes: >-
+  A titanosaur from India, which was then an island drifting north across the Indian Ocean. Its last generations
+  lived as the Deccan Traps volcanoes began to flood the land with lava.

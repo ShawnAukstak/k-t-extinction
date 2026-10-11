@@ -1,0 +1,45 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: mosasaurus
+name: Mosasaurus
+species: [M. hoffmannii, M. beaugei, Mosasaurus spp.]
+group: mosasaur
+body_plan: swimmer
+age:
+  formation: Maastricht Fm (Netherlands/Belgium); New Egypt, Hornerstown, Navesink Fms (New Jersey); Couche III (Morocco); López de Bertodano Fm (Antarctica)
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+taxonomy:
+  status: known
+  note: "Species spelling follows the rediagnosis of M. hoffmannii by Street & Caldwell 2017; other species (M. beaugei in Morocco, unnamed Mosasaurus in Antarctica) share the renderer type."
+regions: [tethys, gulf-atlantic-wis, north-africa-arabia, south-atlantic, weddellian-seas, open-ocean]
+size:
+  length_m:
+    typical: 12.0
+    range: [11.0, 17.0]
+    confidence: contested
+    note: >-
+      Lingham-Soliar 1995 called M. hoffmannii the largest marine reptile known; older estimates near 17 m scale the
+      skull as 1/10 of body length, while smaller estimates (~11–13 m) assume proportions of better-known mosasaurines.
+  hip_height_m: null
+  hip_height_note: "not applicable (fully marine)"
+  mass_kg: {value: 6000, range: [4000, 10000], source: null, confidence: chosen, note: "no published mass in our sources; order of magnitude for a 12 m mosasaur"}
+appearance:
+  integument: small, keeled scales; flippers and a downturned tail with a fluke (as in other derived mosasaurs)
+  colour: unknown; the app uses a dark back and pale belly (countershading)
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: carnivore (fish, cephalopods, turtles and other marine reptiles)
+  activity: [swim, hunt, rest]
+  speed_m_s: {swim: 2.0, max: 8.0, source: null, confidence: chosen}
+abundance:
+  tethys: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common"}
+  gulf-atlantic-wis: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common; the commonest mosasaur on the New Jersey shelf (~30 PBDB occurrences)"}
+  north-africa-arabia: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon (M. beaugei, among ≥15 mosasaur species)"}
+  south-atlantic: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+  weddellian-seas: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+  open-ocean: {relative: 0.005, source: null, confidence: chosen, note: "ordinal very_rare; mosasaurs are mostly found in shelf seas"}
+sources: [linghamsoliar1995, street2017, pbdb]
+notes: >-
+  The original mosasaur, first found in a quarry near Maastricht in the 18th century. These sea-going lizards
+  ruled the shelf seas until the very end of the Cretaceous.

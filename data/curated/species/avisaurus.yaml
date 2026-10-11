@@ -1,0 +1,39 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: avisaurus
+name: Avisaurus
+species: [A. archibaldi, A. darwini]
+group: bird
+body_plan: flier
+age:
+  formation: Hell Creek Fm (Montana)
+  ma_range: [67.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+proxy_in: [south-america]
+size:
+  length_m: {typical: 0.5, range: [0.4, 0.6], confidence: chosen, note: "known from foot bones only"}
+  wingspan_m: {typical: 1.2, range: [1.0, 1.4], confidence: chosen, note: "scaled from a hawk of similar mass"}
+  hip_height_m: 0.2
+  hip_height_note: "estimated"
+  mass_kg:
+    value: 1.7
+    range: [1.2, 2.3]
+    source: clark2024
+    confidence: model
+    note: "Clark et al. 2024: A. archibaldi ~1.7 kg (1.49–2.28 kg); A. darwini ~1.2 kg"
+appearance:
+  integument: feathered; skull unknown (many enantiornithines had small teeth)
+  colour: unknown; the app uses a muted palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 2], confidence: chosen}
+  diet: carnivore (foot anatomy resembles that of birds of prey; Clark et al. 2024)
+  activity: [fly, hunt, rest]
+  speed_m_s: {walk: 0.5, fly: 12.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.02, source: longrich2011, confidence: chosen, note: "ordinal rare (birds are rare fossils)"}
+survived_kpg: {value: false, source: longrich2011, note: "enantiornithines did not survive the boundary"}
+sources: [clark2024, longrich2011, pbdb]
+notes: >-
+  A hawk-sized bird from the 'opposite birds' (enantiornithines), the most diverse birds of the Cretaceous. Its feet
+  suggest it gripped prey like a bird of prey. The whole group died out at the boundary.

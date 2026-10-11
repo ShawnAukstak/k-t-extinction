@@ -1,0 +1,43 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: carnotaurus
+name: Carnotaurus
+species: [C. sastrei]
+group: tyrannosaurid
+body_plan: biped
+age:
+  formation: La Colonia Fm (Chubut, Argentina)
+  ma_range: [72.0, 69.0]
+  latest_maastrichtian: false
+  context_only: true
+  why: >-
+    Age uncertain: Benson 2014 lists Campanian, PBDB lists late Maastrichtian for the holotype collection. Treated
+    conservatively as an older 'representative' abelisaurid for South America (D12).
+taxonomy:
+  status: known
+  note: "An abelisaurid; uses the large-theropod (tyrannosaurid) renderer type with horns, a short skull and vestigial arms."
+regions: [south-america]
+size:
+  length_m: {typical: 7.5, range: [7.0, 8.0], confidence: model}
+  hip_height_m: 2.0
+  hip_height_note: "estimated from the MACN CH 894 femur (1.04 m) in the Benson 2014 data"
+  mass_kg:
+    value: 1600
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: 1,642 kg for the holotype MACN CH 894"
+appearance:
+  integument: scaly; small scales with scattered larger feature scales, no feathers (Hendrickx & Bell 2021); two thick horns over the eyes
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: known
+  sources: [hendrickx2021]
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: carnivore
+  activity: [walk, roam, hunt, scavenge, rest]
+  speed_m_s: {walk: 1.5, max: 9.0, source: null, confidence: chosen}
+abundance:
+  south-america: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon (abelisaurids as a group)"}
+sources: [benson2014, hendrickx2021, pbdb]
+notes: >-
+  A horned predator with arms even smaller than T. rex's. Large patches of its scaly skin are preserved, so its
+  surface texture is better known than that of most dinosaurs.

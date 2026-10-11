@@ -1,0 +1,34 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: prognathodon
+name: Prognathodon
+species: [P. saturator, P. currii, P. rapax, Prognathodon spp.]
+group: mosasaur
+body_plan: swimmer
+age:
+  formation: Maastricht Fm (Netherlands/Belgium); Ouled Abdoun phosphates (Morocco); New Jersey shelf units; Jagüel Fm (Argentina); Angola
+  ma_range: [70.0, 66.0]
+  latest_maastrichtian: true
+regions: [tethys, north-africa-arabia, gulf-atlantic-wis, south-atlantic]
+size:
+  length_m: {typical: 9.0, range: [6.0, 12.0], confidence: model, note: "species range from mid-sized to very large"}
+  hip_height_m: null
+  hip_height_note: "not applicable (fully marine)"
+  mass_kg: {value: 3000, range: [1000, 7000], source: null, confidence: chosen}
+appearance:
+  integument: small scales; flippers and tail fluke
+  colour: unknown; the app uses countershading
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: carnivore (deep, heavy jaws and stout teeth suited to large or hard-shelled prey)
+  activity: [swim, hunt, rest]
+  speed_m_s: {swim: 2.0, max: 7.0, source: null, confidence: chosen}
+abundance:
+  tethys: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common"}
+  north-africa-arabia: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common"}
+  gulf-atlantic-wis: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+  south-atlantic: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+sources: [pbdb]
+notes: >-
+  A heavy-jawed mosasaur with thick, conical teeth, found from the Netherlands to Morocco, New Jersey, Angola and
+  Argentina.

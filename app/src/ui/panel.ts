@@ -6,7 +6,7 @@ import type { Confidence } from '../config';
 import type { TimelineEvent } from '../core/events';
 import type { LocalHistory } from '../core/local-history';
 import type { Poi } from '../core/pois';
-import type { SpeciesDef } from '../life/fauna';
+import type { FaunaEntry, SpeciesDef } from '../life/fauna';
 import { SOURCES } from '../core/sources';
 import { formatRelative } from '../core/timeline';
 
@@ -164,17 +164,26 @@ export class InfoPanel {
     this.body.querySelector('.kt-locate')!.addEventListener('click', () => this.onLocate?.());
   }
 
-  showSpecies(sp: SpeciesDef, extra = ''): void {
+  showSpecies(sp: SpeciesDef, entry?: FaunaEntry, extra = ''): void {
     const mass = sp.massKg >= 1000 ? `${(sp.massKg / 1000).toFixed(sp.massKg >= 10_000 ? 0 : 1)} t` : `${Math.round(sp.massKg)} kg`;
     const group = sp.groupSize[1] > 1 ? `usually ${sp.groupSize[0]}–${sp.groupSize[1]} together` : 'usually alone';
+    const proxy = entry?.proxyFor;
+    const title = proxy ? proxy[0].toUpperCase() + proxy.slice(1) : sp.name;
+    const conf = (c?: string) => (c === 'known' || c === 'model' || c === 'contested' || c === 'chosen' ? c : 'model');
+    const note = sp.survival?.note ? sp.survival.note.replace(/^(yes|no)\b[.;,:]?\s*/i, '') : '';
+    const survived = `<p><strong>Survived the extinction:</strong> ${sp.survives ? 'yes' : 'no'}${note ? ` — ${esc(note[0].toUpperCase() + note.slice(1)).replace(/\.?$/, '.')}` : '.'}</p>`;
     this.body.innerHTML = `
-      <div class="kt-kicker">Animal</div>
-      <h2>${esc(sp.name)}</h2>
-      <div class="kt-chips">${chip('model')}<span class="kt-mag">${sp.lengthM} m long · ${mass} · ${esc(group)}</span></div>
+      <div class="kt-kicker">Animal${proxy ? ' · stand-in' : ''}</div>
+      <h2>${esc(title)}</h2>
+      ${proxy ? `<p class="kt-note">${chip('chosen')} Shown with the <strong>${esc(sp.name)}</strong> model and card as a stand-in: these animals have no card of their own yet.</p>` : ''}
+      <div class="kt-chips">${chip('model')}<span class="kt-mag">${proxy ? `${esc(sp.name)}: ` : ''}${sp.lengthM} m long · ${mass} · ${esc(group)}</span></div>
+      ${entry?.note ? `<p class="kt-note">${chip(conf(entry.confidence))} Here: ${esc(entry.note)}</p>` : entry ? `<p class="kt-note">${chip(conf(entry.confidence))} Lives in this region.</p>` : ''}
+      ${sp.olderRecord ? `<p class="kt-note">${chip('chosen')} Older record, shown as representative: ${esc(sp.olderRecord)}</p>` : ''}
       ${sp.notes ? `<p>${esc(sp.notes)}</p>` : ''}
+      ${survived}
       ${extra}
       <p class="kt-note">${chip('chosen')} The 3-D model is a simplified stand-in with the right overall proportions; colours are unknown for these animals and are a guess.</p>
-      <div class="kt-sources"><span>Sources</span>${sourceLinks(sp.sources)}</div>`;
+      <div class="kt-sources"><span>Sources</span>${sourceLinks([...sp.sources, ...(sp.survival?.source ? [sp.survival.source] : [])])}</div>`;
     this.open('species');
   }
 

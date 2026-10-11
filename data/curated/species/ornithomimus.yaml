@@ -1,0 +1,47 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: ornithomimus
+name: Ornithomimus / Struthiomimus
+species: [Ornithomimus sp., Struthiomimus sedens]
+group: ornithomimid
+body_plan: biped
+age:
+  formation: Hell Creek, Lance, Scollard Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+taxonomy:
+  status: contested
+  note: >-
+    Latest-Maastrichtian ornithomimid material is fragmentary; genus-level identifications (Ornithomimus vs
+    Struthiomimus) are uncertain. Horner et al. 2011 report it as Ornithomimus.
+regions: [hell-creek]
+proxy_in: [south-laramidia, nemegt]
+size:
+  length_m: {typical: 3.8, range: [3.0, 4.5], confidence: model}
+  hip_height_m: 1.4
+  hip_height_note: "estimated from Struthiomimus AMNH 5339 femur (0.48 m) + tibia (0.52 m) in the Benson 2014 data plus a long metatarsus"
+  mass_kg:
+    value: 170
+    range: [84, 179]
+    source: benson2014
+    confidence: model
+    note: >-
+      No Benson 2014 estimate for a Hell Creek specimen. Congeners from slightly older beds: Ornithomimus
+      edmontonicus AMNH 5884 179 kg and ROM 851 84 kg; Struthiomimus altus AMNH 5375 179 kg, AMNH 5339 152 kg.
+appearance:
+  integument: >-
+    feathered: Ornithomimus specimens from Alberta (~71 Ma) preserve a filamentous body covering, and adults have
+    longer feathers on the forearms (Zelenitsky et al. 2012)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: known
+  sources: [zelenitsky2012]
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen, note: "no Hell Creek bonebed evidence"}
+  diet: omnivore (mostly plants)
+  activity: [browse_low, walk, roam, rest]
+  speed_m_s: {walk: 1.5, max: 12.0, source: null, confidence: chosen, note: "long-legged; often described as among the fastest dinosaurs, but no model in our sources"}
+abundance:
+  hell-creek: {relative: 0.05, source: horner2011, confidence: known, note: "5 % (n = 9) of the census"}
+sources: [horner2011, zelenitsky2012, benson2014, pbdb]
+notes: >-
+  The 'ostrich mimics': toothless, long-legged and feathered. Adults had wing-like feathered arms that could not
+  fly, possibly used for display.

@@ -1,0 +1,38 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: acheroraptor
+name: Acheroraptor
+species: [A. temertyorum]
+group: small_theropod
+body_plan: biped
+age:
+  formation: Hell Creek Fm (Montana)
+  ma_range: [67.0, 66.0]
+  latest_maastrichtian: true
+taxonomy:
+  status: known
+  note: >-
+    Known from an upper and a lower jaw (Evans et al. 2013). The larger Dakotaraptor from the same formation is of
+    uncertain validity (its holotype was found to include a turtle bone), so it is not shown.
+regions: [hell-creek]
+proxy_in: [hateg]
+size:
+  length_m: {typical: 2.5, range: [2.0, 3.0], confidence: model, note: "jaws only; scaled from its close relative Velociraptor"}
+  hip_height_m: 0.7
+  hip_height_note: "estimated from length using dromaeosaurid proportions"
+  mass_kg: {value: 30, source: null, confidence: chosen, note: "no published estimate in our sources; order of magnitude for a 2–3 m dromaeosaurid"}
+appearance:
+  integument: feathered, with wing-like arm feathers (inferred; quill knobs are known in its relative Velociraptor, Turner et al. 2007)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+  sources: [turner2007]
+behaviour:
+  group_size: {typical: [1, 3], confidence: chosen}
+  diet: carnivore
+  activity: [walk, roam, hunt, scavenge, rest]
+  speed_m_s: {walk: 1.2, max: 10.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.02, source: horner2011, confidence: chosen, note: "ordinal rare; small predatory dinosaurs are known almost only from teeth (Horner et al. 2011)"}
+sources: [evans2013, turner2007, horner2011, pbdb]
+notes: >-
+  The last known 'raptor' (dromaeosaurid). Its closest relatives lived in Asia, such as Velociraptor, not in North
+  America.

@@ -1,0 +1,37 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: thescelosaurus
+name: Thescelosaurus
+species: [T. neglectus, T. assiniboiensis]
+group: small_ornithischian
+body_plan: biped
+age:
+  formation: Hell Creek, Lance, Frenchman, Scollard Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+proxy_in: [hateg, polar-south]
+size:
+  length_m: {typical: 3.5, range: [2.5, 4.0], confidence: model}
+  hip_height_m: 1.0
+  hip_height_note: "estimated from T. neglectus AMNH 5891 femur (0.45 m) in the Benson 2014 data with typical small-ornithischian limb proportions"
+  mass_kg:
+    value: 340
+    range: [110, 340]
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: T. neglectus AMNH 5891 339 kg; the smaller T. assiniboiensis RSM 1225.1 109 kg"
+appearance:
+  integument: unknown; scales are assumed (no skin described in our sources)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: chosen
+behaviour:
+  group_size: {typical: [1, 2], confidence: chosen, note: "no bonebeds"}
+  diet: herbivore (low browser)
+  activity: [browse_low, walk, rest]
+  speed_m_s: {walk: 1.2, max: 8.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.08, source: horner2011, confidence: known, note: "8 % (n = 15) of the census; found only in mudstones there"}
+sources: [horner2011, benson2014, pbdb]
+notes: >-
+  A stocky, beaked plant-eater about the size of a large pony. It was the commonest small-to-medium plant-eater of
+  the Hell Creek floodplain.

@@ -1,0 +1,45 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: edmontosaurus
+name: Edmontosaurus
+species: [E. annectens]
+group: hadrosaur
+body_plan: facultative_biped
+age:
+  formation: Hell Creek, Lance, Frenchman, Scollard Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek, arctic-beringia]
+proxy_in: [south-laramidia, appalachia, south-america, nemegt]
+size:
+  length_m: {typical: 11.0, range: [9.0, 12.0], confidence: model, note: "Horner et al. 2011 report an 'XL' tail 7.5 m long behind the sacrum (MOR 1142), so some individuals were larger"}
+  hip_height_m: 2.5
+  hip_height_note: "estimated from AMNH 5730 femur (1.15 m) + tibia (0.97 m) in the Benson 2014 data, plus a metatarsus allowance, slightly flexed"
+  mass_kg:
+    value: 6600
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: 6,610 kg for AMNH 5730 (a mature individual). Rare giants were larger."
+appearance:
+  integument: >-
+    scaly skin; two Wyoming 'mummies' preserve a fleshy crest along the neck and trunk, a row of spikes over the
+    hips and tail, and hooves on the hind toes (Sereno et al. 2026)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: known
+  sources: [sereno2026]
+behaviour:
+  group_size:
+    typical: [5, 40]
+    confidence: model
+    note: >-
+      Monodominant Edmontosaurus annectens bonebeds (e.g. Lance Fm, Wyoming; Siviero et al. 2020) suggest herds.
+      Herd size is not measured; the range is chosen.
+  diet: herbivore (low-to-mid browser)
+  activity: [graze, browse_low, walk, roam, rest]
+  speed_m_s: {walk: 1.5, max: 8.0, source: null, confidence: chosen, note: "published simulations vary widely; value chosen"}
+abundance:
+  hell-creek: {relative: 0.20, source: horner2011, confidence: known, note: "20 % (n = 36) of large-dinosaur skeletons in the Hell Creek census"}
+  arctic-beringia: {relative: 0.40, source: pbdb, confidence: chosen, note: "ordinal abundant; hadrosaurs dominate Prince Creek (older, context) and Kakanaut collections"}
+sources: [horner2011, siviero2020, sereno2026, benson2014, pbdb]
+notes: >-
+  Edmontosaurus was a duck-billed plant-eater with hundreds of grinding teeth. Mummified specimens show it had a
+  fleshy ridge down its back and hoof-like coverings on its toes.

@@ -15,6 +15,43 @@ sources:
     verified: true
     volume: "208"
     year: 1980
+  andres2021:
+    authors: "Andres, B., & Langston, W."
+    doi: "10.1080/02724634.2021.1907587"
+    journal: "Journal of Vertebrate Paleontology"
+    open_access: true
+    pages: "46–202"
+    short: "Andres & Langston 2021"
+    title: "Morphology and taxonomy of Quetzalcoatlus Lawson 1975 (Pterodactyloidea: Azhdarchoidea)"
+    url: "https://doi.org/10.1080/02724634.2021.1907587"
+    verified: true
+    volume: "41"
+    year: 2021
+  arbour2017:
+    authors: "Arbour, V. M., & Mallon, J. C."
+    doi: "10.1139/facets-2017-0063"
+    journal: "FACETS"
+    open_access: true
+    pages: "764–794"
+    short: "Arbour & Mallon 2017"
+    title: "Unusual cranial and postcranial anatomy in the archetypal ankylosaur Ankylosaurus magniventris"
+    url: "https://doi.org/10.1139/facets-2017-0063"
+    verified: true
+    volume: "2"
+    year: 2017
+  archibald1990:
+    authors: "Archibald, J. D., & Bryant, L. J."
+    doi: "10.1130/SPE247-p549"
+    journal: "Geological Society of America Special Papers"
+    note: "Chapter in Global Catastrophes in Earth History (GSA Special Paper 247); Crossref lists the book title as the container."
+    open_access: false
+    pages: "549–562"
+    short: "Archibald & Bryant 1990"
+    title: "Differential Cretaceous/Tertiary extinctions of nonmarine vertebrates; Evidence from northeastern Montana"
+    url: "https://doi.org/10.1130/SPE247-p549"
+    verified: true
+    volume: "247"
+    year: 1990
   artemieva2009:
     authors: "Artemieva, N., & Morgan, J."
     doi: "10.1016/j.icarus.2009.01.021"
@@ -178,6 +215,18 @@ sources:
     verified: true
     volume: null
     year: 2021
+  brusatte2011:
+    authors: "Brusatte, S. L., Benson, R. B. J., & Norell, M. A."
+    doi: "10.1206/3717.2"
+    journal: "American Museum Novitates"
+    open_access: true
+    pages: "1–53"
+    short: "Brusatte et al. 2011"
+    title: "The Anatomy of Dryptosaurus aquilunguis (Dinosauria: Theropoda) and a Review of Its Tyrannosauroid Affinities"
+    url: "https://doi.org/10.1206/3717.2"
+    verified: true
+    volume: "3717"
+    year: 2011
   carvalho2021:
     authors: "Carvalho, M. R., Jaramillo, C., de la Parra, F., et al."
     doi: "10.1126/science.abf1969"
@@ -226,6 +275,18 @@ sources:
     verified: true
     volume: "117"
     year: 2020
+  clark2024:
+    authors: "Clark, A. D., Atterholt, J., Scannella, J. B., et al."
+    doi: "10.1371/journal.pone.0310686"
+    journal: "PLOS ONE"
+    open_access: true
+    pages: "e0310686"
+    short: "Clark et al. 2024"
+    title: "New enantiornithine diversity in the Hell Creek Formation and the functional morphology of the avisaurid tarsometatarsus"
+    url: "https://doi.org/10.1371/journal.pone.0310686"
+    verified: true
+    volume: "19"
+    year: 2024
   clyde2016:
     authors: "Clyde, W. C., Ramezani, J., Johnson, K. R., et al."
     doi: "10.1016/j.epsl.2016.07.041"
@@ -276,6 +337,54 @@ sources:
     verified: true
     volume: null
     year: 2020
+  csikisava2015:
+    authors: "Csiki-Sava, Z., Buffetaut, E., Ősi, A., et al."
+    doi: "10.3897/zookeys.469.8439"
+    journal: "ZooKeys"
+    open_access: true
+    pages: "1–161"
+    short: "Csiki-Sava et al. 2015"
+    title: "Island life in the Cretaceous - faunal composition, biogeography, evolution, and extinction of land-living vertebrates on the Late Cretaceous European archipelago"
+    url: "https://doi.org/10.3897/zookeys.469.8439"
+    verified: true
+    volume: "469"
+    year: 2015
+  curryrogers2001:
+    authors: "Curry Rogers, K., & Forster, C. A."
+    doi: "10.1038/35087566"
+    journal: "Nature"
+    open_access: false
+    pages: "530–534"
+    short: "Curry Rogers & Forster 2001"
+    title: "The last of the dinosaur titans: a new sauropod from Madagascar"
+    url: "https://doi.org/10.1038/35087566"
+    verified: true
+    volume: "412"
+    year: 2001
+  curryrogers2011:
+    authors: "Curry Rogers, K., D'Emic, M., Rogers, R., et al."
+    doi: "10.1038/ncomms1578"
+    journal: "Nature Communications"
+    open_access: true
+    pages: "564"
+    short: "Curry Rogers et al. 2011"
+    title: "Sauropod dinosaur osteoderms from the Late Cretaceous of Madagascar"
+    url: "https://doi.org/10.1038/ncomms1578"
+    verified: true
+    volume: "2"
+    year: 2011
+  curryrogers2016:
+    authors: "Curry Rogers, K., Whitney, M., D'Emic, M., et al."
+    doi: "10.1126/science.aaf1509"
+    journal: "Science"
+    open_access: false
+    pages: "450–453"
+    short: "Curry Rogers et al. 2016"
+    title: "Precocity in a tiny titanosaur from the Cretaceous of Madagascar"
+    url: "https://doi.org/10.1126/science.aaf1509"
+    verified: true
+    volume: "352"
+    year: 2016
   depalma2019:
     authors: "DePalma, R. A., Smit, J., Burnham, D. A., et al."
     doi: "10.1073/pnas.1817407116"
@@ -375,6 +484,30 @@ sources:
     verified: true
     volume: "430"
     year: 2004
+  evans2008:
+    authors: "Evans, S. E., Jones, M. E. H., & Krause, D. W."
+    doi: "10.1073/pnas.0707599105"
+    journal: "Proceedings of the National Academy of Sciences"
+    open_access: true
+    pages: "2951–2956"
+    short: "Evans et al. 2008"
+    title: "A giant frog with South American affinities from the Late Cretaceous of Madagascar"
+    url: "https://doi.org/10.1073/pnas.0707599105"
+    verified: true
+    volume: "105"
+    year: 2008
+  evans2013:
+    authors: "Evans, D. C., Larson, D. W., & Currie, P. J."
+    doi: "10.1007/s00114-013-1107-5"
+    journal: "Naturwissenschaften"
+    open_access: false
+    pages: "1041–1049"
+    short: "Evans et al. 2013"
+    title: "A new dromaeosaurid (Dinosauria: Theropoda) with Asian affinities from the latest Cretaceous of North America"
+    url: "https://doi.org/10.1007/s00114-013-1107-5"
+    verified: true
+    volume: "100"
+    year: 2013
   field2018:
     authors: "Field, D. J., Bercovici, A., Berv, J. S., et al."
     doi: "10.1016/j.cub.2018.04.062"
@@ -411,6 +544,42 @@ sources:
     verified: true
     volume: "385"
     year: 2024
+  fondevilla2019:
+    authors: "Fondevilla, V., Riera, V., Vila, B., et al."
+    doi: "10.1016/j.earscirev.2019.01.007"
+    journal: "Earth-Science Reviews"
+    open_access: false
+    pages: "168–189"
+    short: "Fondevilla et al. 2019"
+    title: "Chronostratigraphic synthesis of the latest Cretaceous dinosaur turnover in south-western Europe"
+    url: "https://doi.org/10.1016/j.earscirev.2019.01.007"
+    verified: true
+    volume: "191"
+    year: 2019
+  fowler2011:
+    authors: "Fowler, D. W., & Sullivan, R. M."
+    doi: "10.4202/app.2010.0105"
+    journal: "Acta Palaeontologica Polonica"
+    open_access: true
+    pages: "685–690"
+    short: "Fowler & Sullivan 2011"
+    title: "The First Giant Titanosaurian Sauropod from the Upper Cretaceous of North America"
+    url: "https://doi.org/10.4202/app.2010.0105"
+    verified: true
+    volume: "56"
+    year: 2011
+  godefroit2012:
+    authors: "Godefroit, P., Bolotsky, Y. L., & Bolotsky, I. Y."
+    doi: "10.4202/app.2011.0051"
+    journal: "Acta Palaeontologica Polonica"
+    open_access: true
+    pages: "527–560"
+    short: "Godefroit et al. 2012"
+    title: "Osteology and Relationships of Olorotitan arharensis, A Hollow-Crested Hadrosaurid Dinosaur from the Latest Cretaceous of Far Eastern Russia"
+    url: "https://doi.org/10.4202/app.2011.0051"
+    verified: true
+    volume: "57"
+    year: 2012
   goldin2009:
     authors: "Goldin, T. J., & Melosh, H. J."
     doi: "10.1130/G30433A.1"
@@ -459,6 +628,18 @@ sources:
     verified: true
     volume: "116"
     year: 2019
+  hendrickx2021:
+    authors: "Hendrickx, C., & Bell, P. R."
+    doi: "10.1016/j.cretres.2021.104994"
+    journal: "Cretaceous Research"
+    open_access: true
+    pages: "104994"
+    short: "Hendrickx & Bell 2021"
+    title: "The scaly skin of the abelisaurid Carnotaurus sastrei (Theropoda: Ceratosauria) from the Upper Cretaceous of Patagonia"
+    url: "https://doi.org/10.1016/j.cretres.2021.104994"
+    verified: true
+    volume: "128"
+    year: 2021
   henehan2019:
     authors: "Henehan, M. J., Ridgwell, A., Thomas, E., et al."
     doi: "10.1073/pnas.1905989116"
@@ -483,6 +664,19 @@ sources:
     verified: true
     volume: "19"
     year: 1991
+  holroyd2014:
+    authors: "Holroyd, P. A., Wilson, G. P., & Hutchison, J. H."
+    doi: "10.1130/2014.2503(11)"
+    journal: "Geological Society of America Special Papers"
+    note: "Chapter 11 of Through the End of the Cretaceous in the Type Locality of the Hell Creek Formation in Montana and Adjacent Areas (GSA Special Paper 503); Crossref and OpenAlex records have no page range."
+    open_access: false
+    pages: null
+    short: "Holroyd et al. 2014"
+    title: "Temporal changes within the latest Cretaceous and early Paleogene turtle faunas of northeastern Montana"
+    url: "https://doi.org/10.1130/2014.2503(11)"
+    verified: true
+    volume: "503"
+    year: 2014
   honisch2023:
     authors: "The Cenozoic CO2 Proxy Integration Project (CenCO2PIP) Consortium, Hönisch, B., Royer, D. L., et al."
     doi: "10.1126/science.adi5177"
@@ -519,6 +713,30 @@ sources:
     verified: true
     volume: "367"
     year: 2020
+  hutchinson2011:
+    authors: "Hutchinson, J. R., Bates, K. T., Molnar, J., et al."
+    doi: "10.1371/journal.pone.0026037"
+    journal: "PLoS ONE"
+    open_access: true
+    pages: "e26037"
+    short: "Hutchinson et al. 2011"
+    title: "A Computational Analysis of Limb and Body Dimensions in Tyrannosaurus rex with Implications for Locomotion, Ontogeny, and Growth"
+    url: "https://doi.org/10.1371/journal.pone.0026037"
+    verified: true
+    volume: "6"
+    year: 2011
+  jain1997:
+    authors: "Jain, S. L., & Bandyopadhyay, S."
+    doi: "10.1080/02724634.1997.10010958"
+    journal: "Journal of Vertebrate Paleontology"
+    open_access: false
+    pages: "114–136"
+    short: "Jain & Bandyopadhyay 1997"
+    title: "New titanosaurid (Dinosauria: Sauropoda) from the Late Cretaceous of central India"
+    url: "https://doi.org/10.1080/02724634.1997.10010958"
+    verified: true
+    volume: "17"
+    year: 1997
   judd2024:
     authors: "Judd, E. J., Tierney, J. E., Lunt, D. J., et al."
     doi: "10.1126/science.adk3705"
@@ -604,6 +822,30 @@ sources:
     verified: true
     volume: "396"
     year: 1998
+  lamanna2014:
+    authors: "Lamanna, M. C., Sues, H.-D., Schachner, E. R., et al."
+    doi: "10.1371/journal.pone.0092022"
+    journal: "PLoS ONE"
+    open_access: true
+    pages: "e92022"
+    short: "Lamanna et al. 2014"
+    title: "A New Large-Bodied Oviraptorosaurian Theropod Dinosaur from the Latest Cretaceous of Western North America"
+    url: "https://doi.org/10.1371/journal.pone.0092022"
+    verified: true
+    volume: "9"
+    year: 2014
+  linghamsoliar1995:
+    authors: "Lingham-Soliar, T."
+    doi: "10.1098/rstb.1995.0019"
+    journal: "Philosophical Transactions of the Royal Society of London. Series B: Biological Sciences"
+    open_access: false
+    pages: "155–180"
+    short: "Lingham-Soliar 1995"
+    title: "Anatomy and functional morphology of the largest marine reptile known, Mosasaurus hoffmanni (Mosasauridae, Reptilia) from the Upper Cretaceous, Upper Maastrichtian of The Netherlands"
+    url: "https://doi.org/10.1098/rstb.1995.0019"
+    verified: true
+    volume: "347"
+    year: 1995
   longrich2011:
     authors: "Longrich, N. R., Tokaryk, T., & Field, D. J."
     doi: "10.1073/pnas.1110395108"
@@ -616,6 +858,30 @@ sources:
     verified: true
     volume: "108"
     year: 2011
+  longrich2012:
+    authors: "Longrich, N. R., & Field, D. J."
+    doi: "10.1371/journal.pone.0032623"
+    journal: "PLoS ONE"
+    open_access: true
+    pages: "e32623"
+    short: "Longrich & Field 2012"
+    title: "Torosaurus Is Not Triceratops: Ontogeny in Chasmosaurine Ceratopsids as a Case Study in Dinosaur Taxonomy"
+    url: "https://doi.org/10.1371/journal.pone.0032623"
+    verified: true
+    volume: "7"
+    year: 2012
+  longrich2017:
+    authors: "Longrich, N. R., Pereda-Suberbiola, X., Jalil, N.-E., et al."
+    doi: "10.1016/j.cretres.2017.03.021"
+    journal: "Cretaceous Research"
+    open_access: true
+    pages: "40–52"
+    short: "Longrich et al. 2017"
+    title: "An abelisaurid from the latest Cretaceous (late Maastrichtian) of Morocco, North Africa"
+    url: "https://doi.org/10.1016/j.cretres.2017.03.021"
+    verified: true
+    volume: "76"
+    year: 2017
   longrich2018:
     authors: "Longrich, N. R., Martill, D. M., & Andres, B."
     doi: "10.1371/journal.pbio.2001663"
@@ -628,6 +894,18 @@ sources:
     verified: true
     volume: "16"
     year: 2018
+  longrich2021:
+    authors: "Longrich, N. R., Pereda Suberbiola, X., Pyron, R. A., et al."
+    doi: "10.1016/j.cretres.2020.104678"
+    journal: "Cretaceous Research"
+    open_access: true
+    pages: "104678"
+    short: "Longrich et al. 2021"
+    title: "The first duckbill dinosaur (Hadrosauridae: Lambeosaurinae) from Africa and the role of oceanic dispersal in dinosaur biogeography"
+    url: "https://doi.org/10.1016/j.cretres.2020.104678"
+    verified: true
+    volume: "120"
+    year: 2021
   lowery2018:
     authors: "Lowery, C. M., Bralower, T. J., Owens, J. D., et al."
     doi: "10.1038/s41586-018-0163-6"
@@ -676,6 +954,18 @@ sources:
     verified: true
     volume: "372"
     year: 2021
+  mathews2009:
+    authors: "Mathews, J. C., Brusatte, S. L., Williams, S. A., et al."
+    doi: "10.1080/02724634.2009.10010382"
+    journal: "Journal of Vertebrate Paleontology"
+    open_access: false
+    pages: "286–290"
+    short: "Mathews et al. 2009"
+    title: "The first Triceratops bonebed and its implications for gregarious behavior"
+    url: "https://doi.org/10.1080/02724634.2009.10010382"
+    verified: true
+    volume: "29"
+    year: 2009
   melosh1990:
     authors: "Melosh, H. J., Schneider, N. M., Zahnle, K. J., et al."
     doi: "10.1038/343251a0"
@@ -773,6 +1063,18 @@ sources:
     verified: true
     volume: "7"
     year: 2014
+  otero2014:
+    authors: "Otero, R. A., Soto-Acuña, S., O'Keefe, F. R., et al."
+    doi: "10.1080/02724634.2013.780953"
+    journal: "Journal of Vertebrate Paleontology"
+    open_access: true
+    pages: "100–125"
+    short: "Otero et al. 2014"
+    title: "Aristonectes quiriquinensis, sp. nov., a new highly derived elasmosaurid from the upper Maastrichtian of central Chile"
+    url: "https://doi.org/10.1080/02724634.2013.780953"
+    verified: true
+    volume: "34"
+    year: 2014
   paleodem:
     authors: "Scotese, C. R., & Wright, N. M."
     doi: "10.5281/zenodo.5460860"
@@ -799,6 +1101,31 @@ sources:
     verified: true
     volume: null
     year: null
+  pearson2002:
+    authors: "Pearson, D. A., Schaefer, T., Johnson, K. R., et al."
+    doi: "10.1130/0-8137-2361-2.145"
+    journal: "Geological Society of America Special Papers"
+    note: "Chapter in The Hell Creek Formation and the Cretaceous-Tertiary Boundary in the Northern Great Plains (GSA Special Paper 361); starts on p. 145 per the DOI; Crossref and OpenAlex records have no page range."
+    open_access: false
+    pages: null
+    short: "Pearson et al. 2002"
+    title: "Vertebrate biostratigraphy of the Hell Creek Formation in southwestern North Dakota and northwestern South Dakota"
+    url: "https://doi.org/10.1130/0-8137-2361-2.145"
+    verified: true
+    volume: "361"
+    year: 2002
+  pereda2009:
+    authors: "Pereda-Suberbiola, X., Canudo, J. I., Cruzado-Caballero, P., et al."
+    doi: "10.1016/j.crpv.2009.05.002"
+    journal: "Comptes Rendus Palevol"
+    open_access: true
+    pages: "559–572"
+    short: "Pereda-Suberbiola et al. 2009"
+    title: "The last hadrosaurid dinosaurs of Europe: A new lambeosaurine from the Uppermost Cretaceous of Aren (Huesca, Spain)"
+    url: "https://doi.org/10.1016/j.crpv.2009.05.002"
+    verified: true
+    volume: "8"
+    year: 2009
   pickersgill2021:
     authors: "Pickersgill, A. E., Mark, D. F., Lee, M. R., et al."
     doi: "10.1126/sciadv.abe6530"
@@ -922,6 +1249,54 @@ sources:
     verified: true
     volume: "16"
     year: 2025
+  rogers2003:
+    authors: "Rogers, R. R., Krause, D. W., & Curry Rogers, K."
+    doi: "10.1038/nature01532"
+    journal: "Nature"
+    open_access: false
+    pages: "515–518"
+    short: "Rogers et al. 2003"
+    title: "Cannibalism in the Madagascan dinosaur Majungatholus atopus"
+    url: "https://doi.org/10.1038/nature01532"
+    verified: true
+    volume: "422"
+    year: 2003
+  sampson2005:
+    authors: "Sampson, S. D., & Loewen, M. A."
+    doi: "10.1671/0272-4634(2005)025[0469:TRFTUC]2.0.CO;2"
+    journal: "Journal of Vertebrate Paleontology"
+    open_access: false
+    pages: "469–472"
+    short: "Sampson & Loewen 2005"
+    title: "Tyrannosaurus rex from the Upper Cretaceous (Maastrichtian) North Horn Formation of Utah: biogeographic and paleoecologic implications"
+    url: "https://doi.org/10.1671/0272-4634(2005)025[0469:TRFTUC]2.0.CO;2"
+    verified: true
+    volume: "25"
+    year: 2005
+  scannella2010:
+    authors: "Scannella, J. B., & Horner, J. R."
+    doi: "10.1080/02724634.2010.483632"
+    journal: "Journal of Vertebrate Paleontology"
+    open_access: false
+    pages: "1157–1168"
+    short: "Scannella & Horner 2010"
+    title: "Torosaurus Marsh, 1891, is Triceratops Marsh, 1889 (Ceratopsidae: Chasmosaurinae): synonymy through ontogeny"
+    url: "https://doi.org/10.1080/02724634.2010.483632"
+    verified: true
+    volume: "30"
+    year: 2010
+  scannella2014:
+    authors: "Scannella, J. B., Fowler, D. W., Goodwin, M. B., et al."
+    doi: "10.1073/pnas.1313334111"
+    journal: "Proceedings of the National Academy of Sciences"
+    open_access: true
+    pages: "10245–10250"
+    short: "Scannella et al. 2014"
+    title: "Evolutionary trends in Triceratops from the Hell Creek Formation, Montana"
+    url: "https://doi.org/10.1073/pnas.1313334111"
+    verified: true
+    volume: "111"
+    year: 2014
   schoene2019:
     authors: "Schoene, B., Eddy, M. P., Samperton, K. M., et al."
     doi: "10.1126/science.aau2422"
@@ -1021,6 +1396,31 @@ sources:
     verified: true
     volume: null
     year: 2023
+  sereno2026:
+    authors: "Sereno, P. C., Saitta, E. T., Vidal, D., et al."
+    doi: "10.1126/science.adw3536"
+    journal: "Science"
+    open_access: false
+    pages: "eadw3536"
+    short: "Sereno et al. 2026"
+    title: "Duck-billed dinosaur fleshy midline and hooves reveal terrestrial clay-template “mummification”"
+    url: "https://doi.org/10.1126/science.adw3536"
+    verified: true
+    volume: "391"
+    year: 2026
+  siviero2020:
+    authors: "Siviero, B. C. T., Rega, E., Hayes, W. K., et al."
+    doi: "10.2110/palo.2019.079"
+    journal: "Palaios"
+    note: "Title given in sentence case; Crossref has it in capitals."
+    open_access: false
+    pages: "201–214"
+    short: "Siviero et al. 2020"
+    title: "Skeletal trauma with implications for intratail mobility in Edmontosaurus annectens from a monodominant bonebed, Lance Formation (Maastrichtian), Wyoming USA"
+    url: "https://doi.org/10.2110/palo.2019.079"
+    verified: true
+    volume: "35"
+    year: 2020
   sprain2018:
     authors: "Sprain, C. J., Renne, P. R., Clemens, W. A., et al."
     doi: "10.1130/B31890.1"
@@ -1045,6 +1445,31 @@ sources:
     verified: true
     volume: "363"
     year: 2019
+  stein2010:
+    authors: "Stein, K., Csiki, Z., Curry Rogers, K., et al."
+    doi: "10.1073/pnas.1000781107"
+    journal: "Proceedings of the National Academy of Sciences"
+    open_access: true
+    pages: "9258–9263"
+    short: "Stein et al. 2010"
+    title: "Small body size and extreme cortical bone remodeling indicate phyletic dwarfism in Magyarosaurus dacus (Sauropoda: Titanosauria)"
+    url: "https://doi.org/10.1073/pnas.1000781107"
+    verified: true
+    volume: "107"
+    year: 2010
+  street2017:
+    authors: "Street, H. P., & Caldwell, M. W."
+    doi: "10.1017/S0016756816000236"
+    journal: "Geological Magazine"
+    note: "Online 2016; issue dated 2017."
+    open_access: false
+    pages: "521–557"
+    short: "Street & Caldwell 2017"
+    title: "Rediagnosis and redescription of Mosasaurus hoffmannii (Squamata: Mosasauridae) and an assessment of species assigned to the genus Mosasaurus"
+    url: "https://doi.org/10.1017/S0016756816000236"
+    verified: true
+    volume: "154"
+    year: 2017
   tabor2020:
     authors: "Tabor, C. R., Bardeen, C. G., Otto-Bliesner, B. L., et al."
     doi: "10.1029/2019GL085572"
@@ -1071,6 +1496,31 @@ sources:
     verified: true
     volume: null
     year: 2019
+  thomas2024:
+    authors: "Thomas, H. N., Hone, D. W. E., Gomes, T., et al."
+    doi: "10.1080/02724634.2024.2442476"
+    journal: "Journal of Vertebrate Paleontology"
+    note: "Online 2025; volume dated 2024."
+    open_access: false
+    pages: "e2442476"
+    short: "Thomas et al. 2024"
+    title: "Infernodrakon hastacollis gen. et sp. nov., a new azhdarchid pterosaur from the Hell Creek Formation of Montana, and the pterosaur diversity of Maastrichtian North America"
+    url: "https://doi.org/10.1080/02724634.2024.2442476"
+    verified: true
+    volume: "44"
+    year: 2024
+  torres2025:
+    authors: "Torres, C. R., Clarke, J. A., Groenke, J. R., et al."
+    doi: "10.1038/s41586-024-08390-0"
+    journal: "Nature"
+    open_access: false
+    pages: "146–151"
+    short: "Torres et al. 2025"
+    title: "Cretaceous Antarctic bird skull elucidates early avian ecological diversity"
+    url: "https://doi.org/10.1038/s41586-024-08390-0"
+    verified: true
+    volume: "638"
+    year: 2025
   trinquier2006:
     authors: "Trinquier, A., Birck, J.-L., & Allègre, C. J."
     doi: "10.1016/j.epsl.2005.11.006"
@@ -1083,6 +1533,18 @@ sources:
     verified: true
     volume: "241"
     year: 2006
+  turner2007:
+    authors: "Turner, A. H., Makovicky, P. J., & Norell, M. A."
+    doi: "10.1126/science.1145076"
+    journal: "Science"
+    open_access: false
+    pages: "1721"
+    short: "Turner et al. 2007"
+    title: "Feather Quill Knobs in the Dinosaur Velociraptor"
+    url: "https://doi.org/10.1126/science.1145076"
+    verified: true
+    volume: "317"
+    year: 2007
   tyrrell2015:
     authors: "Tyrrell, T., Merico, A., & Armstrong McKay, D. I."
     doi: "10.1073/pnas.1418604112"
@@ -1119,6 +1581,18 @@ sources:
     verified: true
     volume: "17"
     year: 2021
+  vanbijlert2021:
+    authors: "van Bijlert, P. A., van Soest, A. J., & Schulp, A. S."
+    doi: "10.1098/rsos.201441"
+    journal: "Royal Society Open Science"
+    open_access: true
+    pages: "201441"
+    short: "van Bijlert et al. 2021"
+    title: "Natural Frequency Method: estimating the preferred walking speed of Tyrannosaurus rex based on tail natural frequency"
+    url: "https://doi.org/10.1098/rsos.201441"
+    verified: true
+    volume: "8"
+    year: 2021
   vellekoop2014:
     authors: "Vellekoop, J., Sluijs, A., Smit, J., et al."
     doi: "10.1073/pnas.1319253111"
@@ -1131,6 +1605,42 @@ sources:
     verified: true
     volume: "111"
     year: 2014
+  vila2016:
+    authors: "Vila, B., Sellés, A. G., & Brusatte, S. L."
+    doi: "10.1016/j.cretres.2015.07.003"
+    journal: "Cretaceous Research"
+    open_access: true
+    pages: "552–564"
+    short: "Vila et al. 2016"
+    title: "Diversity and faunal changes in the latest Cretaceous dinosaur communities of southwestern Europe"
+    url: "https://doi.org/10.1016/j.cretres.2015.07.003"
+    verified: true
+    volume: "57"
+    year: 2016
+  vila2022:
+    authors: "Vila, B., Sellés, A., Moreno-Azanza, M., et al."
+    doi: "10.1038/s41559-021-01651-5"
+    journal: "Nature Ecology & Evolution"
+    open_access: true
+    pages: "288–296"
+    short: "Vila et al. 2022"
+    title: "A titanosaurian sauropod with Gondwanan affinities in the latest Cretaceous of Europe"
+    url: "https://doi.org/10.1038/s41559-021-01651-5"
+    verified: true
+    volume: "6"
+    year: 2022
+  vincent2011:
+    authors: "Vincent, P., Bardet, N., Pereda Suberbiola, X., et al."
+    doi: "10.1016/j.gr.2010.10.005"
+    journal: "Gondwana Research"
+    open_access: false
+    pages: "1062–1073"
+    short: "Vincent et al. 2011"
+    title: "Zarafasaura oceanis, a new elasmosaurid (Reptilia: Sauropterygia) from the Maastrichtian Phosphates of Morocco and the palaeobiogeography of latest Cretaceous plesiosaurs"
+    url: "https://doi.org/10.1016/j.gr.2010.10.005"
+    verified: true
+    volume: "19"
+    year: 2011
   wilson2013:
     authors: "Wilson, G. P."
     doi: "10.1666/12041"
@@ -1143,3 +1653,39 @@ sources:
     verified: true
     volume: "39"
     year: 2013
+  wilson2016:
+    authors: "Wilson, G. P., Ekdale, E. G., Hoganson, J. W., et al."
+    doi: "10.1038/ncomms13734"
+    journal: "Nature Communications"
+    open_access: true
+    pages: "13734"
+    short: "Wilson et al. 2016"
+    title: "A large carnivorous mammal from the Late Cretaceous and the North American origin of marsupials"
+    url: "https://doi.org/10.1038/ncomms13734"
+    verified: true
+    volume: "7"
+    year: 2016
+  witton2010:
+    authors: "Witton, M. P., & Habib, M. B."
+    doi: "10.1371/journal.pone.0013982"
+    journal: "PLoS ONE"
+    open_access: true
+    pages: "e13982"
+    short: "Witton & Habib 2010"
+    title: "On the Size and Flight Diversity of Giant Pterosaurs, the Use of Birds as Pterosaur Analogues and Comments on Pterosaur Flightlessness"
+    url: "https://doi.org/10.1371/journal.pone.0013982"
+    verified: true
+    volume: "5"
+    year: 2010
+  zelenitsky2012:
+    authors: "Zelenitsky, D. K., Therrien, F., Erickson, G. M., et al."
+    doi: "10.1126/science.1225376"
+    journal: "Science"
+    open_access: false
+    pages: "510–514"
+    short: "Zelenitsky et al. 2012"
+    title: "Feathered Non-Avian Dinosaurs from North America Provide Insight into Wing Origins"
+    url: "https://doi.org/10.1126/science.1225376"
+    verified: true
+    volume: "338"
+    year: 2012

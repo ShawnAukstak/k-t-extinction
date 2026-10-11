@@ -74,7 +74,7 @@ interface PointerInfo {
 export class GlobeControls {
   pose: CameraPose;
   enabled = true;
-  minRange = 40;
+  minRange = 10;
   maxRange = 6e7;
   /** Called after any user interaction (for deep-link updates, cinematic interruption, etc.). */
   onUserInput: (() => void) | null = null;
@@ -83,7 +83,7 @@ export class GlobeControls {
   /** Terrain height (m) under a unit direction; keeps the target on the ground and the camera above it. */
   terrainHeight: ((dir: Vector3) => number) | null = null;
   /** Minimum clearance of the camera above the ground, m. */
-  clearance = 12;
+  clearance = 3;
   private down = { x: 0, y: 0, t: 0, moved: 0 };
   private flight: { from: CameraPose; to: CameraPose; elapsed: number; duration: number; bump: number; resolve: () => void } | null = null;
 

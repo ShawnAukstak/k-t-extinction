@@ -1,0 +1,32 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: basilemys
+name: Basilemys
+species: [B. sinuosa]
+group: turtle
+body_plan: sprawling
+age:
+  formation: Hell Creek, Lance Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+size:
+  length_m: {typical: 0.6, range: [0.4, 0.8], confidence: chosen, note: "shell length; large for a land turtle; no measured range in our sources"}
+  hip_height_m: 0.2
+  hip_height_note: "estimated"
+  mass_kg: {value: 30, source: null, confidence: chosen}
+appearance:
+  integument: high-domed shell with a heavily pitted surface; scaly limbs
+  colour: unknown; the app uses dull browns
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: herbivore (assumed)
+  activity: [browse_low, walk, rest]
+  speed_m_s: {walk: 0.2, max: 0.4, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.08, source: holroyd2014, confidence: chosen, note: "ordinal uncommon; PBDB lists ~45 occurrences"}
+survived_kpg: {value: false, source: pbdb, note: "no Paleocene occurrences in PBDB; most other Hell Creek turtle lineages did cross the boundary"}
+sources: [holroyd2014, pbdb]
+notes: >-
+  A big land turtle with a pitted, tank-like shell. Unlike most turtles of its time it lived on land, and unlike
+  most of them it did not survive.

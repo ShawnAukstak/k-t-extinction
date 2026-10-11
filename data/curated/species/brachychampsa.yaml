@@ -1,0 +1,32 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: brachychampsa
+name: Brachychampsa
+species: [B. montana]
+group: crocodylian
+body_plan: sprawling
+age:
+  formation: Hell Creek, Lance Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+proxy_in: [south-laramidia]
+size:
+  length_m: {typical: 2.5, range: [1.5, 3.5], confidence: model, note: "estimated from skull size with alligator proportions"}
+  hip_height_m: 0.3
+  hip_height_note: "estimated (high walk)"
+  mass_kg: {value: 70, source: null, confidence: chosen, note: "a modern alligator of similar length; no published estimate in our sources"}
+appearance:
+  integument: scaly with bony back plates (osteoderms), as in living alligators
+  colour: unknown; the app uses dark olive tones like living crocodylians
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 3], confidence: chosen}
+  diet: carnivore (broad diet; blunt rear teeth for crushing hard prey such as turtles)
+  activity: [swim, hunt, rest]
+  speed_m_s: {walk: 0.5, swim: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.20, source: pearson2002, confidence: chosen, note: "ordinal common; PBDB lists ~100 occurrences in the latest-Maastrichtian formations"}
+survived_kpg: {value: false, source: pbdb, note: "PBDB lists a single Paleocene occurrence (basal Tullock Mb), so a brief survival or reworking cannot be ruled out"}
+sources: [pearson2002, archibald1990, pbdb]
+notes: >-
+  A broad-snouted relative of alligators with crushing back teeth, probably good at cracking turtle shells.

@@ -1,0 +1,494 @@
+# Fauna regions: where each species card (data/curated/species/*.yaml) lives on the 66 Ma globe (decision D11).
+#
+# FOOTPRINTS
+#   paleo_center  {lat, lon} in the PALEOMAP 65 Ma frame, the same frame as the PaleoDEM terrain and the POIs (D2).
+#   radius_km     great-circle radius of the region's disc. Regions with several separate fossil areas also list
+#                 `subcenters` (each with its own radius); the app should treat the region as the union of the
+#                 subcenter discs where they exist, and the big disc only as a coarse fallback.
+#   Land regions apply to land cells and marine regions to sea cells; where discs overlap, the nearer centre wins.
+#
+#   How centres were computed (2026-10-11): from the PBDB Maastrichtian occurrence pulls in
+#   data/raw/paleontology/pbdb/ (Dinosauria, marine reptiles, Crocodylomorpha + Choristodera + Testudines, Mammalia,
+#   Pterosauria). PBDB's own paleocoordinates (`pla`/`pln`, pgm=scotese) are computed at the midpoint of each
+#   record's age range (`ps1: mid`, ~69 Ma for most Maastrichtian records), which puts them 100–200 km (India ~490 km)
+#   from the app's 65 Ma positions. So we reconstructed each unique collection's modern `lat`/`lng` to 65 Ma with
+#   scripts/kt/plates.py (PALEOMAP v3, offline; it reproduces the POI positions, e.g. Tanis 51.674, -79.599), and
+#   used PBDB's plate id (`gpl`) wherever our point-in-polygon lookup disagreed with it (6 Brazilian points landed on
+#   the Pacific plate polygon; see the report). Centre = spherical mean of the unique collections in the region;
+#   `n_collections`, `r50_km`/`r90_km` (half / 90 % of collections lie within) document each cluster. Radii are
+#   chosen to cover ~90 % of collections plus a margin for the unsampled landscape around the outcrops. Regions with
+#   no usable record (open ocean, African interior) use reconstructed reference points, as noted.
+#
+# FAUNA ENTRIES
+#   species             id of a file in data/curated/species/
+#   relative_abundance  0–1 weight, comparable only among entries of the same `guild` in the same region:
+#                         land_large (adult > ~100 kg), land_small, freshwater, air, sea
+#   basis               census  = measured share (Horner et al. 2011: skeletons of large dinosaurs, Hell Creek Fm)
+#                       ordinal = our estimate on a fixed scale:
+#                         abundant 0.40 · common 0.20 · uncommon 0.08 · rare 0.02 · very_rare 0.005
+#   group               typical group size [min, max] (from the species card)
+#   confidence          known | model | contested | chosen (decisions.md, factual-accuracy UX principle)
+#   proxy_for           present when the species card stands in for a related animal that has no card of its own.
+#                       The app may draw the proxy's model but the tooltip must name the real animals and say
+#                       "stand-in: <card name>".
+#   Records older than ~67 Ma are labelled per D12 ('representative / older record'): see each species card's
+#   `age.context_only` / `age.why`, and the region's `latest_maastrichtian` / `record_age`.
+#
+# Absolute densities are not set here. The app should derive them from body mass (Damuth scaling) and these
+# relative weights; the one published absolute estimate is for T. rex (marshall2021; see tyrannosaurus.yaml).
+
+regions:
+
+  # ── Land ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  - id: hell-creek
+    name: Northern Laramidia (Hell Creek, Lance, Frenchman, Scollard)
+    kind: land
+    # 620 PBDB collections (3,178 occurrences) in the Hell Creek, Lance, Frenchman, Scollard and Ferris Fms.
+    # r50 208 km, r90 460 km, farthest 1,210 km (Scollard, Alberta). Tanis lies 142 km and the Hell Creek type
+    # area 178 km from the centre.
+    paleo_center: {lat: 51.98, lon: -81.61}
+    radius_km: 1100
+    n_collections: 620
+    r50_km: 208
+    r90_km: 460
+    habitat: [floodplain, forest, swamp, river, coastal_plain]
+    latest_maastrichtian: true
+    record_age: latest Maastrichtian (C30n–C29r); the census and the bird fauna lie within ~300 kyr to ~2 Myr of the boundary
+    confidence: known
+    fauna:
+      - {species: triceratops, relative_abundance: 0.40, basis: census, guild: land_large, group: [1, 3], confidence: known}
+      - {species: tyrannosaurus, relative_abundance: 0.24, basis: census, guild: land_large, group: [1, 1], confidence: known, note: "skeleton share; may overstate living numbers"}
+      - {species: edmontosaurus, relative_abundance: 0.20, basis: census, guild: land_large, group: [5, 40], confidence: known}
+      - {species: thescelosaurus, relative_abundance: 0.08, basis: census, guild: land_large, group: [1, 2], confidence: known}
+      - {species: ornithomimus, relative_abundance: 0.05, basis: census, guild: land_large, group: [1, 6], confidence: known}
+      - {species: pachycephalosaurus, relative_abundance: 0.01, basis: census, guild: land_large, group: [1, 3], confidence: known}
+      - {species: ankylosaurus, relative_abundance: 0.01, basis: census, guild: land_large, group: [1, 1], confidence: known}
+      - {species: anzu, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 3], confidence: chosen, note: "not in the census; three partial skeletons from the Dakotas"}
+      - {species: torosaurus, relative_abundance: 0.005, basis: ordinal, ordinal: very_rare, guild: land_large, group: [1, 2], confidence: contested, note: "counted as Triceratops by Horner et al. 2011"}
+      - {species: acheroraptor, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_small, group: [1, 3], confidence: chosen}
+      - {species: didelphodon, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_small, group: [1, 1], confidence: chosen}
+      - {species: mesodma, relative_abundance: 0.40, basis: ordinal, ordinal: abundant, guild: land_small, group: [1, 4], confidence: chosen}
+      - {species: basilemys, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 1], confidence: chosen}
+      - {species: champsosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: freshwater, group: [1, 3], confidence: chosen}
+      - {species: brachychampsa, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: freshwater, group: [1, 3], confidence: chosen}
+      - {species: borealosuchus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: freshwater, group: [1, 3], confidence: chosen}
+      - {species: avisaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 2], confidence: chosen}
+      - {species: azhdarchid, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 8], confidence: chosen, note: "Infernodrakon"}
+    sources: [horner2011, pearson2002, archibald1990, wilson2013, holroyd2014, longrich2011, thomas2024, pbdb]
+
+  - id: south-laramidia
+    name: Southern Laramidia (Javelina, Black Peaks, Ojo Alamo, North Horn; northern Mexico)
+    kind: land
+    # 131 PBDB collections (278 occurrences). r50 535 km, r90 801 km. The southern 'Alamosaurus fauna' and the
+    # northern 'Triceratops fauna' do not split along one latitude: the North Horn Fm (Utah, 46.4°N at 65 Ma) has
+    # Alamosaurus while the Denver Fm (45.7°N) has the northern fauna. Where this disc overlaps hell-creek, use the
+    # nearer centre.
+    paleo_center: {lat: 39.83, lon: -86.98}
+    radius_km: 1000
+    n_collections: 131
+    r50_km: 535
+    r90_km: 801
+    subcenters:
+      - {name: "Big Bend (Javelina, Black Peaks Fms)", lat: 35.38, lon: -84.59, radius_km: 250, n_collections: 46}
+      - {name: "San Juan Basin (Ojo Alamo Fm, Naashoibito Mb)", lat: 43.06, lon: -88.28, radius_km: 250, n_collections: 46}
+      - {name: "Wasatch Plateau (North Horn Fm)", lat: 46.35, lon: -90.76, radius_km: 250, n_collections: 25}
+    habitat: [floodplain, forest, river, upland]
+    latest_maastrichtian: true
+    record_age: late Maastrichtian (~69–66 Ma); the Naashoibito Mb and the upper Javelina Fm approach the boundary
+    confidence: model
+    fauna:
+      - {species: alamosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 6], confidence: chosen}
+      - {species: tyrannosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: chosen}
+      - {species: torosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 2], confidence: contested, note: "T. utahensis"}
+      - {species: edmontosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [5, 30], confidence: chosen, proxy_for: "hadrosaurids of the Javelina and Ojo Alamo Fms (mostly unidentified to genus)"}
+      - {species: ankylosaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 1], confidence: chosen, proxy_for: "nodosaurid ankylosaurs (e.g. Glyptodontopelta, Naashoibito Mb)"}
+      - {species: ornithomimus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 6], confidence: chosen, proxy_for: "ornithomimids indet."}
+      - {species: brachychampsa, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: freshwater, group: [1, 3], confidence: chosen, proxy_for: "crocodylians of the Javelina Fm"}
+      - {species: quetzalcoatlus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: air, group: [1, 2], confidence: chosen}
+      - {species: azhdarchid, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: air, group: [1, 8], confidence: chosen, note: "Quetzalcoatlus lawsoni, Wellnhopterus"}
+    sources: [andres2021, fowler2011, sampson2005, benson2014, pbdb]
+
+  - id: appalachia
+    name: Appalachia (eastern North America)
+    kind: land
+    # 28 PBDB collections with dinosaurs (51 occurrences), all in marine or coastal rocks of New Jersey, Maryland,
+    # the Carolinas and the Mississippi Embayment: carcasses washed out to sea. The interior has no record.
+    # r50 204 km, r90 665 km.
+    paleo_center: {lat: 39.43, lon: -54.51}
+    radius_km: 900
+    n_collections: 28
+    r50_km: 204
+    r90_km: 665
+    habitat: [coastal_plain, forest, swamp]
+    latest_maastrichtian: true
+    record_age: Maastrichtian (New Egypt, Navesink, Hornerstown Fms); sparse
+    confidence: chosen
+    fauna:
+      - {species: dryptosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: chosen}
+      - {species: edmontosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [3, 20], confidence: chosen, proxy_for: "hadrosaurids indet. (the commonest Appalachian dinosaur remains)"}
+      - {species: borealosuchus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: freshwater, group: [1, 3], confidence: chosen, proxy_for: "coastal crocodylians (e.g. Thoracosaurus)"}
+    sources: [brusatte2011, pbdb]
+
+  - id: arctic-beringia
+    name: Arctic Alaska and Chukotka (polar forests)
+    kind: land
+    # Two clusters ~1,570 km apart: Prince Creek Fm, North Slope of Alaska (11 collections, 81.4°N at 65 Ma;
+    # older, context) and Kakanaut Fm, Chukotka (2 collections, 72.8°N; late Maastrichtian per PBDB).
+    # Centre = mean of the two clusters.
+    paleo_center: {lat: 78.4, lon: -166.0}
+    radius_km: 1300
+    subcenters:
+      - {name: "North Slope (Prince Creek Fm)", lat: 81.38, lon: -128.72, radius_km: 400, n_collections: 11, latest_maastrichtian: false}
+      - {name: "Kakanaut Fm (Chukotka)", lat: 72.82, lon: 176.05, radius_km: 400, n_collections: 2, latest_maastrichtian: true}
+    habitat: [polar_forest, floodplain, river]
+    latest_maastrichtian: false
+    record_age: mixed; most named taxa come from the Prince Creek Fm (late Campanian to ~70 Ma); Kakanaut is late Maastrichtian but fragmentary
+    confidence: chosen
+    fauna:
+      - {species: edmontosaurus, relative_abundance: 0.40, basis: ordinal, ordinal: abundant, guild: land_large, group: [5, 40], confidence: chosen, note: "Edmontosaurus at Prince Creek (context); hadrosaurids indet. at Kakanaut"}
+      - {species: triceratops, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 5], confidence: chosen, proxy_for: "Pachyrhinosaurus perotorum (centrosaurine; Prince Creek Fm, older record)"}
+      - {species: tyrannosaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 1], confidence: chosen, proxy_for: "smaller tyrannosaurids (Nanuqsaurus, Prince Creek Fm; teeth at Kakanaut)"}
+    sources: [pbdb]
+
+  - id: ibero-armorica
+    name: Ibero-Armorican island (Iberia and southern France)
+    kind: land
+    # 345 PBDB collections (757 occurrences) in Spain, France and Portugal; r50 85 km, r90 301 km; the Tremp basin
+    # (south-central Pyrenees) alone has 150 collections.
+    paleo_center: {lat: 35.21, lon: -0.04}
+    radius_km: 600
+    n_collections: 345
+    r50_km: 85
+    r90_km: 301
+    subcenters:
+      - {name: "Tremp basin (south-central Pyrenees)", lat: 34.61, lon: -0.47, radius_km: 200, n_collections: 150}
+    habitat: [floodplain, forest, coast, lagoon]
+    latest_maastrichtian: true
+    record_age: latest Maastrichtian in the Tremp Group (dinosaurs persist into chron C29r); southern France mostly older
+    confidence: model
+    fauna:
+      - {species: arenysaurus, relative_abundance: 0.40, basis: ordinal, ordinal: abundant, guild: land_large, group: [3, 20], confidence: chosen, note: "hadrosaurs as a group"}
+      - {species: ampelosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 6], confidence: chosen, note: "older record standing in for the undiagnostic latest-Maastrichtian titanosaurs"}
+      - {species: majungasaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 1], confidence: chosen, proxy_for: "abelisauroid theropods (isolated teeth)"}
+      - {species: borealosuchus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: freshwater, group: [1, 3], confidence: chosen, proxy_for: "allodaposuchid crocodylians (e.g. Allodaposuchus, Arenysuchus)"}
+      - {species: azhdarchid, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 8], confidence: chosen}
+    sources: [vila2016, fondevilla2019, pereda2009, vila2022, csikisava2015, pbdb]
+
+  - id: hateg
+    name: Hațeg Island (Transylvania, Romania)
+    kind: land
+    # 86 PBDB collections (383 occurrences); r50 34 km, r90 54 km. The island was ~80,000 km² (a disc of radius
+    # ~160 km), so the radius is set by the island, not the outcrop.
+    paleo_center: {lat: 33.81, lon: 20.31}
+    radius_km: 200
+    n_collections: 86
+    r50_km: 34
+    r90_km: 54
+    habitat: [floodplain, forest, river]
+    latest_maastrichtian: false
+    record_age: mostly early Maastrichtian (~72–69 Ma); 'representative / older record' (D12)
+    confidence: model
+    fauna:
+      - {species: magyarosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 6], confidence: chosen}
+      - {species: thescelosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 4], confidence: chosen, proxy_for: "Zalmoxes (rhabdodontid ornithopod, ~120–190 kg)"}
+      - {species: arenysaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 6], confidence: chosen, proxy_for: "Telmatosaurus (small, early hadrosauroid)"}
+      - {species: acheroraptor, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_small, group: [1, 2], confidence: chosen, proxy_for: "Balaur (dromaeosaurid)"}
+      - {species: mesodma, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_small, group: [1, 4], confidence: chosen, proxy_for: "kogaionid multituberculates"}
+      - {species: quetzalcoatlus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: air, group: [1, 2], confidence: chosen, proxy_for: "Hatzegopteryx (giant, robust azhdarchid)"}
+    sources: [csikisava2015, stein2010, benson2014, pbdb]
+
+  - id: south-america
+    name: South America
+    kind: land
+    # 327 PBDB collections (688 occurrences); r50 1,045 km, r90 2,201 km. Three main clusters below; scattered
+    # records in Uruguay, Chile, Peru, Colombia and Ecuador.
+    paleo_center: {lat: -36.88, lon: -52.57}
+    radius_km: 2500
+    n_collections: 327
+    r50_km: 1045
+    r90_km: 2201
+    subcenters:
+      - {name: "northern Patagonia (Allen, Los Alamitos, La Colonia Fms)", lat: -44.30, lon: -56.55, radius_km: 500, n_collections: 165}
+      - {name: "Bauru Basin (Marília / Serra da Galga Fms)", lat: -23.30, lon: -35.75, radius_km: 500, n_collections: 38}
+      - {name: "Andean basins (El Molino Fm, Bolivia)", lat: -21.35, lon: -53.22, radius_km: 400, n_collections: 56}
+    habitat: [floodplain, forest, semi_arid, coast]
+    latest_maastrichtian: false
+    record_age: mostly late Campanian–early Maastrichtian; latest-Maastrichtian vertebrates are fragmentary
+    confidence: chosen
+    note: "Tropical South American forests were open-canopy and conifer-bearing before the impact (Carvalho et al. 2021)."
+    fauna:
+      - {species: saltasaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [2, 10], confidence: chosen, note: "older record standing in for titanosaurs generally"}
+      - {species: carnotaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: chosen, note: "abelisaurids generally"}
+      - {species: edmontosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [3, 20], confidence: chosen, proxy_for: "saurolophine hadrosaurs of the Allen Fm (e.g. Bonapartesaurus)"}
+      - {species: mesodma, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_small, group: [1, 4], confidence: chosen, proxy_for: "gondwanatherian and meridiolestidan mammals"}
+      - {species: avisaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 2], confidence: chosen, proxy_for: "avisaurid enantiornithines (e.g. Soroavisaurus)"}
+    sources: [benson2014, hendrickx2021, clark2024, carvalho2021, pbdb]
+
+  - id: africa-interior
+    name: Continental Africa
+    kind: land
+    # Almost no latest-Maastrichtian land record. The best animals come from marine phosphates in Morocco, where
+    # carcasses washed into the sea. Centre = modern (5°N, 20°E) reconstructed on plate 701 to 65 Ma; radius covers
+    # the continent. Note: the offline plate model mis-assigns some West African points (e.g. near Accra) to the
+    # Pacific plate (901); see the report.
+    paleo_center: {lat: -6.4, lon: 12.4}
+    radius_km: 3800
+    habitat: [forest, floodplain, coastal_plain]
+    latest_maastrichtian: true
+    record_age: latest Maastrichtian (Morocco, Couche III) but very sparse
+    confidence: chosen
+    fauna:
+      - {species: rapetosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 6], confidence: chosen, proxy_for: "titanosaurs indet."}
+      - {species: majungasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: chosen, proxy_for: "Chenanisaurus barbaricus (abelisaurid, late Maastrichtian, Morocco)"}
+      - {species: arenysaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 6], confidence: chosen, proxy_for: "Ajnabia odysseus (small lambeosaurine, late Maastrichtian, Morocco; probably arrived from Europe across the sea)"}
+      - {species: azhdarchid, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 4], confidence: chosen, proxy_for: "azhdarchids indet."}
+    sources: [longrich2017, longrich2021, longrich2018, pbdb]
+
+  - id: india
+    name: India (Indian island, Deccan volcanic province)
+    kind: land
+    # 149 PBDB collections (388 occurrences) in India and Pakistan; r50 507 km, r90 919 km. Centre = mean of the
+    # three clusters below.
+    paleo_center: {lat: -20.9, lon: 59.7}
+    radius_km: 1300
+    n_collections: 149
+    r50_km: 507
+    r90_km: 919
+    subcenters:
+      - {name: "Lameta Fm and intertrappean beds (central and western India)", lat: -20.53, lon: 61.71, radius_km: 500, n_collections: 90}
+      - {name: "Vitakri Fm (Balochistan, Pakistan)", lat: -10.73, lon: 58.72, radius_km: 300, n_collections: 38}
+      - {name: "Kallamedu Fm (Tamil Nadu)", lat: -31.39, lon: 58.57, radius_km: 300, n_collections: 6}
+    habitat: [floodplain, forest, river, lava_field]
+    latest_maastrichtian: true
+    record_age: latest Maastrichtian; dinosaurs persist between early Deccan lava flows
+    confidence: model
+    fauna:
+      - {species: isisaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 6], confidence: chosen}
+      - {species: majungasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: chosen, proxy_for: "Indian abelisaurids (Rajasaurus, Indosuchus, Rahiolisaurus)"}
+      - {species: mesodma, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 4], confidence: chosen, proxy_for: "gondwanatherian and other small mammals of the intertrappean beds"}
+    sources: [jain1997, schoene2019, sprain2019, pbdb]
+
+  - id: madagascar
+    name: Madagascar
+    kind: land
+    # All 84 PBDB collections are in the Maevarano Fm, Mahajanga Basin (centre -28.62, 38.31; r90 49 km). The
+    # region centre is the island's centre, modern (19°S, 46.7°E) reconstructed to 65 Ma; radius covers the island.
+    paleo_center: {lat: -31.7, lon: 38.6}
+    radius_km: 800
+    n_collections: 84
+    subcenters:
+      - {name: "Mahajanga Basin (Maevarano Fm)", lat: -28.62, lon: 38.31, radius_km: 150, n_collections: 84}
+    habitat: [floodplain, river, semi_arid]
+    latest_maastrichtian: true
+    record_age: Maastrichtian (Anembalemba Mb, usually treated as late Maastrichtian; not radiometrically dated)
+    confidence: model
+    note: "A strongly seasonal, drought-prone setting (Curry Rogers et al. 2016)."
+    fauna:
+      - {species: rapetosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 6], confidence: chosen}
+      - {species: majungasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: chosen}
+      - {species: beelzebufo, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: freshwater, group: [1, 1], confidence: chosen}
+      - {species: mesodma, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_small, group: [1, 2], confidence: chosen, proxy_for: "gondwanatherian mammals (e.g. Vintana, Adalatherium)"}
+    sources: [rogers2003, curryrogers2016, evans2008, benson2014, pbdb]
+
+  - id: polar-south
+    name: Antarctica, Australia and Zealandia (southern polar forests)
+    kind: land
+    # Only 19 PBDB land collections, spread over thousands of km. Centre = mean of five reference points reconstructed
+    # to 65 Ma (Seymour Island cluster; East and West Antarctica; central Australia; New Zealand). Australia and
+    # Zealandia were still close to Antarctica.
+    paleo_center: {lat: -79.8, lon: 175.6}
+    radius_km: 4000
+    n_collections: 19
+    subcenters:
+      - {name: "James Ross basin (Seymour and Vega Islands)", lat: -63.49, lon: -67.71, radius_km: 400, n_collections: 14}
+      - {name: "Western Australia (Miria Fm)", lat: -48.48, lon: 99.79, radius_km: 400, n_collections: 5}
+      - {name: "Zealandia (New Zealand)", lat: -56.13, lon: -154.72, radius_km: 700, n_collections: 12}
+    habitat: [polar_forest, coast]
+    latest_maastrichtian: false
+    record_age: mixed; the López de Bertodano Fm reaches the boundary, but most land vertebrates are older or fragmentary
+    confidence: chosen
+    fauna:
+      - {species: vegavis, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: air, group: [1, 10], confidence: chosen, note: "older record (69.2–68.4 Ma)"}
+      - {species: thescelosaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 3], confidence: chosen, proxy_for: "small ornithopods (elasmarians, known from older Antarctic beds)"}
+      - {species: azhdarchid, relative_abundance: 0.005, basis: ordinal, ordinal: very_rare, guild: air, group: [1, 8], confidence: chosen}
+    sources: [torres2025, pbdb]
+
+  - id: east-asia
+    name: East Asia (Amur region and southern China)
+    kind: land
+    # 82 PBDB land collections in China and the Russian Far East (198 occurrences). Two clusters ~2,950 km apart;
+    # centre = their mean.
+    paleo_center: {lat: 38.9, lon: 111.7}
+    radius_km: 1800
+    n_collections: 82
+    subcenters:
+      - {name: "Amur–Heilongjiang (Udurchukan, Yuliangzi Fms)", lat: 51.78, lon: 116.64, radius_km: 400, n_collections: 4}
+      - {name: "Nanxiong and Ganzhou basins (Pingling, Zhenshui, Hekou Fms)", lat: 25.91, lon: 108.38, radius_km: 400, n_collections: 61}
+    habitat: [floodplain, forest, river, semi_arid]
+    latest_maastrichtian: true
+    record_age: late Maastrichtian (Udurchukan; Nanxiong ~66.7 Ma)
+    confidence: chosen
+    fauna:
+      - {species: olorotitan, relative_abundance: 0.40, basis: ordinal, ordinal: abundant, guild: land_large, group: [3, 20], confidence: chosen, note: "lambeosaurines dominate the Amur sites"}
+      - {species: tarbosaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 1], confidence: contested, note: "teeth referred to Tarbosaurus (Amur, Heilongjiang); long-snouted tyrannosaurids (Qianzhousaurus) in southern China"}
+      - {species: anzu, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 4], confidence: chosen, proxy_for: "oviraptorids of the Nanxiong and Ganzhou basins (e.g. Banji, Corythoraptor), known from many skeletons and nests"}
+    sources: [godefroit2012, pbdb]
+
+  - id: nemegt
+    name: Gobi (Nemegt Basin, Mongolia)
+    kind: land
+    # 142 PBDB collections (417 occurrences); r50 34 km, r90 122 km.
+    paleo_center: {lat: 42.34, lon: 89.48}
+    radius_km: 600
+    n_collections: 142
+    r50_km: 34
+    r90_km: 122
+    habitat: [river, floodplain, forest]
+    latest_maastrichtian: false
+    record_age: no radiometric date; usually placed in the early–middle Maastrichtian; 'representative / older record' (D12)
+    confidence: chosen
+    fauna:
+      - {species: tarbosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [1, 1], confidence: chosen}
+      - {species: edmontosaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_large, group: [5, 30], confidence: chosen, proxy_for: "Saurolophus angustirostris"}
+      - {species: saltasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 4], confidence: chosen, proxy_for: "Opisthocoelicaudia and Nemegtosaurus (titanosaurs)"}
+      - {species: ornithomimus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 6], confidence: chosen, proxy_for: "Gallimimus"}
+      - {species: anzu, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_large, group: [1, 3], confidence: chosen, proxy_for: "oviraptorids (e.g. Nemegtomaia)"}
+      - {species: ankylosaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 1], confidence: chosen, proxy_for: "Tarchia"}
+      - {species: pachycephalosaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_large, group: [1, 3], confidence: chosen, proxy_for: "Prenocephale"}
+    sources: [benson2014, pbdb]
+
+  # ── Sea ──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  - id: gulf-atlantic-wis
+    name: Gulf of Mexico, proto-Caribbean, North American Atlantic shelf and the Western Interior Seaway remnant
+    kind: sea
+    # 53 PBDB marine-reptile collections (106 occurrences), mostly New Jersey and Maryland. Centre = mean of the four
+    # subcenters (Chicxulub is the POI position).
+    paleo_center: {lat: 38.2, lon: -68.2}
+    radius_km: 2000
+    n_collections: 53
+    subcenters:
+      - {name: "proto-Caribbean / Yucatán shelf (Chicxulub)", lat: 25.11, lon: -71.58, radius_km: 800, n_collections: 0}
+      - {name: "Gulf coastal plain (Alabama, Mississippi, Tennessee, Missouri, Texas)", lat: 36.63, lon: -71.04, radius_km: 800, n_collections: 5}
+      - {name: "Atlantic shelf (New Jersey to South Carolina)", lat: 39.13, lon: -54.21, radius_km: 700, n_collections: 36}
+      - {name: "Western Interior Seaway remnant (Fox Hills Fm, Dakotas)", lat: 50.84, lon: -76.85, radius_km: 300, n_collections: 17}
+    habitat: [shelf_sea, epicontinental_sea]
+    latest_maastrichtian: true
+    record_age: Maastrichtian; the New Jersey units (New Egypt, Hornerstown) reach the boundary
+    confidence: model
+    fauna:
+      - {species: mosasaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: prognathodon, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: elasmosaurid, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 3], confidence: chosen}
+    sources: [pbdb]
+
+  - id: tethys
+    name: Northern Tethys and the European chalk seas
+    kind: sea
+    # 50 PBDB marine-reptile collections (86 occurrences) from the Netherlands and Belgium to Denmark, Poland,
+    # Ukraine, Bulgaria, Turkey and Spain; r50 453 km, r90 1,584 km. The open Tethys between Africa and Eurasia
+    # also belongs to this region where it is not covered by north-africa-arabia.
+    paleo_center: {lat: 43.24, lon: 7.19}
+    radius_km: 1800
+    n_collections: 50
+    r50_km: 453
+    r90_km: 1584
+    subcenters:
+      - {name: "Maastricht type area (Netherlands, Belgium)", lat: 43.80, lon: 2.94, radius_km: 500, n_collections: 40}
+      - {name: "Danish chalk sea (Stevns Klint, Møns Klint)", lat: 48.64, lon: 8.46, radius_km: 400, n_collections: 8}
+      - {name: "eastern European shelf (Poland to Turkey)", lat: 40.39, lon: 25.75, radius_km: 1000, n_collections: 8}
+      - {name: "Iberian margin (Basque–Cantabrian, southern France)", lat: 37.44, lon: -3.16, radius_km: 700, n_collections: 6}
+    habitat: [shelf_sea, chalk_sea, open_sea]
+    latest_maastrichtian: true
+    record_age: late Maastrichtian (Maastricht Fm; Danish chalk to the boundary at Stevns Klint)
+    confidence: model
+    fauna:
+      - {species: mosasaurus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: prognathodon, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: elasmosaurid, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 3], confidence: chosen}
+      - {species: asteriornis, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 6], confidence: chosen, note: "coastal; nearshore cells only"}
+    sources: [linghamsoliar1995, street2017, field2020, pbdb]
+
+  - id: north-africa-arabia
+    name: Southern Tethys margin (North Africa and Arabia) and the Trans-Saharan Seaway
+    kind: sea
+    # 40 PBDB collections (137 occurrences of marine reptiles and pterosaurs). Centre = mean of the four subcenters.
+    paleo_center: {lat: 17.1, lon: 10.6}
+    radius_km: 2400
+    n_collections: 40
+    subcenters:
+      - {name: "Ouled Abdoun phosphates (Morocco, Couche III)", lat: 24.91, lon: -8.61, radius_km: 400, n_collections: 26}
+      - {name: "Levant (Jordan, Israel, Syria)", lat: 18.84, lon: 29.04, radius_km: 800, n_collections: 4}
+      - {name: "Egypt (Dakhla Fm)", lat: 15.97, lon: 21.93, radius_km: 400, n_collections: 12}
+      - {name: "Trans-Saharan Seaway (Niger, Nigeria, Mali)", lat: 6.29, lon: -0.25, radius_km: 900, n_collections: 15}
+    habitat: [shelf_sea, upwelling_coast, epicontinental_sea]
+    latest_maastrichtian: true
+    record_age: Couche III is latest Maastrichtian, within ~1 Myr of the boundary (Longrich et al. 2018)
+    confidence: model
+    note: "The Moroccan phosphates hold a very diverse marine-reptile fauna (PBDB) and the most diverse latest-Cretaceous pterosaur fauna known (Longrich et al. 2018)."
+    fauna:
+      - {species: prognathodon, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: mosasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 1], confidence: chosen, note: "M. beaugei"}
+      - {species: elasmosaurid, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 3], confidence: chosen, note: "Zarafasaura"}
+      - {species: azhdarchid, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: air, group: [1, 8], confidence: chosen, note: "Phosphatodraco"}
+      - {species: quetzalcoatlus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 1], confidence: chosen, proxy_for: "giant azhdarchids (Arambourgiania in Jordan; a ~9 m-span ulna from Morocco)"}
+    sources: [longrich2018, vincent2011, pbdb]
+
+  - id: south-atlantic
+    name: South Atlantic (Brazil, Angola, Patagonian Atlantic incursion)
+    kind: sea
+    # 54 PBDB marine-reptile collections (91 occurrences). Centre = mean of the three subcenters.
+    paleo_center: {lat: -27.3, lon: -21.8}
+    radius_km: 2500
+    n_collections: 54
+    subcenters:
+      - {name: "Brazilian margin (Gramame Fm, Pernambuco)", lat: -11.80, lon: -21.31, radius_km: 500, n_collections: 7}
+      - {name: "Angolan margin (Mocuio Fm)", lat: -24.45, lon: 1.90, radius_km: 500, n_collections: 6}
+      - {name: "Patagonian Atlantic incursion (Jagüel, Allen, La Colonia Fms)", lat: -40.96, lon: -51.57, radius_km: 700, n_collections: 40}
+    habitat: [shelf_sea, open_sea]
+    latest_maastrichtian: true
+    record_age: Maastrichtian; the Angolan records are early Maastrichtian
+    confidence: chosen
+    fauna:
+      - {species: mosasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: prognathodon, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: elasmosaurid, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 3], confidence: chosen}
+    sources: [pbdb]
+
+  - id: weddellian-seas
+    name: Weddellian seas (Antarctic Peninsula, southern South America, Zealandia)
+    kind: sea
+    # 64 PBDB marine-reptile collections (97 occurrences). Centre = mean of the three subcenters.
+    paleo_center: {lat: -60.4, lon: -88.6}
+    radius_km: 3000
+    n_collections: 64
+    subcenters:
+      - {name: "James Ross basin (López de Bertodano Fm)", lat: -63.55, lon: -67.57, radius_km: 500, n_collections: 34}
+      - {name: "central Chile (Quiriquina Fm)", lat: -38.98, lon: -61.88, radius_km: 400, n_collections: 9}
+      - {name: "Zealandia (Conway Fm)", lat: -56.13, lon: -154.72, radius_km: 700, n_collections: 12}
+    habitat: [shelf_sea, cold_sea]
+    latest_maastrichtian: true
+    record_age: late Maastrichtian; the López de Bertodano Fm spans the boundary
+    confidence: model
+    fauna:
+      - {species: elasmosaurid, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: sea, group: [1, 3], confidence: chosen, note: "Aristonectes and other aristonectines"}
+      - {species: mosasaurus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: sea, group: [1, 1], confidence: chosen}
+    sources: [otero2014, pbdb]
+
+  - id: open-ocean
+    name: Open ocean
+    kind: sea
+    # No PBDB record: open-ocean marine reptiles are almost never preserved. Footprint = every deep-water cell of
+    # the 65 Ma PaleoDEM not inside another sea region's footprint. No centre.
+    paleo_center: null
+    radius_km: null
+    footprint: all deep-ocean cells (below the shelf break in the 65 Ma PaleoDEM) outside the other sea regions
+    habitat: [open_sea]
+    latest_maastrichtian: true
+    record_age: none (inferred)
+    confidence: chosen
+    fauna:
+      - {species: mosasaurus, relative_abundance: 0.005, basis: ordinal, ordinal: very_rare, guild: sea, group: [1, 1], confidence: chosen}
+      - {species: elasmosaurid, relative_abundance: 0.005, basis: ordinal, ordinal: very_rare, guild: sea, group: [1, 3], confidence: chosen}
+    sources: [scotese2018]

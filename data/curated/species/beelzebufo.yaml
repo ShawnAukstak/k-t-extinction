@@ -1,0 +1,34 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: beelzebufo
+name: Beelzebufo
+species: [B. ampinga]
+group: frog
+body_plan: sprawling
+age:
+  formation: Maevarano Fm (NW Madagascar)
+  ma_range: [70.0, 66.0]
+  latest_maastrichtian: true
+taxonomy:
+  status: model
+  note: "Evans et al. 2008 placed it with the South American horned frogs (Ceratophryinae); this link is not universally accepted."
+regions: [madagascar]
+size:
+  length_m: {typical: 0.35, range: [0.25, 0.42], confidence: model, note: "snout–vent length; Evans et al. 2008 estimated the largest individuals at ~40 cm"}
+  hip_height_m: 0.1
+  hip_height_note: "estimated"
+  mass_kg: {value: 4.5, source: null, confidence: chosen, note: "not taken from our sources; order of magnitude for a horned-frog-shaped animal of this length"}
+appearance:
+  integument: skin unknown; heavily ornamented, armoured skull roof (as in living horned frogs)
+  colour: unknown; the app uses mottled greens and browns like living horned frogs
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: carnivore (ambush predator, by analogy with horned frogs)
+  activity: [rest, hunt, swim]
+  speed_m_s: {walk: 0.2, max: 1.5, source: null, confidence: chosen}
+abundance:
+  madagascar: {relative: 0.08, source: evans2008, confidence: chosen, note: "ordinal uncommon"}
+sources: [evans2008, pbdb]
+notes: >-
+  The 'devil frog': one of the largest frogs ever, around 40 cm long, with a huge mouth. Its nearest relatives may
+  have lived in South America.

@@ -1,0 +1,42 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: torosaurus
+name: Torosaurus
+species: [T. latus, T. utahensis]
+group: ceratopsid
+body_plan: quadruped
+age:
+  formation: Hell Creek and Lance Fms (T. latus); North Horn and Javelina Fms (T. utahensis)
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+taxonomy:
+  status: contested
+  note: >-
+    Scannella & Horner (2010) argued that Torosaurus is the fully mature form of Triceratops; Longrich & Field
+    (2012) found mature and immature individuals of both and kept them separate. Horner et al. (2011) counted
+    Torosaurus as Triceratops. The app shows it as a rare, separate animal and labels the debate.
+regions: [hell-creek, south-laramidia]
+size:
+  length_m: {typical: 8.0, range: [7.0, 9.0], confidence: model, note: "skull among the longest of any land animal; postcrania poorly known"}
+  hip_height_m: 2.1
+  hip_height_note: "assumed equal to Triceratops (similar body plan; postcrania poorly known)"
+  mass_kg:
+    value: 12000
+    source: benson2014
+    confidence: chosen
+    note: "No Benson 2014 estimate for Torosaurus (no limb circumferences). We reuse the Triceratops value."
+appearance:
+  integument: scaly, as in other ceratopsids (no skin known for Torosaurus)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 2], confidence: chosen, note: "no bonebeds known"}
+  diet: herbivore (low browser)
+  activity: [browse_low, walk, rest, display]
+  speed_m_s: {walk: 1.2, max: 6.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.005, source: horner2011, confidence: chosen, note: "ordinal very_rare; Horner et al. 2011 found no Torosaurus-sized skull in their census area (one skull had Torosaurus-like squamosals)"}
+  south-laramidia: {relative: 0.08, source: null, confidence: chosen, note: "ordinal uncommon"}
+sources: [scannella2010, longrich2012, horner2011, pbdb]
+notes: >-
+  Torosaurus had one of the biggest heads of any land animal, with a long frill pierced by two large openings.
+  Whether it was its own genus or just old Triceratops is still argued.

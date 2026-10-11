@@ -1,0 +1,38 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: vegavis
+name: Vegavis
+species: [V. iaai]
+group: bird
+body_plan: flier
+age:
+  formation: López de Bertodano Fm (Vega Island, Antarctica)
+  ma_range: [69.2, 68.4]
+  latest_maastrichtian: false
+  context_only: true
+  why: "Dated to 69.2–68.4 Ma (Torres et al. 2025), ~2.5 Myr before the impact. Shown as 'representative / older record' for Antarctic coasts (D12)."
+taxonomy:
+  status: contested
+  note: "A new skull supports a place among waterfowl within crown birds (Torres et al. 2025); some earlier studies placed it outside crown birds."
+regions: [polar-south]
+size:
+  length_m: {typical: 0.45, range: [0.35, 0.5], confidence: chosen}
+  wingspan_m: {typical: 0.7, range: [0.6, 0.8], confidence: chosen}
+  hip_height_m: 0.12
+  hip_height_note: "estimated"
+  mass_kg: {value: 0.7, source: benson2014, confidence: model, note: "Benson 2014: 0.70 kg (femoral circumference estimated)"}
+appearance:
+  integument: feathered; toothless, narrow pointed beak (Torres et al. 2025)
+  colour: unknown; the app uses dark grey above, pale below
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 10], confidence: chosen}
+  diet: piscivore (caught prey underwater, like grebes and loons; Torres et al. 2025)
+  activity: [swim, fly, hunt, rest]
+  speed_m_s: {walk: 0.4, swim: 1.5, fly: 15.0, source: null, confidence: chosen}
+abundance:
+  polar-south: {relative: 0.08, source: torres2025, confidence: chosen, note: "ordinal uncommon (coastal)"}
+survived_kpg: {value: null, source: torres2025, note: "Vegavis itself is ~2.5 Myr too old to say; its lineage (waterfowl) survived"}
+sources: [torres2025, benson2014, field2018]
+notes: >-
+  A foot-propelled diving bird from Antarctica, then covered in cool temperate forest. It is one of the oldest
+  well-supported members of the modern bird group.

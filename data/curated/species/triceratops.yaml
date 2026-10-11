@@ -1,0 +1,50 @@
+# Species card. Field conventions (confidence labels, ordinal abundance scale, proxies): see the header of
+# data/curated/fauna-regions.yaml.
+id: triceratops
+name: Triceratops
+species: [T. horridus, T. prorsus]
+group: ceratopsid
+body_plan: quadruped
+age:
+  formation: Hell Creek, Lance, Frenchman, Scollard and Laramie Fms (northern Laramidia)
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+  note: >-
+    In the Hell Creek Fm, T. horridus occurs lower and T. prorsus higher, with intermediate skulls in between
+    (Scannella et al. 2014), so the Triceratops alive at the impact were of the T. prorsus type.
+regions: [hell-creek]
+proxy_in: [arctic-beringia]
+size:
+  length_m: {typical: 8.0, range: [7.0, 9.0], confidence: model, note: "skeletal reconstructions; no single complete adult skeleton"}
+  hip_height_m: 2.1
+  hip_height_note: "estimated from femur + tibia lengths of AMNH 5033 and USNM 4842 (Benson 2014 data) plus a metatarsus allowance"
+  mass_kg:
+    value: 12000
+    range: [10900, 13500]
+    source: benson2014
+    confidence: model
+    note: >-
+      Benson 2014 single-specimen estimates: T. horridus AMNH 5033 13,536 kg; T. prorsus USNM 4842 10,901 kg
+      (humerus circumference estimated). The value is their rounded midpoint.
+appearance:
+  integument: >-
+    scaly; large non-overlapping scales on the body (unpublished skin patches are often cited; no peer-reviewed
+    description in our sources); keratin sheaths on horns and beak
+  colour: unknown (no melanosome data); the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size:
+    typical: [1, 3]
+    confidence: model
+    note: >-
+      Most adult finds are solitary. The only Triceratops-dominated bonebed holds three juveniles (Mathews et al.
+      2009), so the app shows lone adults or small groups, with juveniles in small groups.
+  diet: herbivore (low browser)
+  activity: [browse_low, walk, rest, display]
+  speed_m_s: {walk: 1.2, max: 6.0, source: null, confidence: chosen, note: "no published locomotor model; values chosen for a large quadruped"}
+abundance:
+  hell-creek: {relative: 0.40, source: horner2011, confidence: known, note: "40 % (n = 72) of large-dinosaur skeletons in the Hell Creek census; 69 % in the uppermost third of the formation"}
+sources: [horner2011, scannella2014, mathews2009, benson2014, pbdb]
+notes: >-
+  Triceratops was the most common large dinosaur in the last two million years of the Cretaceous in Montana: about
+  four in ten large-dinosaur skeletons found in the Hell Creek Formation belong to it.

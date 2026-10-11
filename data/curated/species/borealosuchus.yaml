@@ -1,0 +1,33 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: borealosuchus
+name: Borealosuchus
+species: [B. sternbergii]
+group: crocodylian
+body_plan: sprawling
+age:
+  formation: Hell Creek, Lance Fms
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+proxy_in: [appalachia, ibero-armorica]
+size:
+  length_m: {typical: 3.0, range: [2.0, 4.0], confidence: model}
+  hip_height_m: 0.35
+  hip_height_note: "estimated (high walk)"
+  mass_kg: {value: 120, source: null, confidence: chosen, note: "a modern crocodile of similar length; no published estimate in our sources"}
+appearance:
+  integument: scaly with osteoderms
+  colour: unknown; the app uses dark olive tones like living crocodylians
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 3], confidence: chosen}
+  diet: carnivore (fish and small vertebrates)
+  activity: [swim, hunt, rest]
+  speed_m_s: {walk: 0.5, swim: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.20, source: pearson2002, confidence: chosen, note: "ordinal common; PBDB lists ~75 occurrences in the latest-Maastrichtian formations"}
+survived_kpg: {value: true, source: archibald1990, note: "the genus continues into the Paleocene (PBDB lists 36 Paleocene occurrences)"}
+sources: [pearson2002, archibald1990, pbdb]
+notes: >-
+  A moderately long-snouted crocodylian of rivers and swamps. Its genus survived the impact and lived on into the
+  Paleocene.

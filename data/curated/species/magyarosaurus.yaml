@@ -1,0 +1,37 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: magyarosaurus
+name: Magyarosaurus
+species: [M. dacus]
+group: sauropod
+body_plan: quadruped
+age:
+  formation: Densuș-Ciula, Sînpetru and Sebeş Fms (Hațeg and Transylvanian basins, Romania)
+  ma_range: [72.0, 69.0]
+  latest_maastrichtian: false
+  context_only: true
+  why: "Most Hațeg beds are early Maastrichtian, several Myr before the impact (PBDB; Csiki-Sava et al. 2015). Shown as 'representative / older record' (D12)."
+regions: [hateg]
+size:
+  length_m: {typical: 6.0, range: [5.0, 6.5], confidence: model}
+  hip_height_m: 1.0
+  hip_height_note: "estimated from the BMNH R3856 femur (0.475 m) in the Benson 2014 data"
+  mass_kg:
+    value: 750
+    source: benson2014
+    confidence: known
+    note: "Benson 2014: 746 kg; Stein et al. 2010: adults < 1,000 kg, a true island dwarf, not a juvenile"
+appearance:
+  integument: scaly; osteoderms possible (known in other titanosaurs)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen}
+  diet: herbivore
+  activity: [browse_low, browse_high, walk, rest]
+  speed_m_s: {walk: 0.9, max: 3.0, source: null, confidence: chosen}
+abundance:
+  hateg: {relative: 0.20, source: csikisava2015, confidence: chosen, note: "ordinal common"}
+sources: [stein2010, csikisava2015, benson2014, pbdb]
+notes: >-
+  A dwarf sauropod about the weight of a large cow, living on an island in what is now Romania. Its bones show
+  it was fully grown, a textbook case of island dwarfism.

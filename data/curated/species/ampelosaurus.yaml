@@ -1,0 +1,40 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: ampelosaurus
+name: Ampelosaurus
+species: [A. atacis]
+group: sauropod
+body_plan: quadruped
+age:
+  formation: Marnes Rouges Inférieures (Aude, southern France)
+  ma_range: [72.0, 70.0]
+  latest_maastrichtian: false
+  context_only: true
+  why: >-
+    Late Campanian–early Maastrichtian, ~4–6 Myr before the impact. Titanosaurs still lived in the Pyrenees in the
+    latest Maastrichtian (eggs and bones; Vila et al. 2016, Fondevilla et al. 2019) but the latest bones are not
+    identifiable to genus, so Ampelosaurus stands in for them and is labelled 'representative / older record' (D12).
+regions: [ibero-armorica]
+size:
+  length_m: {typical: 9.0, range: [8.0, 12.0], confidence: model, note: "Benson specimen femur 0.71 m; length by comparison with similar-sized titanosaurs"}
+  hip_height_m: 1.4
+  hip_height_note: "estimated from the 0.71 m femur in the Benson 2014 data with titanosaur proportions"
+  mass_kg:
+    value: 2500
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: 2,518 kg (bonebed material; femur 0.71 m, humerus 0.66 m)"
+appearance:
+  integument: scaly, with scattered bony osteoderms (as in several titanosaurs; Curry Rogers et al. 2011)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen}
+  diet: herbivore
+  activity: [browse_high, browse_low, walk, rest]
+  speed_m_s: {walk: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  ibero-armorica: {relative: 0.08, source: vila2016, confidence: chosen, note: "ordinal uncommon (titanosaurs as a group, latest Maastrichtian)"}
+sources: [benson2014, vila2016, fondevilla2019, vila2022, curryrogers2011, csikisava2015, pbdb]
+notes: >-
+  A mid-sized titanosaur from the European islands. A much larger titanosaur, Abditosaurus, whose relatives lived
+  in Africa and South America, reached the same island during the Maastrichtian (Vila et al. 2022).

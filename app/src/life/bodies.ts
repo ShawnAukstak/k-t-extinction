@@ -166,14 +166,87 @@ export function bodyGeometry(spec: BodySpec): BufferGeometry {
       break;
     }
     case 'pterosaur': {
-      add(ellipsoid(H * 0.2, H * 0.25, L * 0.12, 0, H, 0), PART.body, new Vector3());
-      add(tube(H * 0.08, H * 0.05, H * 1.05, L * 0.08, H * 1.6, L * 0.25), PART.head, new Vector3(0, H * 1.05, L * 0.08));
-      add({ g: new ConeGeometry(H * 0.06, L * 0.35, 4), m: T(0, H * 1.62, L * 0.4).multiply(RX(Math.PI / 2)) }, PART.head, new Vector3(0, H * 1.05, L * 0.08));
-      // Wings folded when on the ground: long thin wedges at the sides.
-      add({ g: new ConeGeometry(H * 0.12, L * 0.6, 3), m: T(L * 0.3, H * 1.0, 0).multiply(M().makeRotationZ(Math.PI / 2)) }, PART.wingL, new Vector3(H * 0.15, H, 0), 1);
-      add({ g: new ConeGeometry(H * 0.12, L * 0.6, 3), m: T(-L * 0.3, H * 1.0, 0).multiply(M().makeRotationZ(-Math.PI / 2)) }, PART.wingR, new Vector3(-H * 0.15, H, 0), 1);
-      add(leg(H * 0.12, H * 0.9, -L * 0.05, H * 0.04), PART.legHL, new Vector3(H * 0.12, H * 0.9, -L * 0.05));
-      add(leg(-H * 0.12, H * 0.9, -L * 0.05, H * 0.04), PART.legHR, new Vector3(-H * 0.12, H * 0.9, -L * 0.05));
+      // Azhdarchid on the ground: walks on all fours, the folded wings forming long forelimbs, so the
+      // shoulders stand higher than the hips; stiff neck and a huge, long-beaked head (Witton & Naish 2008).
+      add({ g: new SphereGeometry(1, 10, 7), m: T(0, H * 1.25, 0).multiply(RX(-0.45)).multiply(S(H * 0.22, H * 0.26, L * 0.12)) }, PART.body, new Vector3());
+      add(tube(H * 0.1, H * 0.06, H * 1.45, L * 0.1, H * 2.5, L * 0.32), PART.head, new Vector3(0, H * 1.45, L * 0.1));
+      add(ellipsoid(H * 0.08, H * 0.13, L * 0.08, 0, H * 2.55, L * 0.36), PART.head, new Vector3(0, H * 1.45, L * 0.1));
+      add({ g: new ConeGeometry(H * 0.07, L * 0.32, 4), m: T(0, H * 2.3, L * 0.5).multiply(RX(Math.PI / 2 + 0.75)) }, PART.head, new Vector3(0, H * 1.45, L * 0.1), 1);
+      // Forelimbs (folded wings): long, with the furled membrane alongside.
+      for (const [part, x] of [[PART.legFL, 1], [PART.legFR, -1]] as const) {
+        add(leg(x * H * 0.24, H * 1.45, L * 0.1, H * 0.05, -0.15), part, new Vector3(x * H * 0.24, H * 1.45, L * 0.1));
+        add(ellipsoid(H * 0.03, H * 0.55, L * 0.07, x * H * 0.3, H * 0.95, L * 0.06), part, new Vector3(x * H * 0.24, H * 1.45, L * 0.1), 1);
+      }
+      add(leg(H * 0.14, H, -L * 0.1, H * 0.05), PART.legHL, new Vector3(H * 0.14, H, -L * 0.1));
+      add(leg(-H * 0.14, H, -L * 0.1, H * 0.05), PART.legHR, new Vector3(-H * 0.14, H, -L * 0.1));
+      break;
+    }
+    case 'turtle': {
+      // Domed shell on short legs; the head and tail just out of it.
+      add(ellipsoid(L * 0.36, L * 0.17, L * 0.42, 0, H * 0.95, 0), PART.body, new Vector3());
+      add(ellipsoid(L * 0.34, L * 0.04, L * 0.4, 0, H * 0.8, 0), PART.body, new Vector3(), 1);
+      add(ellipsoid(L * 0.07, L * 0.06, L * 0.09, 0, H * 0.9, L * 0.46), PART.head, new Vector3(0, H * 0.9, L * 0.38));
+      add(tube(L * 0.04, L * 0.01, H * 0.8, -L * 0.38, H * 0.6, -L * 0.52), PART.tail, new Vector3(0, H * 0.8, -L * 0.38));
+      for (const [part, x, z] of [[PART.legFL, 0.26, 0.24], [PART.legFR, -0.26, 0.24], [PART.legHL, 0.26, -0.24], [PART.legHR, -0.26, -0.24]] as const) {
+        add(leg(L * x, H * 0.9, L * z, L * 0.06), part, new Vector3(L * x, H * 0.9, L * z));
+      }
+      break;
+    }
+    case 'mammal_small': {
+      // Small quadruped (opossum- to badger-like): long body, pointed head, tail.
+      add(ellipsoid(H * 0.6, H * 0.65, L * 0.32, 0, H * 1.15, 0), PART.body, new Vector3());
+      add(ellipsoid(H * 0.38, H * 0.36, L * 0.14, 0, H * 1.25, L * 0.4), PART.head, new Vector3(0, H * 1.15, L * 0.28));
+      add(tube(H * 0.15, H * 0.04, H * 1.05, -L * 0.3, H * 0.5, -L * 0.8), PART.tail, new Vector3(0, H * 1.05, -L * 0.3));
+      for (const [part, x, z] of [[PART.legFL, 0.35, 0.2], [PART.legFR, -0.35, 0.2], [PART.legHL, 0.38, -0.2], [PART.legHR, -0.38, -0.2]] as const) {
+        add(leg(H * x, H, L * z, H * 0.14), part, new Vector3(H * x, H, L * z));
+      }
+      break;
+    }
+    case 'bird': {
+      // Ground bird: round body, folded wings, short tail, beak.
+      add(ellipsoid(H * 0.45, H * 0.5, L * 0.3, 0, H * 1.35, 0), PART.body, new Vector3());
+      add(ellipsoid(H * 0.24, H * 0.24, H * 0.27, 0, H * 1.85, L * 0.3), PART.head, new Vector3(0, H * 1.5, L * 0.2));
+      add({ g: new ConeGeometry(H * 0.07, L * 0.14, 4), m: T(0, H * 1.83, L * 0.3 + H * 0.25 + L * 0.06).multiply(RX(Math.PI / 2)) }, PART.head, new Vector3(0, H * 1.5, L * 0.2), 1);
+      add(ellipsoid(H * 0.08, H * 0.33, L * 0.28, H * 0.44, H * 1.42, -L * 0.03), PART.wingL, new Vector3(H * 0.4, H * 1.5, 0), 1);
+      add(ellipsoid(H * 0.08, H * 0.33, L * 0.28, -H * 0.44, H * 1.42, -L * 0.03), PART.wingR, new Vector3(-H * 0.4, H * 1.5, 0), 1);
+      add(ellipsoid(H * 0.22, H * 0.06, L * 0.16, 0, H * 1.4, -L * 0.38), PART.tail, new Vector3(0, H * 1.4, -L * 0.25));
+      add(leg(H * 0.18, H, 0, H * 0.06), PART.legHL, new Vector3(H * 0.18, H, 0));
+      add(leg(-H * 0.18, H, 0, H * 0.06), PART.legHR, new Vector3(-H * 0.18, H, 0));
+      break;
+    }
+    case 'frog': {
+      // Squat, wide-mouthed frog (Beelzebufo-like): hind legs folded at the sides.
+      add(ellipsoid(L * 0.32, L * 0.2, L * 0.38, 0, L * 0.22, 0), PART.body, new Vector3());
+      add(ellipsoid(L * 0.3, L * 0.15, L * 0.2, 0, L * 0.25, L * 0.3), PART.head, new Vector3(0, L * 0.22, L * 0.2));
+      add(ellipsoid(L * 0.1, L * 0.08, L * 0.24, L * 0.3, L * 0.1, -L * 0.15), PART.legHL, new Vector3(L * 0.3, L * 0.15, -L * 0.05));
+      add(ellipsoid(L * 0.1, L * 0.08, L * 0.24, -L * 0.3, L * 0.1, -L * 0.15), PART.legHR, new Vector3(-L * 0.3, L * 0.15, -L * 0.05));
+      add(leg(L * 0.22, L * 0.16, L * 0.2, L * 0.04), PART.legFL, new Vector3(L * 0.22, L * 0.16, L * 0.2));
+      add(leg(-L * 0.22, L * 0.16, L * 0.2, L * 0.04), PART.legFR, new Vector3(-L * 0.22, L * 0.16, L * 0.2));
+      break;
+    }
+    case 'mosasaur': {
+      // Swimmer, origin at the waterline: long streamlined body, four flippers, a downturned tail
+      // with a fluke (Lindgren et al. 2013). Rides just under the surface, back and head showing.
+      const r = L * 0.065;
+      add(ellipsoid(r, r * 1.1, L * 0.24, 0, 0, L * 0.04), PART.body, new Vector3());
+      add(ellipsoid(r * 0.7, r * 0.6, L * 0.1, 0, r * 0.15, L * 0.34), PART.head, new Vector3(0, 0, L * 0.25));
+      add(tube(r * 0.85, r * 0.2, 0, -L * 0.17, -r * 0.4, -L * 0.48), PART.tail, new Vector3(0, 0, -L * 0.17));
+      add({ g: new ConeGeometry(r * 0.25, L * 0.12, 4), m: T(0, -r * 0.9, -L * 0.5).multiply(RX(0.5)).multiply(S(0.4, 1, 1)) }, PART.tail, new Vector3(0, 0, -L * 0.17), 1);
+      for (const [part, x, z, k] of [[PART.legFL, 1, 0.16, 1], [PART.legFR, -1, 0.16, 1], [PART.legHL, 1, -0.1, 0.75], [PART.legHR, -1, -0.1, 0.75]] as const) {
+        add(ellipsoid(L * 0.06 * k, r * 0.12, L * 0.028 * k, x * (r + L * 0.045 * k), -r * 0.45, L * z), part, new Vector3(x * r, -r * 0.45, L * z), 1);
+      }
+      break;
+    }
+    case 'plesiosaur': {
+      // Elasmosaurid: barrel body under the surface, very long neck raised, four large flippers.
+      const r = L * 0.085;
+      add(ellipsoid(r * 1.15, r * 0.8, L * 0.15, 0, -r * 0.35, 0), PART.body, new Vector3());
+      add(tube(r * 0.45, r * 0.18, 0, L * 0.12, r * 1.4, L * 0.48), PART.head, new Vector3(0, 0, L * 0.12));
+      add(ellipsoid(r * 0.24, r * 0.2, L * 0.035, 0, r * 1.45, L * 0.51), PART.head, new Vector3(0, 0, L * 0.12));
+      add(tube(r * 0.55, r * 0.08, -r * 0.3, -L * 0.12, -r * 0.4, -L * 0.32), PART.tail, new Vector3(0, -r * 0.3, -L * 0.12));
+      for (const [part, x, z] of [[PART.legFL, 1, 0.07], [PART.legFR, -1, 0.07], [PART.legHL, 1, -0.08], [PART.legHR, -1, -0.08]] as const) {
+        add(ellipsoid(L * 0.085, r * 0.1, L * 0.035, x * (r + L * 0.07), -r * 0.55, L * z), part, new Vector3(x * r, -r * 0.55, L * z), 1);
+      }
       break;
     }
     case 'crocodylian':

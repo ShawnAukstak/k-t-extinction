@@ -1,0 +1,41 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: saltasaurus
+name: Saltasaurus
+species: [S. loricatus]
+group: sauropod
+body_plan: quadruped
+age:
+  formation: Lecho Fm (Salta, Argentina)
+  ma_range: [71.0, 69.0]
+  latest_maastrichtian: false
+  context_only: true
+  why: >-
+    Early Maastrichtian (Benson 2014; PBDB), a few Myr before the impact. Latest-Maastrichtian South American
+    titanosaurs are known mostly from fragments, so Saltasaurus stands in as a 'representative / older record' (D12).
+regions: [south-america]
+proxy_in: [nemegt]
+size:
+  length_m: {typical: 12.0, range: [10.0, 13.0], confidence: model}
+  hip_height_m: 1.7
+  hip_height_note: "estimated from the largest femur (PVL 4017/80, 0.875 m) in the Benson 2014 data"
+  mass_kg:
+    value: 5800
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: 5,770 kg (largest femur and humerus from a bonebed)"
+appearance:
+  integument: scaly skin studded with bony plates and small ossicles (osteoderms)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: known
+  sources: [curryrogers2011]
+behaviour:
+  group_size: {typical: [2, 10], confidence: chosen, note: "known from a multi-individual bonebed"}
+  diet: herbivore
+  activity: [browse_low, browse_high, walk, roam, rest]
+  speed_m_s: {walk: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  south-america: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common (titanosaurs as a group)"}
+sources: [benson2014, curryrogers2011, pbdb]
+notes: >-
+  A small, armoured titanosaur. Its back was studded with bony plates, a surprise when it was found, because
+  sauropods had been pictured as unarmoured giants.

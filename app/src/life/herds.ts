@@ -23,9 +23,13 @@ import { effectsChunk } from '../render/shaders/effects';
 import type { Heightfield } from '../terrain/heightfield';
 import { clearing, type VegetationMap } from '../terrain/vegetation';
 import { bodyGeometry } from './bodies';
-import { densityPerKm2, type RegionDef, type SpeciesDef } from './fauna';
+import { densityPerKm2, regionAt, type FaunaEntry, type RegionDef, type SpeciesDef } from './fauna';
 
 const CELL_LEVEL = 11; // ~4.9 km cells
+const SWIMMERS = new Set(['mosasaur', 'plesiosaur']);
+const distKm = (a: LatLon, b: LatLon) => centralAngle(a, b) * 6371;
+/** Share of individuals of surviving lineages (crocodylians, turtles, some mammals and birds) that live through the winter: chosen. */
+const SURVIVOR_FRACTION = 0.3;
 const DAY = 86_400;
 
 export interface HerdOptions {
@@ -61,6 +65,8 @@ interface Cell {
   key: string;
   group: Group;
   centerPos: Vector3;
+  /** Each species' entry in this cell's region (abundance, confidence, stand-in for…). */
+  entries: Map<string, FaunaEntry>;
   herds: Herd[];
   meshes: Map<string, { mesh: InstancedMesh; anim: InstancedBufferAttribute; look: InstancedBufferAttribute; items: { herd: Herd; a: Animal }[] }>;
   lastUsed: number;
@@ -199,8 +205,8 @@ export class Herds {
     regions: RegionDef[],
   ) {
     this.group.name = 'herds';
-    for (const s of species) this.speciesById.set(s.id, s);
-    this.regions = regions;
+    this.regions = [];
+    this.setRoster(species, regions);
     // EIEP Table 1: third-degree burns at 0.42 MJ/m² for 1 Mt, scaling as E^(1/6).
     this.burnLethal = 0.42 * crater.energyMt ** (1 / 6);
     this.material = new ShaderMaterial({
@@ -209,6 +215,7 @@ export class Herds {
     });
   }
 
+  /** Replace who lives where (e.g. when the curated roster arrives); cells rebuild on the next update. */
   setRoster(species: SpeciesDef[], regions: RegionDef[]): void {
     this.speciesById.clear();
     for (const s of species) this.speciesById.set(s.id, s);
@@ -226,16 +233,6 @@ export class Herds {
     return g;
   }
 
-  private regionAt(ll: LatLon): RegionDef | null {
-    let best: RegionDef | null = null, bestW = 0;
-    for (const r of this.regions) {
-      const d = centralAngle(ll, r.center) * 6371;
-      const w = 1 - d / r.radiusKm;
-      if (w > bestW) { bestW = w; best = r; }
-    }
-    return best;
-  }
-
   private buildCell(face: number, cx: number, cy: number): Cell {
     const n = 2 ** CELL_LEVEL;
     const r = rng(face + 7, cx, cy);
@@ -244,29 +241,63 @@ export class Herds {
     const cellKm = ((Math.PI / 2) * 6371) / n;
     const area = cellKm * cellKm;
     const herds: Herd[] = [];
-    const region = this.regionAt(vecToLatLon(center));
     const site = IMPACT.site.value;
-    if (region) {
-      const maxAb = Math.max(...region.fauna.map((f) => f.abundance), 1e-6);
+    // A cell can hold land animals (from its land region) and sea creatures (from its sea region).
+    const cll = vecToLatLon(center);
+    const regions = [regionAt(this.regions, cll, 'land', distKm), regionAt(this.regions, cll, 'sea', distKm)]
+      .filter((x): x is RegionDef => !!x);
+    const entries = new Map<string, FaunaEntry>();
+    {
+      // Abundances compare within a guild, so normalise each guild by its commonest member. Biggest
+      // first, so the animals you can see are never crowded out by the small and numerous; animals
+      // under ~1 kg are too small to show at all.
+      const fauna: { f: FaunaEntry; sp: SpeciesDef; rel: number }[] = [];
+      for (const region of regions) {
+        const maxAb = new Map<string, number>();
+        for (const f of region.fauna) maxAb.set(f.guild ?? '', Math.max(maxAb.get(f.guild ?? '') ?? 1e-6, f.abundance));
+        for (const f of region.fauna) {
+          const sp = this.speciesById.get(f.species);
+          if (!sp || sp.massKg < 1 || fauna.some((x) => x.sp === sp)) continue;
+          fauna.push({ f, sp, rel: f.abundance / maxAb.get(f.guild ?? '')! });
+        }
+      }
+      fauna.sort((a, b) => b.sp.massKg - a.sp.massKg);
+      // Numbers: Damuth density for the body mass × relative abundance within the guild (with the
+      // census this puts T. rex at ~0.7 per 100 km², close to Marshall et al. 2021). Large animals
+      // (≥ 100 kg) are drawn at full density; smaller ones are thinned to fit the per-cell budget
+      // (chosen: you could not see them all anyway, and many lived in trees, burrows or water).
+      const veg = this.veg.sample(center);
+      const expect = fauna.map(({ sp, rel }) => {
+        const habitat = SWIMMERS.has(sp.group) ? 1 : 0.3 + 0.7 * veg.density;
+        return densityPerKm2(sp.massKg, sp.diet) * rel * habitat * area;
+      });
+      const bigSum = expect.reduce((a, e, i) => a + (fauna[i].sp.massKg >= 100 ? e : 0), 0);
+      const smallSum = expect.reduce((a, e, i) => a + (fauna[i].sp.massKg < 100 ? e : 0), 0);
+      const smallBudget = Math.max(0, this.opt.maxPerCell - bigSum);
+      const smallScale = Math.min(1, smallBudget / Math.max(1e-9, smallSum));
       let total = 0;
-      for (const f of region.fauna) {
-        const sp = this.speciesById.get(f.species);
-        if (!sp || sp.group === 'mosasaur' || sp.group === 'plesiosaur') continue; // sea creatures: not on land
-        const veg = this.veg.sample(center);
-        const habitat = 0.3 + 0.7 * veg.density;
-        const expected = densityPerKm2(sp.massKg, sp.diet) * Math.sqrt(f.abundance / maxAb) * habitat * area;
+      for (const [k, { f, sp }] of fauna.entries()) {
+        const swims = SWIMMERS.has(sp.group);
+        const lowland = f.guild === 'freshwater';
+        // No one small species takes more than a quarter of the small animals' share.
+        const expected = sp.massKg >= 100 ? expect[k] : Math.min(expect[k] * smallScale, 0.25 * smallBudget);
+        entries.set(sp.id, f);
         const g = f.group ?? sp.groupSize;
         const meanGroup = (g[0] + g[1]) / 2;
         const herdsN = poisson(expected / Math.max(1, meanGroup), r);
-        for (let h = 0; h < herdsN && total < this.opt.maxPerCell; h++) {
-          // Home point: random in the cell, on land, preferring open ground (grazers favour clearings).
-          let dir: Vector3 | null = null, bestOpen = -1;
+        const cap = this.opt.maxPerCell;
+        for (let h = 0; h < herdsN && total < cap; h++) {
+          // Home point: random in the cell; land animals on land, preferring open ground (grazers
+          // favour clearings); freshwater animals on the lowest-lying ground (where rivers and swamps
+          // would be: we have no rivers); sea creatures in water at least 20 m deep.
+          let dir: Vector3 | null = null, best = -Infinity;
           for (let tries = 0; tries < 10; tries++) {
             const d = faceDirection(face, (cx + r()) / n, (cy + r()) / n, new Vector3());
-            if (this.heights.height(d, 200) <= 2) continue;
-            const o = clearing(d);
-            if (o > bestOpen) { bestOpen = o; dir = d; }
-            if (o > 0.7) break;
+            const hd = this.heights.height(d, 200);
+            if (swims ? hd > -20 : hd <= 2) continue;
+            const o = swims ? 1 : lowland ? -hd : clearing(d);
+            if (o > best) { best = o; dir = d; }
+            if (!lowland && o > 0.7) break;
           }
           if (!dir) continue;
           const size = Math.max(1, Math.round(g[0] + r() * (g[1] - g[0])));
@@ -276,7 +307,7 @@ export class Herds {
           const fx = atDistance(this.crater, Math.max(1, rKm));
           const spread = Math.sqrt(size) * sp.lengthM * 1.6;
           const animals: Animal[] = [];
-          for (let i = 0; i < size && total < this.opt.maxPerCell; i++, total++) {
+          for (let i = 0; i < size && total < cap; i++, total++) {
             const pal = PALETTES[Math.floor(r() * PALETTES.length)];
             const v = 0.85 + 0.3 * r();
             const burnt = fx.fireballVisible && fx.thermalMJm2 > this.burnLethal;
@@ -284,7 +315,8 @@ export class Herds {
             let dieAt = Infinity, fallAway = false;
             if (burnt) dieAt = 10 + r() * 20;
             else if (fx.windMs > 50) { dieAt = fx.blastArrivalS + r() * 3; fallAway = true; }
-            else if (!sp.survives) dieAt = 14 * DAY + r() ** 1.5 * 540 * DAY;
+            // Lineages that survived still lost most individuals (the fraction is chosen, not measured).
+            else if (!sp.survives || r() > SURVIVOR_FRACTION) dieAt = 14 * DAY + r() ** 1.5 * 540 * DAY;
             animals.push({
               offE: (r() - 0.5) * spread, offN: (r() - 0.5) * spread, phase: r(), scale: 0.85 + 0.3 * r(),
               look: [pal[0] * v, pal[1] * v, pal[2] * v, burnt ? 1 : 0], dieAt, fallAway,
@@ -325,7 +357,7 @@ export class Herds {
       this.animals += items.length;
     }
     group.updateMatrixWorld(true);
-    return { key: `${face}/${cx}/${cy}`, group, centerPos, herds, meshes, lastUsed: this.frame };
+    return { key: `${face}/${cx}/${cy}`, group, centerPos, herds, meshes, entries, lastUsed: this.frame };
   }
 
   private dropCell(c: Cell): void {
@@ -348,7 +380,11 @@ export class Herds {
     (this.material.uniforms.uFogColor.value as Vector3).copy(fogColor);
     const camDir = camera.position.clone().normalize();
     const alt = camera.position.length() - EARTH_RADIUS - Math.max(0, this.heights.height(camDir, 200));
-    const active = this.heights.ready && this.veg.ready && alt < this.opt.maxAltitude;
+    if (alt < this.opt.maxAltitude * 2 && !this.speciesById.size && this.requestRoster) {
+      this.requestRoster();
+      this.requestRoster = null;
+    }
+    const active = this.heights.ready && this.veg.ready && alt < this.opt.maxAltitude && this.speciesById.size > 0;
     this.group.visible = active;
     if (!active) return;
     const { face, s, t: tt } = directionToFace(camDir);
@@ -396,7 +432,8 @@ export class Herds {
         const walking = sp.diet === 'carnivore' ? 0.8 : cycle > 0.55 ? 1 : 0.15;
         const e = ce + a.offE + 3 * Math.sin(tm * 0.05 + a.phase * 9), nn = cn + a.offN + 3 * Math.cos(tm * 0.04 + a.phase * 7);
         this._d.copy(herd.base).multiplyScalar(EARTH_RADIUS).addScaledVector(herd.e, e).addScaledVector(herd.n, nn).normalize();
-        const h = Math.max(0, this.heights.height(this._d, 30));
+        // Swimmers ride at the waterline (the sea surface is opaque, so only their backs and heads show).
+        const h = SWIMMERS.has(sp.group) ? 0 : Math.max(0, this.heights.height(this._d, 30));
         this._p.copy(this._d).multiplyScalar(EARTH_RADIUS + h).sub(cell.centerPos);
         // Orientation: right-handed local frame x = west, y = up, z = north (forward), then turn to the
         // heading. A yaw ψ points forward at bearing −ψ; the roll (toward local −x) falls at bearing π/2 − ψ,
@@ -430,8 +467,8 @@ export class Herds {
   }
 
   /** The nearest living herd of large animals (mass ≥ minMass) to a direction, or null. */
-  nearestHerd(dir: Vector3, t: number, minMassKg = 500): { dir: Vector3; pos: Vector3; species: SpeciesDef; size: number } | null {
-    let best: { dir: Vector3; pos: Vector3; species: SpeciesDef; size: number } | null = null, bestDot = -2;
+  nearestHerd(dir: Vector3, t: number, minMassKg = 500): { dir: Vector3; pos: Vector3; species: SpeciesDef; entry?: FaunaEntry; size: number } | null {
+    let best: { dir: Vector3; pos: Vector3; species: SpeciesDef; entry?: FaunaEntry; size: number } | null = null, bestDot = -2;
     for (const c of this.cells.values()) for (const [id, m] of c.meshes) {
       const sp = this.speciesById.get(id)!;
       if (sp.massKg < minMassKg) continue;
@@ -441,18 +478,25 @@ export class Herds {
       if (!pos) continue;
       const p = pos.clone().normalize();
       const d = p.dot(dir);
-      if (d > bestDot) { bestDot = d; best = { dir: p, pos, species: sp, size: m.items[i].herd.animals.length }; }
+      if (d > bestDot) { bestDot = d; best = { dir: p, pos, species: sp, entry: c.entries.get(id), size: m.items[i].herd.animals.length }; }
     }
     return best;
   }
 
-  /** The species under a ray, if any. Instance bounds are recomputed first: animals move every frame. */
-  pick(raycaster: Raycaster): SpeciesDef | undefined {
+  /** The animal under a ray, if any. Instance bounds are recomputed first: animals move every frame. */
+  pick(raycaster: Raycaster): { species: SpeciesDef; entry?: FaunaEntry } | undefined {
     if (!this.group.visible) return undefined;
     for (const c of this.cells.values()) for (const m of c.meshes.values()) m.mesh.boundingSphere = null;
     const hit = raycaster.intersectObject(this.group, true)[0];
-    return hit ? this.speciesById.get(hit.object.name.replace(/^herd-/, '')) : undefined;
+    if (!hit) return undefined;
+    const id = hit.object.name.replace(/^herd-/, '');
+    const species = this.speciesById.get(id);
+    const cell = [...this.cells.values()].find((c) => c.group === hit.object.parent);
+    return species && { species, entry: cell?.entries.get(id) };
   }
+
+  /** Called once, the first time animals would be shown and no roster is loaded yet. */
+  requestRoster: (() => void) | null = null;
 
   /** How many of the animals around the camera are alive at sim time t (tests, HUD). */
   aliveAt(t: number): number {
@@ -460,4 +504,14 @@ export class Herds {
     for (const c of this.cells.values()) for (const h of c.herds) for (const a of h.animals) if (t < a.dieAt) n++;
     return n;
   }
+  /** Living animals around the camera at sim time t, split by whether their lineage survived the K-Pg. */
+  census(t: number): { lineagesSurvived: number; lineagesDied: number } {
+    let a = 0, b = 0;
+    for (const c of this.cells.values()) for (const h of c.herds) for (const x of h.animals) {
+      if (t >= x.dieAt) continue;
+      if (h.species.survives) a++; else b++;
+    }
+    return { lineagesSurvived: a, lineagesDied: b };
+  }
+
 }

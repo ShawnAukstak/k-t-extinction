@@ -1,0 +1,41 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: azhdarchid
+name: Medium-sized azhdarchid pterosaurs
+species: [Quetzalcoatlus lawsoni, Infernodrakon hastacollis, Phosphatodraco mauritanicus, Wellnhopterus brevirostris]
+group: pterosaur
+body_plan: flier
+age:
+  formation: Javelina Fm (Texas), Hell Creek Fm (Montana), Couche III Ouled Abdoun phosphates (Morocco); Azhdarchidae indet. in Spain, France and Australia
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+  note: "Couche III is constrained to within ~1 Myr of the K-Pg boundary (Longrich et al. 2018)."
+taxonomy:
+  status: known
+  note: "Grouped here as one renderer type: several species of similar size and build. The Hell Creek specimen, once referred to Quetzalcoatlus, is now Infernodrakon (Thomas et al. 2024)."
+regions: [south-laramidia, hell-creek, north-africa-arabia, ibero-armorica, polar-south]
+proxy_in: [africa-interior]
+size:
+  wingspan_m: {typical: 5.0, range: [3.0, 6.0], source: witton2010, confidence: model, note: "Witton & Habib 2010 cite a ~5 m span for the medium Big Bend Quetzalcoatlus (now Q. lawsoni)"}
+  length_m: {typical: 2.0, range: [1.5, 2.5], confidence: chosen}
+  hip_height_m: 0.8
+  hip_height_note: "estimated, scaled from Quetzalcoatlus"
+  mass_kg: {value: 30, range: [15, 50], source: null, confidence: chosen, note: "no estimate in our sources; scaled down from Quetzalcoatlus northropi"}
+appearance:
+  integument: pycnofibres on the body; leathery wing membranes
+  colour: unknown; the app uses pale greys
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 8], confidence: model, note: "more than 200 Q. lawsoni specimens come from one abandoned river-channel lake deposit (Andres & Langston 2021), so groups are plausible"}
+  diet: carnivore (small animals)
+  activity: [walk, fly, hunt, rest]
+  speed_m_s: {walk: 1.2, fly: 15.0, source: null, confidence: chosen}
+abundance:
+  south-laramidia: {relative: 0.20, source: andres2021, confidence: chosen, note: "ordinal common at Big Bend"}
+  hell-creek: {relative: 0.02, source: thomas2024, confidence: chosen, note: "ordinal rare; a single neck vertebra"}
+  north-africa-arabia: {relative: 0.08, source: longrich2018, confidence: chosen, note: "ordinal uncommon"}
+  ibero-armorica: {relative: 0.02, source: pbdb, confidence: chosen, note: "ordinal rare (Azhdarchidae indet.)"}
+  polar-south: {relative: 0.005, source: pbdb, confidence: chosen, note: "ordinal very_rare (Azhdarchidae indet., Miria Fm, Western Australia)"}
+sources: [andres2021, thomas2024, longrich2018, witton2010, pbdb]
+notes: >-
+  Long-necked, stork-like pterosaurs with wingspans of a few metres. They were still diverse right up to the
+  impact, which argues that pterosaurs died out suddenly rather than fading away.

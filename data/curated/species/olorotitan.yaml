@@ -1,0 +1,35 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: olorotitan
+name: Olorotitan
+species: [O. arharensis]
+group: hadrosaur
+body_plan: facultative_biped
+age:
+  formation: Udurchukan Fm (Kundur, Amur region, Russia)
+  ma_range: [67.0, 66.0]
+  latest_maastrichtian: true
+  note: "'Latest Cretaceous' (Godefroit et al. 2012); PBDB lists late Maastrichtian. Not radiometrically dated."
+regions: [east-asia]
+size:
+  length_m: {typical: 8.0, range: [7.0, 8.5], confidence: model}
+  hip_height_m: 2.4
+  hip_height_note: "estimated from femur (1.09 m) + tibia (1.12 m) of the IRSNB cast in the Benson 2014 data"
+  mass_kg:
+    value: 4100
+    source: benson2014
+    confidence: model
+    note: "Benson 2014: 4,132 kg, measured on the mounted cast at IRSNB"
+appearance:
+  integument: scaly; large, hollow, fan-shaped head crest
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [3, 20], confidence: chosen}
+  diet: herbivore (low-to-mid browser)
+  activity: [graze, browse_low, walk, roam, display]
+  speed_m_s: {walk: 1.4, max: 7.0, source: null, confidence: chosen}
+abundance:
+  east-asia: {relative: 0.40, source: godefroit2012, confidence: chosen, note: "ordinal abundant (lambeosaurine hadrosaurs dominate the Amur-region sites)"}
+sources: [godefroit2012, benson2014, pbdb]
+notes: >-
+  A swan-necked duck-bill with a hollow, fan-shaped crest from the far east of Russia. Its name means 'giant swan'.

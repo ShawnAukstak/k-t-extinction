@@ -1,0 +1,32 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: champsosaurus
+name: Champsosaurus
+species: [Champsosaurus spp.]
+group: champsosaur
+body_plan: swimmer
+age:
+  formation: Hell Creek, Lance, Frenchman, Scollard Fms (and Paleocene beds above)
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+regions: [hell-creek]
+size:
+  length_m: {typical: 1.5, range: [1.0, 2.0], confidence: model, note: "Late Cretaceous species; Paleocene species grew larger"}
+  hip_height_m: 0.15
+  hip_height_note: "sprawling; estimated"
+  mass_kg: {value: 10, source: null, confidence: chosen, note: "no published estimate in our sources; order of magnitude for a slender 1.5 m aquatic reptile"}
+appearance:
+  integument: scaly
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 3], confidence: chosen}
+  diet: piscivore
+  activity: [swim, hunt, rest]
+  speed_m_s: {walk: 0.3, swim: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.20, source: pearson2002, confidence: chosen, note: "ordinal common in river and pond deposits; PBDB lists ~100 occurrences in the latest-Maastrichtian formations"}
+survived_kpg: {value: true, source: archibald1990, note: "choristoderes survived; PBDB lists Champsosaurus in Paleocene beds"}
+sources: [pearson2002, archibald1990, pbdb]
+notes: >-
+  A long-snouted, gharial-like reptile that hunted fish in rivers. It is not a crocodile but a choristodere, and its
+  lineage survived the impact.

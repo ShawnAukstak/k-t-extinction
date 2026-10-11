@@ -1,0 +1,39 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: elasmosaurid
+name: Elasmosaurid plesiosaurs
+species: [Aristonectes quiriquinensis, Aristonectes parvidens, Zarafasaura oceanis, Elasmosauridae indet.]
+group: plesiosaur
+body_plan: swimmer
+age:
+  formation: Quiriquina Fm (Chile); López de Bertodano Fm (Antarctica); Moroccan phosphates; Maastricht Fm; New Jersey and Patagonian shelf units
+  ma_range: [68.0, 66.0]
+  latest_maastrichtian: true
+taxonomy:
+  status: known
+  note: "Grouped as one renderer type. Long-necked elasmosaurines (e.g. Zarafasaura) and the shorter-necked, many-toothed aristonectines (Aristonectes) both reached the end of the Cretaceous."
+regions: [weddellian-seas, north-africa-arabia, tethys, gulf-atlantic-wis, south-atlantic, open-ocean]
+size:
+  length_m: {typical: 8.0, range: [6.0, 11.0], confidence: model, note: "Aristonectes quiriquinensis is a 'large plesiosaurian' (Otero et al. 2014)"}
+  hip_height_m: null
+  hip_height_note: "not applicable (marine)"
+  mass_kg: {value: 3000, range: [1000, 10000], source: null, confidence: chosen}
+appearance:
+  integument: smooth skin assumed; four long flippers
+  colour: unknown; the app uses countershading
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 3], confidence: chosen}
+  diet: carnivore (fish and squid-like prey; aristonectines may have strained small prey)
+  activity: [swim, hunt, rest]
+  speed_m_s: {swim: 1.5, max: 3.0, source: null, confidence: chosen}
+abundance:
+  weddellian-seas: {relative: 0.20, source: otero2014, confidence: chosen, note: "ordinal common; elasmosaurids are the commonest marine reptiles in the López de Bertodano and Quiriquina Fms (PBDB)"}
+  north-africa-arabia: {relative: 0.08, source: vincent2011, confidence: chosen, note: "ordinal uncommon"}
+  tethys: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+  gulf-atlantic-wis: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+  south-atlantic: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon"}
+  open-ocean: {relative: 0.005, source: null, confidence: chosen, note: "ordinal very_rare"}
+sources: [otero2014, vincent2011, pbdb]
+notes: >-
+  Long-necked marine reptiles that rowed with four flippers. They lived worldwide, from Morocco to the cold seas
+  off Antarctica, until the impact ended the plesiosaurs' run of more than 130 million years.

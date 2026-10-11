@@ -1,0 +1,37 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: alamosaurus
+name: Alamosaurus
+species: [A. sanjuanensis]
+group: sauropod
+body_plan: quadruped
+age:
+  formation: Javelina and Black Peaks Fms (Texas), Ojo Alamo Fm Naashoibito Mb (New Mexico), North Horn Fm (Utah)
+  ma_range: [69.0, 66.0]
+  latest_maastrichtian: true
+regions: [south-laramidia]
+size:
+  length_m: {typical: 26.0, range: [20.0, 30.0], confidence: model, note: "most remains are immature; giant vertebrae and a femur show much larger adults (Fowler & Sullivan 2011)"}
+  hip_height_m: 3.5
+  hip_height_note: "estimated from length using titanosaur proportions"
+  mass_kg:
+    value: 35000
+    source: benson2014
+    confidence: model
+    note: >-
+      Benson 2014: 35,164 kg for TMM 41541 (humerus 1.50 m). Fowler & Sullivan 2011 describe remains of much larger
+      individuals, comparable to the largest South American titanosaurs; no reliable mass exists for them.
+appearance:
+  integument: scaly; some titanosaurs carried bony osteoderms (none reported for Alamosaurus in our sources)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen}
+  diet: herbivore (high browser)
+  activity: [browse_high, browse_low, walk, roam, rest]
+  speed_m_s: {walk: 1.0, max: 3.0, source: null, confidence: chosen}
+abundance:
+  south-laramidia: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common; the signature giant of the southern 'Alamosaurus fauna' (~30 PBDB occurrences)"}
+sources: [benson2014, fowler2011, pbdb]
+notes: >-
+  The last North American sauropod and the largest dinosaur known from North America, roaming what is now Texas,
+  New Mexico and Utah while Triceratops grazed farther north.

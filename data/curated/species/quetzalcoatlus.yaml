@@ -1,0 +1,45 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: quetzalcoatlus
+name: Quetzalcoatlus
+species: [Q. northropi]
+group: pterosaur
+body_plan: flier
+age:
+  formation: Javelina and Black Peaks Fms (Big Bend, Texas)
+  ma_range: [69.0, 66.0]
+  latest_maastrichtian: true
+  note: "Andres & Langston 2021 report the youngest pterosaur specimen among the giant Q. northropi material."
+regions: [south-laramidia]
+proxy_in: [north-africa-arabia, hateg]
+size:
+  wingspan_m: {typical: 10.5, range: [10.0, 11.0], source: witton2010, confidence: model}
+  length_m: {typical: 4.0, range: [3.5, 5.0], confidence: chosen, note: "beak to tail; the skull and neck make up most of it"}
+  hip_height_m: 1.6
+  hip_height_note: "estimated for a four-legged standing pose (shoulders higher than hips)"
+  mass_kg:
+    value: 230
+    range: [180, 250]
+    source: witton2010
+    confidence: contested
+    note: "Witton & Habib 2010 argue for ~200–250 kg (tested 180–250 kg); older estimates ranged fivefold"
+appearance:
+  integument: pycnofibres (hair-like filaments) on the body; leathery wing membranes
+  colour: unknown; the app uses pale greys
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 2], confidence: chosen}
+  diet: carnivore (probably took small animals on the ground; the 'terrestrial stalker' view)
+  activity: [walk, fly, hunt, rest]
+  speed_m_s:
+    walk: 1.5
+    fly: 20.0
+    max: 30.0
+    source: witton2010
+    confidence: model
+    note: "Witton & Habib 2010: maximum-range flight speed of a 200 kg model exceeds 30 m/s; walk and cruise values chosen"
+abundance:
+  south-laramidia: {relative: 0.08, source: andres2021, confidence: chosen, note: "ordinal uncommon; holotype plus six giant specimens, all from river-channel deposits"}
+sources: [witton2010, andres2021, longrich2018, pbdb]
+notes: >-
+  One of the largest flying animals ever, with a wingspan of 10–11 m. On the ground it walked on all fours, its
+  head held far above a person's.

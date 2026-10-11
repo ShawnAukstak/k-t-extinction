@@ -61,10 +61,11 @@ const vegetation = new Vegetation(globe.heights, fx.crater, {
   ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
 scene.add(vegetation.group);
-const roster = loadRoster();
 const herds = new Herds(globe.heights, vegetation.map, fx.crater, {
   ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
-}, settings.herds, roster.species, roster.regions);
+}, settings.herds, [], []);
+// The species cards load the first time the camera is low enough for animals.
+herds.requestRoster = () => void loadRoster().then((r) => herds.setRoster(r.species, r.regions));
 scene.add(herds.group);
 const asteroid = new Asteroid();
 scene.add(asteroid.group, asteroid.light, asteroid.light.target);
@@ -188,8 +189,8 @@ controls.onTap = (x, y) => {
   const r = renderer.domElement.getBoundingClientRect();
   _ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
   raycaster.setFromCamera(_ndc, camera);
-  const sp = herds.pick(raycaster);
-  if (sp) { panel.showSpecies(sp); return; }
+  const hit = herds.pick(raycaster);
+  if (hit) { panel.showSpecies(hit.species, hit.entry); return; }
   const p = pick(x, y);
   if (!p) return;
   setQuery(p);
@@ -234,8 +235,8 @@ async function findAnimals(p: Poi): Promise<void> {
     const h = herds.nearestHerd(here, clock.t);
     if (h) {
       const ll = vecToLatLon(h.dir);
-      await controls.flyTo({ lat: ll.lat, lon: ll.lon, range: Math.max(40, h.species.lengthM * 6), heading: 30, tilt: 70 }, 2.5);
-      panel.showSpecies(h.species, h.size > 1 ? `<p>A group of ${h.size}.</p>` : '');
+      await controls.flyTo({ lat: ll.lat, lon: ll.lon, range: Math.max(12, h.species.lengthM * 5), heading: 30, tilt: 70 }, 2.5);
+      panel.showSpecies(h.species, h.entry, h.size > 1 ? `<p>A group of ${h.size}.</p>` : '');
       return;
     }
     await new Promise((r) => setTimeout(r, 250));

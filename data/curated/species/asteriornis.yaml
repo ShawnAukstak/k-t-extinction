@@ -1,0 +1,34 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: asteriornis
+name: Asteriornis
+species: [A. maastrichtensis]
+group: bird
+body_plan: flier
+age:
+  formation: Maastricht Fm (Belgium)
+  ma_range: [66.8, 66.7]
+  latest_maastrichtian: true
+regions: [tethys]
+size:
+  length_m: {typical: 0.3, range: [0.25, 0.35], confidence: chosen}
+  wingspan_m: {typical: 0.5, range: [0.4, 0.6], confidence: chosen}
+  hip_height_m: 0.12
+  hip_height_note: "estimated"
+  mass_kg: {value: 0.4, source: field2020, confidence: model, note: "Field et al. 2020: ~395 g"}
+appearance:
+  integument: feathered; toothless beak
+  colour: unknown; the app uses a muted palette
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen}
+  diet: omnivore (assumed)
+  activity: [walk, fly, rest]
+  speed_m_s: {walk: 0.6, fly: 12.0, source: null, confidence: chosen}
+abundance:
+  tethys: {relative: 0.02, source: field2020, confidence: chosen, note: "ordinal rare; a coastal bird, found in nearshore marine rocks"}
+survived_kpg: {value: true, source: field2018, note: "its lineage (Galloanserae: fowl and waterfowl) survived; whether this species did is unknown"}
+sources: [field2020, field2018]
+notes: >-
+  The 'wonderchicken': a partridge-sized bird close to the common ancestor of chickens and ducks, from about
+  700,000 years before the impact. Field et al. (2018) argue that ground-dwelling birds were the ones that made it
+  through.

@@ -1,0 +1,43 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+id: rapetosaurus
+name: Rapetosaurus
+species: [R. krausei]
+group: sauropod
+body_plan: quadruped
+age:
+  formation: Maevarano Fm, Anembalemba Mb (NW Madagascar)
+  ma_range: [70.0, 66.0]
+  latest_maastrichtian: true
+  note: "Maastrichtian; see majungasaurus.yaml for the dating caveat."
+regions: [madagascar]
+proxy_in: [africa-interior]
+size:
+  length_m: {typical: 15.0, range: [12.0, 15.0], confidence: model, note: "adult length often cited as ~15 m; not verified in our sources"}
+  hip_height_m: 2.8
+  hip_height_note: "estimated: juvenile FMNH PR 2209 femur 0.69 m + tibia 0.50 m (Benson 2014 data) scaled up isometrically, since its limbs grew isometrically (Curry Rogers et al. 2016)"
+  mass_kg:
+    value: 10000
+    source: benson2014
+    confidence: chosen
+    note: >-
+      Benson 2014 gives 1,646 kg for the juvenile holotype FMNH PR 2209. Adults were much larger (adult-sized
+      osteoderms; Curry Rogers et al. 2011) but no adult mass is published in our sources. 10 t is a chosen round
+      value for a ~15 m titanosaur (compare Jainosaurus, 11,946 kg in Benson 2014).
+  juvenile_mass_kg: {value: 1646, source: benson2014, note: "FMNH PR 2209"}
+appearance:
+  integument: scaly with a few large, hollow bony osteoderms (Curry Rogers et al. 2011)
+  colour: unknown; the app uses a muted, countershaded palette
+  confidence: known
+  sources: [curryrogers2011]
+behaviour:
+  group_size: {typical: [1, 6], confidence: chosen}
+  diet: herbivore
+  activity: [browse_high, browse_low, walk, roam, rest]
+  speed_m_s: {walk: 1.0, max: 3.0, source: null, confidence: chosen}
+  young: "hatchlings weighed ~3.4 kg and were independent from birth (Curry Rogers et al. 2016)"
+abundance:
+  madagascar: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common"}
+sources: [curryrogers2001, curryrogers2011, curryrogers2016, benson2014, pbdb]
+notes: >-
+  One of the most complete titanosaurs known. A baby Rapetosaurus found in drought-hit beds weighed about 40 kg a
+  few weeks after hatching and was already fending for itself.
