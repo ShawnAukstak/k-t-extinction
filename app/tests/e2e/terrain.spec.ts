@@ -32,3 +32,15 @@ test('plants grow near the ground and only there', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return k.vegetation.group.visible; })).toBe(false);
   await expectNoErrors(errors);
 });
+
+test('dinosaurs live around Tanis before the impact and are gone within the impact winter', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/#t=-60&p=1&c=51.686,-79.748,2500,150,60&v=1');
+  await waitForGlobe(page);
+  await expect.poll(() => page.evaluate(() => (window as any).__kt.herds.animals), { timeout: 30_000 }).toBeGreaterThan(50);
+  const alive = await page.evaluate(() => (window as any).__kt.herds.aliveAt(-60));
+  const later = await page.evaluate(() => (window as any).__kt.herds.aliveAt(2 * 31_557_600));
+  expect(alive).toBeGreaterThan(50);
+  expect(later).toBe(0); // the fallback roster is all non-avian dinosaurs
+  await expectNoErrors(errors);
+});

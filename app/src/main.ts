@@ -18,6 +18,8 @@ import { Asteroid } from './render/asteroid';
 import { Globe } from './render/globe';
 import { Plume } from './render/plume';
 import { Vegetation } from './terrain/vegetation';
+import { Herds } from './life/herds';
+import { loadRoster } from './life/roster';
 import { Sky } from './render/sky';
 import { Markers } from './ui/markers';
 import { chip, InfoPanel, sourceLinks } from './ui/panel';
@@ -59,6 +61,11 @@ const vegetation = new Vegetation(globe.heights, fx.crater, {
   ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
 scene.add(vegetation.group);
+const roster = loadRoster();
+const herds = new Herds(globe.heights, vegetation.map, fx.crater, {
+  ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
+}, settings.herds, roster.species, roster.regions);
+scene.add(herds.group);
 const asteroid = new Asteroid();
 scene.add(asteroid.group, asteroid.light, asteroid.light.target);
 const cine = new Cinematic(asteroid);
@@ -370,6 +377,7 @@ function renderNow(dt = 0): void {
     fogColor.set(0.34, 0.44, 0.58).multiplyScalar(day * fx.meanLight);
   }
   vegetation.update(camera, fogColor);
+  herds.update(camera, clock.t, clock.rate(), fogColor);
   renderer.render(scene, camera);
   if (plume.update(clock.t, camera, sun, fx.meanLight)) plume.render(renderer, camera);
   timeline.update();
@@ -422,13 +430,13 @@ declare global {
   interface Window {
     __kt: {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
-      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid; vegetation: Vegetation;
+      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
       mode: () => 'cine' | 'free';
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
     };
   }
 }
 window.__kt = {
-  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, vegetation, mode: () => mode,
+  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, vegetation, herds, mode: () => mode,
   renderNow, setQuery, effectsReady: () => ensureEffectData(true),
 };

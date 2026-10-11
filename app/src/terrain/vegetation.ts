@@ -20,6 +20,7 @@ import { directionToFace, faceDirection, FACE_NAMES } from '../render/cube';
 import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
 import type { Heightfield } from './heightfield';
+import { simplex3 } from './noise';
 import { plantGeometry, plantMix, type PlantKind } from './plants';
 
 const KINDS: PlantKind[] = ['conifer', 'broadleaf', 'palm', 'treefern', 'cycad', 'shrub'];
@@ -40,6 +41,17 @@ export interface VegetationOptions {
 
 /** Vegetation classes, in the order scripts/process_globe.py writes them. */
 export const VEG_CLASSES = ['water', 'desert', 'arid_shrub', 'fern_savanna', 'tropical_forest', 'warm_forest', 'cool_forest', 'wetland', 'rock'];
+
+/**
+ * Openness of the ground (0 = closed canopy, 1 = clearing): large-scale noise so forests are a mosaic
+ * of stands and open fern/horsetail ground, as floodplain vegetation is. Shared with the herds, which
+ * graze in the open.
+ */
+export function clearing(d: Vector3): number {
+  const x = d.x * EARTH_RADIUS, y = d.y * EARTH_RADIUS, z = d.z * EARTH_RADIUS;
+  const n = 0.65 * simplex3(x / 420, y / 420, z / 420) + 0.35 * simplex3(x / 130 + 9, y / 130, z / 130);
+  return Math.min(1, Math.max(0, (n + 0.15) * 2.2));
+}
 
 export class VegetationMap {
   private faces: Uint8Array[] = [];
@@ -216,8 +228,9 @@ export class Vegetation {
       const s = (cx + (i + rnd()) / per) / n, t = (cy + (j + rnd()) / per) / n;
       faceDirection(face, s, t, d);
       const veg = this.map.sample(d);
-      // Clumpy: thin by density with a little patchiness.
-      if (rnd() > veg.density * (0.75 + 0.5 * rnd())) continue;
+      // Clumpy: thin by density, with clearings.
+      const open = clearing(d);
+      if (rnd() > veg.density * (1 - 0.9 * open) * (0.75 + 0.5 * rnd())) continue;
       const mix = plantMix(veg.cls, veg.tempC);
       if (!mix.length) continue;
       let r = rnd() * mix.reduce((a, [, w]) => a + w, 0);
