@@ -45,20 +45,27 @@ vec3 extinction(float odR, float odM) {
   return BETA_R * odR + vec3(BETA_M_EXT * (1.0 + uHaze * 40.0)) * odM;
 }
 
-// Transmittance from p toward the Sun to the top of the atmosphere (0 inside the planet's shadow).
+// Relative optical depth of an exponential atmosphere from altitude h (in scale heights) toward
+// zenith angle χ, times exp(−h): Schüler's approximation to the Chapman function (GPU Pro 3, 2012).
+// X is the planet radius in scale heights.
+float chapman(float X, float h, float cosChi) {
+  float c = sqrt(X + h);
+  if (cosChi >= 0.0) return c / (c * cosChi + 1.0) * exp(-h);
+  float x0 = sqrt(max(0.0, 1.0 - cosChi * cosChi)) * (X + h);
+  float c0 = sqrt(x0);
+  return 2.0 * c0 * exp(min(X - x0, 60.0)) - c / (1.0 - c * cosChi) * exp(-h);
+}
+
+// Transmittance from p toward the Sun to space (0 inside the planet's shadow). Analytic: no loop.
 vec3 sunTransmittance(vec3 p, vec3 sunDir) {
   vec2 tp = raySphere(p, sunDir, PR - 0.5);
   if (tp.x > 0.0 && tp.x < tp.y) return vec3(0.0);
-  vec2 ta = raySphere(p, sunDir, AR);
-  float len = max(0.0, ta.y);
-  float seg = len / 4.0;
-  float odR = 0.0, odM = 0.0;
-  for (int i = 0; i < 4; i++) {
-    float h = max(0.0, length(p + sunDir * (seg * (float(i) + 0.5))) - PR);
-    odR += exp(-h / H_R);
-    odM += exp(-h / H_M);
-  }
-  return exp(-extinction(odR * seg, odM * seg));
+  float r = length(p);
+  float h = max(0.0, r - PR);
+  float cosChi = dot(p, sunDir) / r;
+  float odR = H_R * chapman(PR / H_R, h / H_R, cosChi);
+  float odM = H_M * chapman(PR / H_M, h / H_M, cosChi);
+  return exp(-extinction(odR, odM));
 }
 
 // In-scattered light along ro + rd*t for t in [t0, t1]; transmittance over the segment returned in T.

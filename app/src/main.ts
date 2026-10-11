@@ -363,9 +363,29 @@ function renderNow(dt = 0): void {
   const range = mode === 'free' ? controls.pose.range : camera.position.length() - EARTH_RADIUS;
   markers.update(camera, window.innerWidth, window.innerHeight, range < 6_000_000);
 }
+// ── adaptive resolution ──────────────────────────────────────────────────────
+// Hold ~60 fps by trading pixel ratio (1 … the tier's maximum) against frame time.
+let frameMs = 16;
+let lastScale = 0;
+function adaptResolution(now: number, dtMs: number): void {
+  if (dtMs > 0 && dtMs < 250) frameMs = frameMs * 0.95 + dtMs * 0.05;
+  if (now - lastScale < 1500) return;
+  const pr = renderer.getPixelRatio();
+  const max = Math.min(window.devicePixelRatio, settings.maxPixelRatio);
+  let next = pr;
+  if (frameMs > 19 && pr > 1) next = Math.max(1, pr - 0.25);
+  else if (frameMs < 12.5 && pr < max) next = Math.min(max, pr + 0.25);
+  if (next !== pr) {
+    renderer.setPixelRatio(next);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    lastScale = now;
+  }
+}
+
 let last = performance.now();
 let lastPanelRefresh = 0;
 function frame(now: number): void {
+  adaptResolution(now, now - last);
   const dt = Math.min(0.25, (now - last) / 1000); // cap: no huge jump after a background tab
   last = now;
   clock.tick(dt);
