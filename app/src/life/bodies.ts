@@ -55,9 +55,12 @@ const T = (x: number, y: number, z: number) => M().makeTranslation(x, y, z);
 const S = (x: number, y: number, z: number) => M().makeScale(x, y, z);
 const RX = (a: number) => M().makeRotationX(a);
 
+/** Sphere tessellation: big animals get rounder bodies; small ones are a few pixels tall anyway. */
+let DETAIL = 10;
+
 /** An ellipsoid centred at (x,y,z) with radii (rx, ry, rz). */
-function ellipsoid(rx: number, ry: number, rz: number, x: number, y: number, z: number, detail = 10): { g: BufferGeometry; m: Matrix4 } {
-  return { g: new SphereGeometry(1, detail, Math.max(6, detail - 3)), m: T(x, y, z).multiply(S(rx, ry, rz)) };
+function ellipsoid(rx: number, ry: number, rz: number, x: number, y: number, z: number, detail = DETAIL): { g: BufferGeometry; m: Matrix4 } {
+  return { g: new SphereGeometry(1, detail, Math.max(5, detail - 3)), m: T(x, y, z).multiply(S(rx, ry, rz)) };
 }
 
 /** A tapered tube along +z from z0 to z1 at height y (cone-ish, for necks and tails). */
@@ -85,6 +88,7 @@ export interface BodySpec {
 export function bodyGeometry(spec: BodySpec): BufferGeometry {
   const L = spec.lengthM;
   const H = spec.hipHeightM;
+  DETAIL = L >= 6 ? 9 : L >= 2 ? 7 : 6;
   const p: Piece[] = [];
   const add = (x: { g: BufferGeometry; m: Matrix4 }, part: number, pivot: Vector3, tint = 0) => p.push(piece(x.g, part, pivot, x.m, tint));
   switch (spec.group) {

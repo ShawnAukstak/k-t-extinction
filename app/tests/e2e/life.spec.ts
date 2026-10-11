@@ -28,15 +28,16 @@ test('tapping an animal opens its species card', async ({ page }) => {
     const lat = Math.asin(h.dir.y) * 180 / Math.PI, lon = Math.atan2(h.dir.x, h.dir.z) * 180 / Math.PI;
     k.clock.playing = false;
     k.controls.setPose({ lat, lon, range: h.species.lengthM * 6, heading: 0, tilt: 60 });
+    (window as any).__target = h.dir.clone(); // look the herd up again from here, not from the camera
     return h.species.name as string;
   });
-  // Project that animal's body (its torso, just above hip height) to the screen and click it.
+  // Project that animal's torso (0.95 × hip height: inside the body at every drawn scale) and click it.
   await expect.poll(async () => {
     const xy = await page.evaluate(() => {
       const k = (window as any).__kt;
       k.renderNow();
-      const h = k.herds.nearestHerd(k.camera.position.clone().normalize(), k.clock.t);
-      const p = h.pos.clone().addScaledVector(h.dir, h.species.hipHeightM * 1.08).project(k.camera);
+      const h = k.herds.nearestHerd((window as any).__target, k.clock.t);
+      const p = h.pos.clone().addScaledVector(h.dir, h.species.hipHeightM * 0.95).project(k.camera);
       const r = k.renderer.domElement.getBoundingClientRect();
       return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height];
     });

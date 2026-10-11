@@ -275,10 +275,13 @@ export class Quadtree {
   }
 
   private evict(): void {
+    if (this.frame % 30 !== 0) return;
     let count = 0;
     for (const t of this.tiles.values()) if (t.mesh) count++;
     if (count <= this.opt.maxTiles) return;
-    const old = [...this.tiles.values()].filter((t) => t.mesh && t.level > 0 && t.lastUsed < this.frame).sort((a, b) => a.lastUsed - b.lastUsed);
+    // Only tiles unused for a while: if the view needs more tiles than the cap, evicting ones it
+    // just used would rebuild them every frame (the cap is soft in that case).
+    const old = [...this.tiles.values()].filter((t) => t.mesh && t.level > 0 && t.lastUsed < this.frame - 30).sort((a, b) => a.lastUsed - b.lastUsed);
     for (const t of old) {
       if (count <= this.opt.maxTiles) break;
       this.disposeMesh(t);

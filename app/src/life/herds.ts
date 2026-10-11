@@ -47,6 +47,8 @@ interface Animal {
   look: [number, number, number, number];
   dieAt: number;                // sim seconds; Infinity = survives
   fallAway: boolean;            // knocked down by the blast (vs died in place)
+  /** Ground height cache: last sampled position (e, n) and its height, m. */
+  gE?: number; gN?: number; gH?: number;
 }
 
 interface Herd {
@@ -67,6 +69,8 @@ interface Cell {
   centerPos: Vector3;
   /** Each species' entry in this cell's region (abundance, confidence, stand-in for…). */
   entries: Map<string, FaunaEntry>;
+  /** Instance matrices have been set at least once. */
+  animated?: boolean;
   herds: Herd[];
   meshes: Map<string, { mesh: InstancedMesh; anim: InstancedBufferAttribute; look: InstancedBufferAttribute; items: { herd: Herd; a: Animal }[] }>;
   lastUsed: number;
@@ -403,7 +407,10 @@ export class Herds {
         this.group.add(cell.group);
       }
       cell.lastUsed = this.frame;
-      this.animateCell(cell, t, rate);
+      // Far cells (animals a few pixels tall) animate every fourth frame, staggered.
+      // (A new cell always animates at once: until then its instances all sit at the cell centre.)
+      const far = cell.centerPos.distanceTo(camera.position) > 3000;
+      if (!far || !cell.animated || (this.frame + c.x + c.y) % 4 === 0) this.animateCell(cell, t, rate);
     }
     for (const [key, cell] of this.cells) {
       if (cell.lastUsed === this.frame) continue;
@@ -413,6 +420,7 @@ export class Herds {
   }
 
   private animateCell(cell: Cell, t: number, rate: number): void {
+    cell.animated = true;
     // At time-lapse speeds, motion would only be jitter: hold animals still.
     const live = Math.abs(rate) < 40;
     const ta = live ? t : 0;
@@ -433,7 +441,12 @@ export class Herds {
         const e = ce + a.offE + 3 * Math.sin(tm * 0.05 + a.phase * 9), nn = cn + a.offN + 3 * Math.cos(tm * 0.04 + a.phase * 7);
         this._d.copy(herd.base).multiplyScalar(EARTH_RADIUS).addScaledVector(herd.e, e).addScaledVector(herd.n, nn).normalize();
         // Swimmers ride at the waterline (the sea surface is opaque, so only their backs and heads show).
-        const h = SWIMMERS.has(sp.group) ? 0 : Math.max(0, this.heights.height(this._d, 30));
+        // Ground height is resampled only once an animal has moved half a metre.
+        if (a.gH === undefined || Math.abs(e - a.gE!) + Math.abs(nn - a.gN!) > 0.5) {
+          a.gE = e; a.gN = nn;
+          a.gH = SWIMMERS.has(sp.group) ? 0 : Math.max(0, this.heights.height(this._d, 30));
+        }
+        const h = a.gH;
         this._p.copy(this._d).multiplyScalar(EARTH_RADIUS + h).sub(cell.centerPos);
         // Orientation: right-handed local frame x = west, y = up, z = north (forward), then turn to the
         // heading. A yaw ψ points forward at bearing −ψ; the roll (toward local −x) falls at bearing π/2 − ψ,

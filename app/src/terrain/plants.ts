@@ -67,8 +67,9 @@ export function plantGeometry(kind: PlantKind): BufferGeometry {
     case 'broadleaf': {
       // Angiosperm tree with a broad, lumpy crown, ~18 m.
       const trunk = withPart(new CylinderGeometry(0.35, 0.6, 10, 5), 0, T(0, 5, 0));
+      // Main lobe smooth, side lobes faceted: thousands are drawn, so triangles count (~160 per tree).
       const crown = [[0, 12, 0, 5.5], [2.8, 10.5, 1.2, 3.6], [-2.6, 11, -1.4, 3.8], [0.6, 14.5, -1.8, 3.4]].map(([x, y, z, r], i) =>
-        withPart(lumpy(new IcosahedronGeometry(r, 1), 0.18, i + 1), 1, T(x, y, z)));
+        withPart(lumpy(new IcosahedronGeometry(r, i === 0 ? 1 : 0), 0.18, i + 1), 1, T(x, y, z)));
       return merge([trunk, ...crown]);
     }
     case 'palm': {

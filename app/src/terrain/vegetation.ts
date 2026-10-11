@@ -213,6 +213,7 @@ interface Cell { key: string; group: Group; lastUsed: number }
 export class Vegetation {
   readonly group = new Group();
   readonly material: ShaderMaterial;
+  private readonly fronds: ShaderMaterial;
   readonly map = new VegetationMap();
   private readonly geoms = new Map<PlantKind, BufferGeometry>();
   private readonly cells = new Map<string, Cell>();
@@ -236,9 +237,13 @@ export class Vegetation {
     }
     this.ignition = treeIgnitionMJm2(crater.energyMt);
     this.material = new ShaderMaterial({
-      vertexShader, fragmentShader, side: DoubleSide, // fronds and palm leaves are single planes
+      vertexShader, fragmentShader,
       uniforms: { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) } },
     });
+    // Fronds and palm leaves are single planes: draw both sides (closed crowns keep back-face culling).
+    this.fronds = this.material.clone();
+    this.fronds.uniforms = this.material.uniforms;
+    this.fronds.side = DoubleSide;
   }
 
   private buildCell(face: number, cx: number, cy: number): Group {
@@ -292,7 +297,8 @@ export class Vegetation {
     const g = new Group();
     g.position.copy(centerPos);
     for (const [kind, list] of lists) {
-      const mesh = new InstancedMesh(this.geoms.get(kind)!, this.material, list.length);
+      const flat = kind === 'palm' || kind === 'treefern' || kind === 'cycad' || kind === 'fern';
+      const mesh = new InstancedMesh(this.geoms.get(kind)!, flat ? this.fronds : this.material, list.length);
       const inst = new Float32Array(list.length * 4);
       list.forEach((e, i) => { mesh.setMatrixAt(i, e.m); inst.set(e.inst, i * 4); });
       mesh.geometry = this.geoms.get(kind)!.clone();
