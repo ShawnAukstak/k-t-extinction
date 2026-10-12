@@ -2,9 +2,12 @@
  * The impact plume and ejecta curtain as a raymarched volume, in true spherical geometry around the
  * crater, for the first hour or two.
  *
- *   0–8 s      the fireball (EIEP radius of maximum radiation) — an incandescent, rising ball
- *   0–180 s    the ejecta curtain grows: Artemieva & Morgan's 180 s field, scaled self-similarly
- *   180–3600 s Artemieva & Morgan 2020 FIG 2 dust density fields, blended between keyframes
+ *   0–90 s     the fireball (EIEP radius of maximum radiation): an incandescent ball that rises and
+ *              stretches upward out of the atmosphere, cooling from white to deep red
+ *   3–180 s    the ejecta curtain: an inverted cone at ~45° growing from the rim of the transient crater
+ *              as it opens (Collins et al. 2020 timescales), streaked into rays, hot at its base
+ *   90–3600 s  Artemieva & Morgan 2020 FIG 2 dust density fields, blended between keyframes (before the
+ *              first keyframe, its 180 s field scaled self-similarly, fading in as the curtain fades)
  *
  * Rendered at reduced resolution into a half-float target and composited over the scene; the Earth's
  * surface occludes it analytically. Brightness and opacity are visual choices on top of the model's
@@ -16,6 +19,9 @@ import {
   BufferAttribute, Vector3, Vector4, WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
 import { IMPACT } from '../config';
+import { CRATER_OBSERVED } from '../effects/impact-effects';
+
+const TRANSIENT_RADIUS_KM = CRATER_OBSERVED.transientRadiusKm;
 import { latLonToVec } from '../core/geo';
 import { atmosphereChunk } from './shaders/atmosphere';
 
@@ -42,6 +48,10 @@ uniform float uT;
 uniform float uSteps;
 uniform float uFireR;
 uniform float uFade;
+uniform vec4 uFire;          // horizontal radius, vertical radius, centre height (km), strength
+uniform vec4 uCurtain;       // base radius, top height, sheet thickness (km), strength
+uniform vec2 uExtent;        // radial and vertical extent of everything drawn (km)
+uniform float uFieldOn;      // weight of the model dust field
 uniform vec3 uImpactDir;
 uniform vec3 uCamPosKm;
 uniform mat3 uViewToWorld;
@@ -70,36 +80,50 @@ float vnoise(vec3 x) {
              mix(mix(h3(i + vec3(0, 0, 1)), h3(i + vec3(1, 0, 1)), f.x), mix(h3(i + vec3(0, 1, 1)), h3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
 
-float capAngle() { return max(uKA.y / uKA.w, uKB.y / uKB.w) / PR + 0.02; }
+float capAngle() { return uExtent.x / PR + 0.02; }
 
-// Dust extinction (per km) and fireball fraction at a point (planet-centred km).
-vec2 plumeAt(vec3 p) {
+// Dust extinction (per km), fireball fraction and curtain fraction at a point (planet-centred km).
+vec3 plumeAt(vec3 p) {
   float lp = length(p);
   float z = lp - PR;
-  if (z < 0.0) return vec2(0.0);
+  if (z < 0.0) return vec3(0.0);
   vec3 pn = p / lp;
   float ang = atan(length(cross(pn, uImpactDir)), dot(pn, uImpactDir));
-  if (ang > capAngle()) return vec2(0.0);
+  if (ang > capAngle()) return vec3(0.0);
   float r = ang * PR;
-  float rho = mix(tileDensity(uKA, r, z), tileDensity(uKB, r, z), uKW);
+  float rho = uFieldOn > 0.0 ? mix(tileDensity(uKA, r, z), tileDensity(uKB, r, z), uKW) * uFieldOn : 0.0;
   float fb = 0.0;
-  if (uT < 90.0) {
-    float rf = uFireR * (1.0 - exp(-uT / 3.0)) + 2.0 * max(0.0, uT - 8.0);
-    float d = length(vec2(r, z - 0.35 * rf));
-    fb = smoothstep(rf, 0.6 * rf, d) * exp(-uT / 25.0);
+  if (uFire.w > 0.0) {
+    // A rising, stretching ball with a turbulent, billowing edge.
+    float turb = vnoise(p / (uFire.x * 0.22) - uImpactDir * uT * 0.08) - 0.5;
+    float d = length(vec2(r / uFire.x, (z - uFire.z) / uFire.y)) + turb * 0.45;
+    fb = smoothstep(1.0, 0.45, d) * uFire.w;
   }
-  if (rho <= 0.0 && fb <= 0.0) return vec2(0.0);
+  float cur = 0.0;
+  if (uCurtain.w > 0.0 && z < uCurtain.y) {
+    // Inverted cone opening outward at 45° from the transient crater's rim; rays of denser ejecta.
+    float dr = (r - (uCurtain.x + z)) / uCurtain.z;
+    float sheet = exp(-dr * dr);
+    if (sheet > 0.01) {
+      vec3 e = normalize(cross(vec3(0.0, 1.0, 0.0), uImpactDir));
+      vec3 nn = cross(uImpactDir, e);
+      float az = atan(dot(pn, e), dot(pn, nn));
+      float rays = 0.35 + 1.1 * vnoise(vec3(az * 11.0, z / 30.0, 1.7)) * (0.6 + 0.8 * vnoise(vec3(az * 40.0, z / 9.0, 4.1)));
+      cur = sheet * rays * smoothstep(uCurtain.y, uCurtain.y * 0.5, z) * smoothstep(0.0, 2.0, z) * uCurtain.w;
+    }
+  }
+  if (rho <= 0.0 && fb <= 0.0 && cur <= 0.0) return vec3(0.0);
   // Billows: two octaves of noise, drifting outward and upward with time.
   vec3 q = p / 38.0 + uImpactDir * (uT * 0.002);
   float billow = 0.15 + 1.8 * vnoise(q) * (0.4 + vnoise(p / 11.0));
-  float sigma = 1.6 * rho * billow + fb * 0.08;
-  return vec2(sigma, fb);
+  float sigma = 1.6 * rho * billow + fb * 0.08 + cur * 0.3;
+  return vec3(sigma, fb, cur);
 }
 
 void main() {
   vec3 rd = normalize(uViewToWorld * normalize(vec3(vNdc * uTanHalf, -1.0)));
   vec3 ro = uCamPosKm;
-  float zTop = max(uKA.z / uKA.w, uKB.z / uKB.w) + 20.0;
+  float zTop = uExtent.y + 20.0;
   vec2 shell = raySphere(ro, rd, PR + zTop);
   if (shell.y <= 0.0 || uFade <= 0.0) { gl_FragColor = vec4(0.0); return; }
   vec2 earth = raySphere(ro, rd, PR);
@@ -118,7 +142,7 @@ void main() {
   for (int i = 0; i < 64; i++) {
     if (float(i) >= n || trans < 0.02) break;
     vec3 p = ro + rd * (t0 + dt * (float(i) + jitter));
-    vec2 s = plumeAt(p);
+    vec3 s = plumeAt(p);
     float sigma = s.x;
     if (sigma <= 1e-6) continue;
     float a = 1.0 - exp(-sigma * dt);
@@ -130,8 +154,15 @@ void main() {
     vec3 albedo = mix(vec3(0.20, 0.17, 0.14), vec3(0.42, 0.37, 0.31), smoothstep(30.0, 200.0, zKm));
     vec3 lit = albedo * (sunT * SUN_E * uSunScale * phase / PI * 0.55 * sh + 0.04);
     float rhoTerm = clamp(sigma / 1.6, 0.0, 1.0);
-    float tempGlow = hot * rhoTerm * 5.0 + s.y * (300.0 * exp(-uT / 4.0) + 30.0);
-    vec3 glow = mix(vec3(1.0, 0.42, 0.1), vec3(1.0, 0.92, 0.8), clamp(s.y * exp(-uT / 10.0), 0.0, 1.0)) * tempGlow;
+    // The fireball cools from white through yellow and orange to a dull red; hottest in its core.
+    float cool = clamp(uT / 45.0 + (1.0 - s.y) * 0.35, 0.0, 1.0);
+    vec3 fireC = mix(vec3(1.0, 0.95, 0.88), vec3(1.0, 0.72, 0.32), smoothstep(0.0, 0.35, cool));
+    fireC = mix(fireC, vec3(0.95, 0.32, 0.08), smoothstep(0.3, 0.7, cool));
+    fireC = mix(fireC, vec3(0.45, 0.08, 0.03), smoothstep(0.65, 1.0, cool));
+    float tempGlow = hot * rhoTerm * 5.0 + s.y * (260.0 * exp(-uT / 5.0) + 26.0 * exp(-uT / 40.0));
+    vec3 glow = fireC * tempGlow;
+    // The curtain's base glows with hot ejecta and melt for the first minute or two.
+    glow += vec3(1.0, 0.38, 0.1) * s.z * 9.0 * exp(-zKm / 25.0) * exp(-uT / 60.0);
     acc += trans * a * (lit + glow);
     trans *= 1.0 - a;
   }
@@ -177,6 +208,7 @@ export class Plume {
         uPlume: { value: null }, uTiles: { value: 1 },
         uKA: { value: new Vector4(-1, 1, 1, 1) }, uKB: { value: new Vector4(-1, 1, 1, 1) }, uKW: { value: 0 },
         uT: { value: 0 }, uSteps: { value: steps }, uFireR: { value: 169 }, uFade: { value: 0 },
+        uFire: { value: new Vector4() }, uCurtain: { value: new Vector4() }, uExtent: { value: [1, 1] }, uFieldOn: { value: 1 },
         uImpactDir: { value: latLonToVec(IMPACT.site.value.lat, IMPACT.site.value.lon, 1) },
         uCamPosKm: { value: this.camKm }, uViewToWorld: { value: this.viewToWorld }, uTanHalf: { value: [1, 1] },
         uSunDir: { value: new Vector3(1, 0, 0) }, uSunScale: { value: 1 }, uHaze: { value: 0 },
@@ -227,6 +259,20 @@ export class Plume {
     u.uFade.value = fade;
     u.uT.value = t;
     const tiles = m.tiles;
+    // Fireball: grows to the EIEP radius in seconds, rises and stretches out of the atmosphere, fades.
+    const R = u.uFireR.value as number;
+    // As it rises it narrows into a column (the vapour escapes up the hole the asteroid punched).
+    const rf = R * (1 - Math.exp(-t / 3)) * (0.5 + 0.5 * Math.exp(-t / 15));
+    const fireOn = t < 120 ? Math.min(1, t / 0.3) * Math.exp(-t / 18) : 0;
+    const fireTop = rf * 0.4 + 2.5 * t, fireV = rf * (1 + t / 12);
+    (u.uFire.value as Vector4).set(rf, fireV, fireTop, fireOn);
+    // Ejecta curtain: base on the opening transient crater's rim; the top rises ballistically
+    // (~1.5 km/s); it hands over to the model dust field between 90 and 180 s.
+    const base = TRANSIENT_RADIUS_KM * (1 - Math.exp(-t / 30));
+    const top = Math.min(260, 1.5 * t);
+    const curtainOn = t < 3 ? 0 : Math.min(1, (t - 3) / 4) * (1 - Math.min(1, Math.max(0, (t - 90) / 90)));
+    (u.uCurtain.value as Vector4).set(base, top, 2.5 + 0.05 * top, curtainOn);
+    u.uFieldOn.value = t >= tiles[0].t ? 1 : Math.min(1, Math.max(0, (t - 90) / 90));
     const ka = u.uKA.value as Vector4, kb = u.uKB.value as Vector4;
     const set = (k: Vector4, i: number, scale = 1) => k.set(i, tiles[i].rmaxKm, tiles[i].zmaxKm, scale);
     if (t <= tiles[0].t) {
@@ -245,6 +291,12 @@ export class Plume {
       set(kb, i + 1);
       u.uKW.value = Math.log(t / tiles[i].t) / Math.log(tiles[i + 1].t / tiles[i].t);
     }
+    const field = (k: Vector4) => [k.y / k.w, k.z / k.w];
+    const [fr1, fz1] = field(ka), [fr2, fz2] = field(kb);
+    u.uExtent.value = [
+      Math.max(fr1, fr2, fireOn > 0 ? rf * 1.6 : 0, curtainOn > 0 ? base + top + 10 : 0),
+      Math.max(fz1, fz2, fireOn > 0 ? fireTop + fireV * 1.6 : 0, curtainOn > 0 ? top : 0),
+    ];
     (u.uSunDir.value as Vector3).copy(sunDir);
     u.uSunScale.value = sunScale;
     this.viewToWorld.setFromMatrix4(camera.matrixWorld);
