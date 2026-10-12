@@ -14,9 +14,6 @@ services:
         sync: false
       - key: NODE_VERSION
         value: 22.12.0
-      # Google Analytics (app/src/core/analytics.ts). Public anyway: it appears in the page.
-      - key: GA_ID
-        value: G-93G9HMSBN0
     headers:
       # Hashed bundles never change; data files can, so cache them for an hour.
       - path: /assets/*
