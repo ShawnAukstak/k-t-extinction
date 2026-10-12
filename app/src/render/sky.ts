@@ -46,7 +46,14 @@ void main() {
   vec2 ta = raySphere(uCamPosKm, rd, AR);
   if (ta.y <= 0.0) {                       // ray misses the atmosphere: space
     float sunDisc = smoothstep(0.99996, 0.99999, dot(rd, uSunDir));
-    gl_FragColor = vec4(vec3(sunDisc * 40.0 * uSunScale), 1.0);
+    // A faint Milky Way: a band of unresolved stars with clumps and a dark dust rift (illustrative).
+    vec3 gp = normalize(vec3(-0.4, 0.55, 0.73));
+    float b = dot(rd, gp) + 0.025 * (cvn(rd * 11.0) - 0.5);
+    float band = exp(-b * b / 0.010);
+    float clump = cvn(rd * 9.0) * 0.6 + cvn(rd * 27.0) * 0.4;
+    float rift = mix(1.0, 0.25, exp(-pow((b + 0.006) / 0.012, 2.0)) * smoothstep(0.35, 0.65, cvn(rd * 6.0 + 2.0)));
+    vec3 mw = vec3(0.72, 0.75, 0.9) * band * (0.35 + clump) * rift * 0.06;
+    gl_FragColor = vec4(vec3(sunDisc * 40.0 * uSunScale) + mw, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
     gl_FragColor.a = 1.0;
@@ -119,7 +126,8 @@ varying float vBright;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-  vBright = pow(10.0, -0.4 * mag);
+  // Compressed range (like a long exposure): more of the faint stars show.
+  vBright = pow(10.0, -0.4 * mag * 0.62);
   gl_PointSize = clamp(2.2 * uPixelRatio * (0.6 + 0.6 * vBright), 1.0, 4.0 * uPixelRatio);
 }
 `;
@@ -130,7 +138,7 @@ uniform float uVisibility;
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float a = smoothstep(0.5, 0.15, length(c));
-  gl_FragColor = vec4(vec3(min(1.0, vBright * 1.6) * uVisibility * a), 1.0);
+  gl_FragColor = vec4(vec3(clamp(vBright * 1.8, 0.1, 1.0) * uVisibility * a), 1.0);
 }
 `;
 
