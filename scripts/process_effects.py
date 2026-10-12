@@ -72,6 +72,7 @@ def bake_winter() -> None:
     c = netCDF4.Dataset(base / "cntl_mon_30yr.nc")
     Fc = np.array(c["FSDS"][:, 0], dtype=np.float64)
     out = APP_DATA / "effects"
+    out.mkdir(parents=True, exist_ok=True)
     months = winter_keyframes()
     for name, fname in WINTER_SCENARIOS.items():
         d = netCDF4.Dataset(base / fname)
@@ -148,6 +149,7 @@ def bake_plume() -> None:
         meta.append({"t": t, "rmaxKm": rmax, "zmaxKm": zmax})
     atlas = np.concatenate(tiles, axis=0)  # rows: tile0 z0..z63, tile1 …
     out = APP_DATA / "effects"
+    out.mkdir(parents=True, exist_ok=True)
     (out / "plume.bin").write_bytes(atlas.tobytes())
     (out / "plume.json").write_text(json.dumps({
         "width": PLUME_R, "tileHeight": PLUME_Z, "tiles": meta,

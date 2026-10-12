@@ -28,8 +28,13 @@ App-ready assets are written to `app/public/data/` (gitignored) so the dev serve
 ```sh
 python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 .venv/bin/python scripts/fetch.py                 # ~1.8 GB of `core` sources into data/raw/
-.venv/bin/python scripts/process_globe.py         # cube-face textures → app/public/data/globe/
+.venv/bin/python scripts/process_globe.py         # cube-face textures and heights → app/public/data/globe/
+.venv/bin/python scripts/process_effects.py       # dust cloud, plume, impact winter → app/public/data/effects/
+.venv/bin/python scripts/process_tsunami.py       # tsunami arrival and height → app/public/data/effects/
+.venv/bin/python scripts/process_places.py        # plate model and cities → app/public/data/places/
 ```
+
+`scripts/reconstruct_pois.py` rewrites `curated/points-of-interest.reconstructed.yaml` (committed) after you edit the places.
 
 `scripts/fetch.py --list` shows every source; `--group heavy` adds the 7 GB tsunami sea-surface-height archive.
 
