@@ -14,8 +14,31 @@ function yamlPlugin(): Plugin {
   };
 }
 
+/**
+ * Link previews: the Open Graph image wants an absolute URL. On Render the build knows the site's URL
+ * (RENDER_EXTERNAL_URL; SITE_URL overrides); elsewhere a relative path, which most unfurlers resolve.
+ */
+function ogImagePlugin(): Plugin {
+  return {
+    name: 'kt-og-image',
+    transformIndexHtml(html) {
+      const site = (process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL ?? '').replace(/\/$/, '');
+      const img = site ? `${site}/og.jpg` : 'og.jpg';
+      const tags = [
+        `<meta property="og:image" content="${img}" />`,
+        '<meta property="og:image:width" content="1200" />',
+        '<meta property="og:image:height" content="630" />',
+        '<meta property="og:image:alt" content="An asteroid approaching the Earth of 66 million years ago" />',
+        `<meta name="twitter:image" content="${img}" />`,
+        ...(site ? [`<meta property="og:url" content="${site}/" />`] : []),
+      ].join('\n    ');
+      return html.replace('</head>', `    ${tags}\n  </head>`);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [yamlPlugin()],
+  plugins: [yamlPlugin(), ogImagePlugin()],
   server: { port: 5173, strictPort: true, host: '127.0.0.1', fs: { allow: ['..'] } },
   preview: { port: 4173, strictPort: true, host: '127.0.0.1' },
   build: { target: 'es2022', sourcemap: true },
