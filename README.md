@@ -2,7 +2,7 @@
 
 An explorable, scientifically grounded 3D simulation of the Chicxulub impact and the end-Cretaceous (K-Pg, "K-T") extinction, for the web. Orbit a 66-million-year-old Earth, scrub a non-linear timeline from the asteroid's last hour through the first seconds, days and years to the recovery a million years later, fly down to the ground among the plants and animals, and share any moment as a link.
 
-**Status:** runs locally; not hosted yet. Built so far (phases 0–5 in [`docs/plan/roadmap.md`](docs/plan/roadmap.md)):
+**Status:** runs locally, plus an unlisted preview on Render (see [Deploy](#deploy)). Built so far (phases 0–5 in [`docs/plan/roadmap.md`](docs/plan/roadmap.md)):
 
 - **The 66 Ma globe:** the PALEOMAP 65 Ma elevation model (with a cited correction at the impact site), coloured from a 66 Ma climate run, with a physically based atmosphere.
 - **Timeline:** a non-linear scrubber from 1 hour before impact to 1 million years after, with event markers and cards.
@@ -18,7 +18,7 @@ An explorable, scientifically grounded 3D simulation of the Chicxulub impact and
   - surviving lineages rebound, and early Paleocene mammals arrive on their published dates.
 - **Confidence labels:** every claim is labelled **known**, **model**, **contested** or **chosen**, and links to its sources.
 
-Next: better animal models, then the discoveries index and hosting.
+Next: better animal models, the licensed climate source (PhanDA) before any public sharing, then the discoveries index.
 
 ## Requirements
 
@@ -107,6 +107,23 @@ npm run check                            # types + unit tests (Vitest) + browser
 ```
 
 `npm run check` must pass before every commit. It starts its own dev server on port 5173, or reuses one that is already running. The Python plate model has its own test: `.venv/bin/python scripts/tests/test_plates.py`.
+
+## Deploy
+
+The app is a static site, deployed to Render from `render.yaml` (a Blueprint) on every push to `main`.
+
+The generated data is not in git. Deploys fetch it from a release of this repo:
+- `app/tools/publish-data.sh data-vN` packages `app/public/data` into release `data-vN` and records its name and checksum in `app/data-bundle.json`. Commit that file.
+- The Render build (`app/tools/render-build.sh`) downloads that bundle, checks it, and runs `npm run build` into `app/dist`. It needs `GH_DATA_TOKEN`: a fine-grained GitHub token with read-only **Contents** access to this repository.
+
+To test a production build locally:
+
+```sh
+cd app && npm run build && npx vite preview                       # → http://127.0.0.1:4173
+KT_BASE_URL=http://127.0.0.1:4173 npx playwright test             # the browser tests, against the build
+```
+
+`KT_BASE_URL` also works with the deployed URL.
 
 ## Layout
 

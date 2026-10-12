@@ -6,6 +6,9 @@ const gpuArgs = process.platform === 'darwin'
   ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
   : ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 
+// KT_BASE_URL runs the suite against another server (a `vite preview` of the build, or the deployed site).
+const external = process.env.KT_BASE_URL;
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
@@ -14,10 +17,10 @@ export default defineConfig({
   reporter: [['list']],
   outputDir: './test-results',
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: external ?? 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
   },
-  webServer: {
+  webServer: external ? undefined : {
     command: 'npx vite --port 5173 --strictPort',
     url: 'http://127.0.0.1:5173',
     reuseExistingServer: true,

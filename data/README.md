@@ -21,7 +21,7 @@ data/
     dem-corrections.yaml   ← cited edits to the PaleoDEM (e.g. the impact site was under the sea)
 ```
 
-App-ready assets are written to `app/public/data/` (gitignored) so the dev server serves them.
+App-ready assets are written to `app/public/data/` (gitignored) so the dev server serves them. For deploys they are published as a release asset (`app/tools/publish-data.sh`, recorded in `app/data-bundle.json`); see the README's Deploy section. Re-publish (with a new `data-vN` tag) whenever a `process_*.py` script's output changes.
 
 ## Rebuild everything
 
