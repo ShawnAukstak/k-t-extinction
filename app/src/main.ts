@@ -75,7 +75,7 @@ const herds = new Herds(globe.heights, vegetation.map, fx.crater, {
 herds.requestRoster = () => void loadRoster().then((r) => herds.setRoster(r.species, r.regions));
 scene.add(herds.group);
 const asteroid = new Asteroid();
-scene.add(asteroid.group, asteroid.light, asteroid.light.target);
+scene.add(asteroid.group, ...asteroid.lights.flatMap((l) => [l, l.target]));
 const cine = new Cinematic(asteroid);
 const plume = new Plume(settings.plumeScale, settings.plumeSteps);
 plume.setFireballRadiusKm(fx.crater.fireballRadiusKm);
