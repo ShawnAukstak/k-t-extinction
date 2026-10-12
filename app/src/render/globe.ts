@@ -71,11 +71,27 @@ uniform float uHasData;
 uniform sampler2D uDetail;
 uniform samplerCube uVeg;
 uniform float uHasVeg;
+uniform samplerCube uClouds;
+uniform float uCloudsOn;
 varying vec2 vDetail;
 varying vec3 vDir;
 varying vec3 vViewPos;
 varying vec3 vGeoNormal;
 varying float vHeight;
+
+// Clouds (render/clouds.ts): drift with the zonal winds for the first days, then hold.
+const float CLOUD_KM = 6.0;
+vec3 cloudDrift(vec3 p) {
+  float tc = clamp(uT, -259200.0, 259200.0);
+  float lat = asin(clamp(p.y, -1.0, 1.0));
+  float alat = abs(degrees(lat));
+  // Zonal wind (m/s): trade easterlies, mid-latitude westerlies, polar easterlies.
+  float u = -7.0 * exp(-pow(alat / 16.0, 2.0)) + 15.0 * exp(-pow((alat - 45.0) / 12.0, 2.0)) - 4.0 * smoothstep(65.0, 80.0, alat);
+  float a = -u * tc / (PR * 1000.0 * max(0.1, cos(lat)));
+  float c = cos(a), s = sin(a);
+  return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+}
+vec2 cloudAt(vec3 p) { return textureCube(uClouds, cloudDrift(p)).rg; }
 
 void main() {
   #include <logdepthbuf_fragment>
@@ -145,6 +161,17 @@ void main() {
   vec3 L = uSunDir;
   vec3 pKm = n * (PR + max(elev, 0.0) / 1000.0);
   vec3 sunT = sunTransmittance(pKm + n * 0.05, L) * winter.x;
+  // Clouds fade out as the camera comes down to their level (no parallax on a painted layer).
+  float camAltC = length(uCamPosKm) * 1000.0 - 6371000.0;
+  float clouds = uCloudsOn * smoothstep(9000.0, 30000.0, camAltC) * (1.0 - 0.7 * uOverlay);
+  vec2 cl = vec2(0.0);
+  if (clouds > 0.0) {
+    cl = cloudAt(n);
+    // Shadow: the cloud the sunbeam to this point passes through, CLOUD_KM up.
+    float sl = max(0.08, dot(n, L));
+    vec3 sp = normalize(n + (L - n * dot(n, L)) * (CLOUD_KM / PR) / sl);
+    sunT *= 1.0 - 0.75 * clouds * cloudAt(sp).r;
+  }
   float ndl = max(0.0, dot(nrm, L));
   // Sky fill: a little blue light on the day side, fading through twilight.
   float dayness = smoothstep(-0.15, 0.25, dot(n, L));
@@ -169,6 +196,19 @@ void main() {
     // Crest: foam line. Behind it: sediment-laden water (the wave scours the seafloor; Range 2022).
     radiance += sunlit * (vec3(0.50, 0.56, 0.56) * tsu.x * 0.22 + vec3(0.075, 0.07, 0.055) * tsu.y * 0.45);
     radiance += fxTsunamiOverlay(tsu) * water * 1.5;
+  }
+
+  // Cloud tops, lit from above: white where thick, a little blue-grey at thin edges; the side
+  // facing away from the Sun (gradient of cover toward the Sun) a touch darker.
+  if (clouds > 0.0 && cl.r > 0.002) {
+    vec3 Lt = L - n * dot(n, L);
+    float toward = cloudAt(normalize(n + Lt * 0.004)).r - cl.r;
+    float relief = clamp(1.0 - 1.6 * toward, 0.55, 1.15);
+    vec3 cT = sunTransmittance(n * (PR + CLOUD_KM), L) * winter.x;
+    float cdl = max(0.0, dot(n, L));
+    vec3 cAlb = mix(vec3(0.58, 0.62, 0.68), vec3(0.86, 0.87, 0.88), cl.g);
+    vec3 cRad = cAlb * (cT * SUN_E * uSunScale * (cdl * relief + 0.04 * smoothstep(-0.1, 0.1, dot(n, L))) / PI + sky * 1.4);
+    radiance = mix(radiance, cRad, cl.r * clouds);
   }
 
   // Ejecta/dust cloud above the surface: hides the ground, lit by the Sun where it's day.
@@ -259,6 +299,8 @@ export class Globe {
         uDetail: { value: makeDetailTexture() },
         uVeg: { value: placeholderCube() },
         uHasVeg: { value: 0 },
+        uClouds: { value: placeholderCube() },
+        uCloudsOn: { value: 0 },
         uSunDir: { value: new Vector3(1, 0, 0) },
         uSunScale: { value: 1 },
         uHaze: { value: 0 },

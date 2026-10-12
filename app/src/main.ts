@@ -16,6 +16,7 @@ import { formatAge, formatRelative } from './core/timeline';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
 import { CRATER_OBSERVED, ImpactEffects, type WinterScenario } from './effects/impact-effects';
 import { Asteroid } from './render/asteroid';
+import { Clouds } from './render/clouds';
 import { Globe } from './render/globe';
 import { Plume } from './render/plume';
 import { Vegetation } from './terrain/vegetation';
@@ -64,6 +65,11 @@ sky.skyMaterial.uniforms.uBlastWall = fx.uniforms.uBlastWall;
 const globe = new Globe(settings.terrain, fx.uniforms);
 scene.add(globe.group);
 const gu = globe.material.uniforms;
+// Clouds: baked once on the GPU (a few ms), sampled by the globe.
+const clouds = new Clouds(settings.faceSize);
+clouds.bake(renderer);
+gu.uClouds.value = clouds.target.texture;
+gu.uCloudsOn.value = 1;
 const vegetation = new Vegetation(globe.heights, fx.crater, {
   ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
@@ -353,7 +359,8 @@ topbar.onAbout = () => {
     <div class="kt-sources"><span>Season and day length</span>${sourceLinks(['during2022', 'dewinter2020'])}</div>
     <p><b>Data</b></p>
     <ul class="kt-credits">${credits}</ul>
-    <p class="kt-note">Vegetation colours, sea colour, atmospheric haze, the plume's look and the soundtrack are interpretations
+    <p class="kt-note">Vegetation colours, sea colour, atmospheric haze, the clouds (their pattern follows the general
+    circulation, but the weather of that day is unknowable), the asteroid's shape, the plume's look and the soundtrack are interpretations
     of the data, documented in the project's research notes. Space is silent; on the ground the quake, the blast and the
     falling debris would arrive minutes to hours apart depending on distance.</p>`);
 };
