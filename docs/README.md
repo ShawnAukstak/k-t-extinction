@@ -7,7 +7,7 @@ Research and planning for the K-Pg (K-T) extinction simulator. Start with the vi
 | [`00-vision.md`](00-vision.md) | What we're making and why — the original brain-dump, lightly structured |
 | [`01-feasibility.md`](01-feasibility.md) | Verdict: feasible, phased; what's hard; what the research changed |
 | [`plan/roadmap.md`](plan/roadmap.md) | Phases 0–6, each ending in something runnable |
-| [`plan/open-questions.md`](plan/open-questions.md) | The questions that gated the build, with your answers |
+| [`plan/open-questions.md`](plan/open-questions.md) | The questions that gated the build, and how each was settled |
 | [`plan/decisions.md`](plan/decisions.md) | **Decision log**: what we chose, why, and when to revisit |
 
 ## research/ — the science
@@ -35,6 +35,6 @@ Research and planning for the K-Pg (K-T) extinction simulator. Start with the vi
 
 ## Conventions
 
-- **Verification tags** in research pages: `[V]` verified from the source this session · `[S]` from a search snippet · `[U]` unverified / from memory · `[W]/[M]/[C]` well-constrained / model-dependent / contested. Anything tagged `[U]` must be checked against the paper before it's hard-coded.
+- **Verification tags** in research pages: `[V]` verified from the source during research · `[S]` from a search snippet · `[U]` unverified / from memory · `[W]/[M]/[C]` well-constrained / model-dependent / contested. Anything tagged `[U]` must be checked against the paper before it's hard-coded.
 - Research pages are written to be *the* source of truth for numbers in the app. If a number changes, change it here first.
 - Date of research pass 1: **2026-10-11**. Library versions and free-tier limits in `tech/` are as of that date.

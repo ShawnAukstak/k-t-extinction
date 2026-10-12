@@ -197,8 +197,8 @@ def main() -> None:
 
     print("loading DEM + corrections")
     dem = D.load()
-    print("loading climate (texyn)")
-    clim = C.load_texyn(dem)
+    print("loading climate (PhanDA: texyn)")
+    clim = C.load_phanda(dem)
     print("colouring")
     sea = sea_colour(dem.z)
     land = land_colour(dem, clim)

@@ -2,7 +2,7 @@
 
 > Research pass 1, 2026-10-11. Candidate locations for fixed camera presets, "discoveries", and ground-level detail. This becomes `data/curated/points-of-interest.yaml`.
 >
-> Modern coordinates (decimal degrees). "66 Ma" = reconstructed with GPlates Web Service, MULLER2019 model (lat, lon) — **model-dependent; recompute with whichever plate model the globe raster uses.** "km" = modern great-circle distance to the crater centre (computed). Verification: **V** = coordinate verified from a source this session; **U** = approximate / from memory.
+> Modern coordinates (decimal degrees). "66 Ma" = reconstructed with GPlates Web Service, MULLER2019 model (lat, lon) — **model-dependent; recompute with whichever plate model the globe raster uses.** "km" = modern great-circle distance to the crater centre (computed). Verification: **V** = coordinate verified from a source during research; **U** = approximate / from memory.
 
 ## A. The impact and its proximal record
 

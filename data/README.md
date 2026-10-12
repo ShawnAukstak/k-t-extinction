@@ -13,7 +13,7 @@ data/
   raw/                 ← untouched downloads (gitignored), re-created by scripts/fetch.py
     .fetched.json      ← fetch dates + checksums (PBDB results change over time)
     paleogeography/    ← PaleoDEM, PaleoCoastlines, (reference) Dutkiewicz bathymetry
-    climate/           ← BRIDGE HadCM3L texyn, Scotese 2021 temperatures, Pohl 2022 Köppen
+    climate/           ← PhanDA priors (BRIDGE texyn), BRIDGE originals (reference), Scotese 2021 temperatures, Pohl 2022 Köppen
     impact/            ← Range 2022 tsunami, Artemieva 2020 dust cloud, Tabor 2020 impact winter
     paleontology/      ← PBDB occurrence pulls, Benson 2014 body masses
   processed/           ← intermediate products and previews (gitignored)
@@ -42,4 +42,4 @@ python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 
 - Large files stay out of git (decision D1 in `docs/plan/decisions.md`). They'll move to object storage when we deploy.
 - PALEOMAP is the canonical plate frame; points are reconstructed at 65 Ma to match the terrain slice (D2).
-- Sources without a stated licence are flagged `ship: false` in the catalog and used for local development only (D4). Today that's the BRIDGE climate run that colours the land; its licensed substitute is PhanDA (same model family, CC BY 4.0).
+- Sources without a stated licence are flagged `ship: false` in the catalog and used for local development only (D4). Today that's only BRIDGE's own `texyn` files, kept for comparison; the app reads the same run from the PhanDA priors (CC BY 4.0).

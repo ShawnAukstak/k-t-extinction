@@ -47,7 +47,7 @@ And three things that make it *harder* than it looks:
 
 ## What the research changed about the plan
 
-- **Confirmed your instinct**: the dominant initial task is assembling and organising data. Everything downstream depends on it, and it's the least glamorous. It's Phase 0.
+- **Confirmed**: the dominant initial task is assembling and organising data. Everything downstream depends on it, and it's the least glamorous. It's Phase 0.
 - **Bake, don't simulate** is the single most important technical decision. Real-time physics in the browser is neither necessary nor more accurate than the published models.
 - **"Minute by minute" is the hook**, not "see a herd". The viral precedents and the documentary view counts both say so. Herds are the long tail.
 - **three.js over Rust/WASM.** Bevy/wgpu would mean building an engine; Godot/Unity/Unreal web exports are too heavy or WebGL2-only. three.js (WebGPU with automatic WebGL2 fallback) is the pragmatic choice; Babylon.js 9 is a serious alternative if we'd rather not write the globe scaffolding.

@@ -2,9 +2,9 @@
 
 An explorable, scientifically grounded 3D simulation of the Chicxulub impact and the end-Cretaceous (K-Pg, "K-T") extinction, for the web. Orbit a 66-million-year-old Earth, scrub a non-linear timeline from the asteroid's last hour through the first seconds, days and years to the recovery a million years later, fly down to the ground among the plants and animals, and share any moment as a link.
 
-**Status:** runs locally, plus an unlisted preview on Render (see [Deploy](#deploy)). Built so far (phases 0–5 in [`docs/plan/roadmap.md`](docs/plan/roadmap.md)):
+**Live:** <https://k-t-extinction.onrender.com>, deployed from `main` (see [Deploy](#deploy)). Built so far (phases 0–5 in [`docs/plan/roadmap.md`](docs/plan/roadmap.md)):
 
-- **The 66 Ma globe:** the PALEOMAP 65 Ma elevation model (with a cited correction at the impact site), coloured from a 66 Ma climate run, with a physically based atmosphere.
+- **The 66 Ma globe:** the PALEOMAP 65 Ma elevation model (with a cited correction at the impact site), coloured from a 66 Ma climate run (BRIDGE's HadCM3L `texyn`, via the PhanDA model priors), with a physically based atmosphere.
 - **Timeline:** a non-linear scrubber from 1 hour before impact to 1 million years after, with event markers and cards.
 - **The asteroid:** a cratered, boulder-strewn carbonaceous body lit by the Sun and earthshine, with a bow shock and a streaming entry trail.
 - **Impact effects:**
@@ -24,7 +24,7 @@ An explorable, scientifically grounded 3D simulation of the Chicxulub impact and
 
 - **Share:** a Share button freezes the moment and gives a link to that exact time, view and panel, plus a captioned image.
 
-Next: the licensed climate source (PhanDA) before any public sharing, then the discoveries index.
+Next: the discoveries index (Phase 6).
 
 ## Requirements
 
@@ -159,5 +159,5 @@ Start reading at [`docs/README.md`](docs/README.md). The science behind each eff
 
 - **Code:** MIT ([`LICENSE`](LICENSE)).
 - **Curated data and docs:** CC BY 4.0 ([`LICENSE-DATA.md`](LICENSE-DATA.md)).
-- **Upstream datasets:** keep their own licences; [`data/catalog.yaml`](data/catalog.yaml) records each one with its credit line.
-- **Exception:** the BRIDGE climate run that colours the land has no stated licence, so it is used for local development only and will be replaced by PhanDA (CC BY 4.0) before the app is published.
+- **Upstream datasets:** keep their own licences; [`data/catalog.yaml`](data/catalog.yaml) records each one with its credit line, and [`ATTRIBUTION.md`](ATTRIBUTION.md) (generated from it) credits every source the app uses.
+- The land colours come from BRIDGE's 66 Ma HadCM3L run `texyn` as republished in the PhanDA model priors (CC BY 4.0). BRIDGE's own files have no stated licence, so they are kept for local comparison only.

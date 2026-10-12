@@ -91,12 +91,41 @@ sources:
 
   # ── B. Climate and vegetation ────────────────────────────────────────────────
 
+  - id: phanda_priors
+    name: PhanDA HadCM3L model priors, 66 Ma simulation `texyn` (Judd et al. 2024; simulations by BRIDGE)
+    group: core
+    role: >-
+      Pre-impact climate (annual mean air temperature and precipitation) that colours the land and sets
+      vegetation. Experiment 96 of suite scotese_spinupa is BRIDGE's texyn run (66 Ma, 576 ppm CO2),
+      republished with a licence.
+    licence: CC-BY-4.0
+    ship: true
+    credit: "Climate: E. J. Judd et al., PhanDA HadCM3L model priors (CC BY 4.0); simulations by P. J. Valdes and BRIDGE, University of Bristol"
+    citation: >-
+      Judd, E. J., Tierney, J. E., Lunt, D. J., Montañez, I. P., Huber, B. T., Wing, S. L., & Valdes, P. J.
+      (2024). A 485-million-year history of Earth's surface temperature. Science, 385(6715), eadk3705.
+      https://doi.org/10.1126/science.adk3705 ; data: https://doi.org/10.5281/zenodo.8237751
+    landing: https://zenodo.org/records/8237751
+    files:
+      - url: https://zenodo.org/api/records/8237751/files/scotese_spinupa_tas.zip/content
+        path: climate/phanda/scotese_spinupa_tas.zip
+        size: 306012590
+        md5: 08cdb0bfecdfcb034adebc20e1b86e07
+        extract: ["*_096_66Ma_*"]   # the five 20-year means of experiment 96 (texyn)
+        remote: true                # read just those from the 306 MB zip
+      - url: https://zenodo.org/api/records/8237751/files/scotese_spinupa_pr.zip/content
+        path: climate/phanda/scotese_spinupa_pr.zip
+        size: 516485481
+        md5: 635347a4f23684fc5a641b82ea7995ff
+        extract: ["*_096_66Ma_*"]
+        remote: true
+
   - id: bridge_texyn
     name: BRIDGE HadCM3L 66 Ma simulation `texyn` (Valdes, Scotese & Lunt 2021)
-    group: core
-    role: Pre-impact climate (temperature, precipitation) and BIOME4 vegetation classes for colouring land
+    group: reference
+    role: "Reference only: the original files of the run we use through PhanDA (phanda_priors), plus BIOME4 output"
     licence: null            # paper is CC BY 4.0; the data files have no stated terms
-    ship: false              # ask Paul Valdes before shipping derived rasters, or switch to PhanDA (CC BY)
+    ship: false              # not used by the app; phanda_priors carries the same run under CC BY 4.0
     credit: "Climate & biomes: P. J. Valdes, C. R. Scotese & D. J. Lunt, BRIDGE, University of Bristol"
     citation: >-
       Valdes, P. J., Scotese, C. R., & Lunt, D. J. (2021). Deep ocean temperatures through time.

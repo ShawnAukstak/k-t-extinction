@@ -1,6 +1,6 @@
 # Tech stack feasibility (as of 2026-10-11)
 
-> Research pass 1. Compiled from a web-research agent that fetched docs/registries and **measured bundle sizes locally with esbuild**. Not a decision — see `docs/plan/` for that.
+> Research pass 1. AI-assisted: fetched docs/registries and **measured bundle sizes locally with esbuild**. Not a decision — see `docs/plan/` for that.
 >
 > **Legend:** `[V]` = verified from a fetched page / registry query / local measurement on 2026-10-11 · `[U]` = unverified or inferred.
 

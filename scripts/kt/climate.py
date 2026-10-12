@@ -1,19 +1,21 @@
 """Pre-impact climate fields regridded to the DEM grid.
 
-Source today: BRIDGE HadCM3L run `texyn` (66 Ma, PALEOMAP geography; licence unstated → local
-development only, see data/catalog.yaml). The licensed substitute is PhanDA (same model family,
-CC BY 4.0); swapping it in only needs a new loader returning the same arrays.
+Source: BRIDGE's HadCM3L run `texyn` (66 Ma, PALEOMAP geography, 576 ppm CO2) as republished in the
+PhanDA model priors (Judd et al. 2024; CC BY 4.0): experiment 96 of suite scotese_spinupa, five 20-year
+monthly climatologies from the last 100 model years. load_texyn reads BRIDGE's own files (no stated
+licence; local comparison only, see data/catalog.yaml).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+from glob import glob
 
 import netCDF4
 import numpy as np
 from scipy.ndimage import gaussian_filter, map_coordinates
 
 from .dem import Dem
-from .paths import one
+from .paths import RAW, one
 
 LAPSE_K_PER_M = -6.5e-3
 # HadCM3L at 3.75° is too dry over Late Cretaceous continents compared with the fossil record:
@@ -49,16 +51,40 @@ def _regrid_periodic(field: np.ndarray, flat: np.ndarray, flon: np.ndarray, dem:
     return gaussian_filter(out, sigma=(9, 13), mode=("nearest", "wrap"))
 
 
+def _phanda_annual(var: str, name: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Annual mean of the five 20-year means (12 months each; the model's 360-day calendar weights them equally)."""
+    files = sorted(glob(str(RAW / f"climate/phanda/scotese_spinupa_{var}/scotese_spinupa_096_66Ma_*_{var}.nc")))
+    if len(files) != 5:
+        raise SystemExit(f"expected 5 PhanDA {var} files, found {len(files)} — run scripts/fetch.py --only phanda_priors")
+    fields = []
+    for f in files:
+        d = netCDF4.Dataset(f)
+        fields.append(np.array(d[name][:]).squeeze().mean(axis=0))
+        lat, lon = np.array(d["latitude"][:]), np.array(d["longitude"][:])
+    return np.mean(fields, axis=0), lat, lon
+
+
+def load_phanda(dem: Dem) -> Climate:
+    t, lat, lon = _phanda_annual("tas", "temp_mm_1_5m")
+    p, _, _ = _phanda_annual("pr", "precip_mm_srf")
+    return _on_dem(t - 273.15, p * SECONDS_PER_YEAR, lat, lon, dem, "phanda_priors")
+
+
 def load_texyn(dem: Dem) -> Climate:
     d = netCDF4.Dataset(one("climate/bridge_texyn/texyna.pdclann.nc"))
     lat = np.array(d["latitude"][:])
     lon = np.array(d["longitude"][:])
     t = np.array(d["temp_mm_1_5m"][:]).squeeze() - 273.15
     p = np.array(d["precip_mm_srf"][:]).squeeze() * SECONDS_PER_YEAR  # kg m-2 s-1 → mm/yr
+    return _on_dem(t, p, lat, lon, dem, "bridge_texyn")
+
+
+def _on_dem(t: np.ndarray, p: np.ndarray, lat: np.ndarray, lon: np.ndarray, dem: Dem, source: str) -> Climate:
+    """Model-grid temperature (°C) and precipitation (mm/yr) → the DEM grid, calibrated and downscaled."""
     temp = _regrid_periodic(t, lat, lon, dem)
     precip = np.maximum(0, _regrid_periodic(p, lat, lon, dem)) * PRECIP_CALIBRATION
     # Downscale temperature with a lapse rate against the model's (smooth) view of the terrain.
     land = np.maximum(dem.z, 0)
     smooth = gaussian_filter(land, sigma=(12, 18), mode=("nearest", "wrap"))
     temp = temp + LAPSE_K_PER_M * (land - smooth)
-    return Climate(temp_c=temp, precip_mm=precip, source="bridge_texyn")
+    return Climate(temp_c=temp, precip_mm=precip, source=source)

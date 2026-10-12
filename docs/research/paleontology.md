@@ -1,8 +1,8 @@
 # Paleontology: who lived where at 66 Ma, and where to get the data
 
-> Research pass 1, 2026-10-11. Compiled from a web-research agent that live-tested the PBDB and other APIs. Not yet independently re-verified line by line.
+> Research pass 1, 2026-10-11. AI-assisted: live-tested the PBDB and other APIs. Not yet independently re-verified line by line.
 >
-> **Verification legend:** **[V]** = page fetched / API called and read · **[S]** = from a search-result snippet, not opened · **[U]** = background knowledge, unverified this session · **(computed)** = we computed it from a live PBDB pull.
+> **Verification legend:** **[V]** = page fetched / API called and read · **[S]** = from a search-result snippet, not opened · **[U]** = background knowledge, unverified during research · **(computed)** = we computed it from a live PBDB pull.
 
 ## 1. Paleobiology Database (PBDB) — the primary occurrence source
 

@@ -1,8 +1,8 @@
 # Paleogeography, climate and environment at 66 Ma
 
-> Research pass 1, 2026-10-11. Compiled from a web-research agent that **downloaded and inspected** the main datasets (PaleoDEM, PaleoAtlas rasters, PaleoCoastlines, GWS API calls, BRIDGE climate files). Companion dataset catalog: `data-catalog.md`. Points of interest: `points-of-interest.md`.
+> Research pass 1, 2026-10-11 (AI-assisted): **downloaded and inspected** the main datasets (PaleoDEM, PaleoAtlas rasters, PaleoCoastlines, GWS API calls, BRIDGE climate files). Companion dataset catalog: `data-catalog.md`. Points of interest: `points-of-interest.md`.
 >
-> **Verification legend:** **[V]** = page fetched / file downloaded and inspected / API tested · **[S]** = search snippet only · **[U]** = prior knowledge, unverified this session · **[computed]** = we computed it.
+> **Verification legend:** **[V]** = page fetched / file downloaded and inspected / API tested · **[S]** = search snippet only · **[U]** = prior knowledge, unverified during research · **[computed]** = we computed it.
 
 ## 1. The world at 66 Ma — what the globe should show
 
@@ -65,13 +65,13 @@ What the app shows, and every place where we departed from a dataset, with the r
 |---|---|---|---|
 | Elevation and sea depth | PaleoDEM 65 Ma, 0.1° (its own metadata calls it "KT_Boundary, 66 Ma") | Cube-face textures; relief shading uses 6× vertical exaggeration so terrain reads from orbit | model |
 | **Yucatán / impact site** | PaleoDEM shows land at +700–1,000 m with a crater ring already drawn in | **Replaced** with a marine carbonate ramp: ~100 m deep on the SW side → ~650 m at the centre → ~1,200 m to the NE (Gulick 2008, 2019; Morgan 2016); the rest of the block is flattened to a low platform. Today's NE is 57.6° in the 65 Ma frame (GWS). `data/curated/dem-corrections.yaml` | model (our correction) |
-| Land vegetation colour | HadCM3L run `texyn` (BRIDGE), annual temperature and precipitation, lapse-rate downscaled to 0.1° | Moisture index *P* / (260 + 32·max(*T*, 0)) mm → desert / arid shrub / fern–shrub savanna / forest (tropical, warm, cool), plus wet lowlands and rocky highlands. **No grassland**: grasses existed but grasslands did not | model |
+| Land vegetation colour | HadCM3L run `texyn` (BRIDGE; shipped from the PhanDA model priors, CC BY 4.0), annual temperature and precipitation, lapse-rate downscaled to 0.1° | Moisture index *P* / (260 + 32·max(*T*, 0)) mm → desert / arid shrub / fern–shrub savanna / forest (tropical, warm, cool), plus wet lowlands and rocky highlands. **No grassland**: grasses existed but grasslands did not | model |
 | Precipitation calibration | Raw `texyn` is drier than the fossil record: 16 % desert, and Hell Creek (Tanis) at 488 mm/yr would be arid shrubland | **×1.7** → ~6 % desert (Chaboureau et al. 2014 estimate ~4 % for the Maastrichtian) and a wooded Hell Creek, consistent with its humid floodplain floras | model (our calibration) |
 | Polar cover | Model annual means fall below 0 °C in Arctic/Antarctic interiors | Sparse cover only below −7 °C; fossil polar forests (Alaska, Antarctic Peninsula) argue against barren high latitudes | model |
 | Sea colour | Depth from the corrected DEM | Turquoise over shallow carbonate shelves, darkening with depth | chosen (visual) |
 | Atmosphere | Modern Rayleigh/Mie coefficients | Single scattering; haze scaled ×0.4 over the ground for legibility | chosen (visual) |
 
-Licence note: `texyn` has no stated licence, so these vegetation colours are **local development only** until Paul Valdes grants permission or we switch to PhanDA (same HadCM3L family, CC BY 4.0). See `data/catalog.yaml`.
+Licence note: BRIDGE's own `texyn` files have no stated licence, so the app reads the same run from the PhanDA model priors (Judd et al. 2024; experiment 96 of suite `scotese_spinupa`, CC BY 4.0). The two agree to 0.03 K and 0.1 % in precipitation. See `data/catalog.yaml`.
 
 ## 2. Suggested data stack for the globe
 
@@ -88,8 +88,8 @@ Licence note: `texyn` has no stated licence, so these vegetation colours are **l
 - **Licensing:** GPlates / pyGPlates / GPlately / GWS are **GPL-2.0** — call the public or a self-hosted GWS over HTTP rather than linking pyGPlates into app code. Deep Time Maps (Blakey) are paid and "cannot be posted online". PALEOMAP PaleoAtlas JPGs are inside the CC BY 4.0 Zenodo record, but the zip itself has no licence file; cite Scotese 2016.
 - **File format:** the 0.1° PaleoDEM NetCDF is HDF5-based — use netCDF4/xarray/GDAL, not a NetCDF-3 reader.
 - Scotese describes the DEMs as a "first draft" with known topographic errors.
-- Not verified this session: Haq 2014 absolute values; Tabor 2020 model grid; licences for Wright 2020 and Cao 2017 grids (EarthByte data are usually CC BY 4.0 but those folders lack a licence file).
+- Not verified in this pass: Haq 2014 absolute values; Tabor 2020 model grid; licences for Wright 2020 and Cao 2017 grids (EarthByte data are usually CC BY 4.0 but those folders lack a licence file).
 
-## 4. Bibliography (V = opened this session)
+## 4. Bibliography (V = opened in this pass)
 
 Cao et al. 2017 *Biogeosciences* 14:5425 [V] · Chaboureau et al. 2014 *PNAS* 111:14066 [V] · Chiarenza et al. 2020 *PNAS* 117:17084 [V] · Davies et al. 2020; Ray et al. 2019 (Cretaceous eustasy) [V via EGU2020] · Dutkiewicz et al. 2019 *Geology* doi:10.1130/G45424.1 [V] · Gulick et al. 2008 *Nat. Geosci.* 1:131 [V via UT news] · Haq 2014 *Global Planet. Change* 113:44 [values U] · Hönisch et al. (CenCO2PIP) 2023 *Science* 382 eadi5177 [V] · Judd et al. 2024 *Science* 385 eadk3705 [V] · Kocsis & Scotese 2021 *Earth-Sci. Rev.* doi:10.1016/j.earscirev.2020.103463 [V] · Linnert et al. 2014 *Nat. Commun.* 5:4194 [S] · Merdith et al. 2021 *Earth-Sci. Rev.* 214:103477 [V] · Miller et al. 2005 *Science* 310:1293 [U] · Molina et al. 2006 *Episodes* 29:263 (El Kef GSSP) [V] · Müller et al. 2016 *AREPS* 44 [V] · Müller et al. 2019 *Tectonics* 38:1884 [V] · Müller et al. 2022 *Solid Earth* 13:1127 [V] · Ormö et al. 2021 *EPSL* [S] · Pohl et al. 2022 *Data in Brief* 43:108424 [V] · Scotese 2016 PALEOMAP PaleoAtlas for GPlates [V] · Scotese & Wright 2018 PaleoDEMs [V] · Scotese, Song, Mills & van der Meer 2021 *Earth-Sci. Rev.* 215:103503 [V] · Sewall et al. 2007 *Clim. Past* 3:647 [V] · Tabor et al. 2020 *GRL* 47 [V record] · Valdes, Scotese & Lunt 2021 *Clim. Past* 17:1483 [V] · Wright et al. 2020 *Earth-Sci. Rev.* doi:10.1016/j.earscirev.2020.103293 [V] · Boucot, Xu & Scotese 2013 SEPM CSP 11 [S].

@@ -1,6 +1,6 @@
 # The impact event: impactor, site, date
 
-> Research pass 1, 2026-10-11. Compiled from a web-research agent that read primary papers / open-access PDFs / abstracts. Companion to `timeline.md` (sequence of effects) and `sources.md` (bibliography).
+> Research pass 1, 2026-10-11. AI-assisted: read primary papers / open-access PDFs / abstracts. Companion to `timeline.md` (sequence of effects) and `sources.md` (bibliography).
 >
 > **Confidence tags:** **[W]** well-constrained (independent primary sources agree) · **[M]** model-dependent but converging · **[C]** contested / order-of-magnitude disagreement · **[U]** unsourced or from memory — verify before hard-coding.
 
@@ -25,7 +25,7 @@
 | Quantity | Value | Tag | Source |
 |---|---|---|---|
 | Crater centre (modern coords) | **21.29°N, 89.53°W** (geometric centre of rim from gravity gradient + cenote ring); Morgan 2016 used 21.30°N, 89.54°W. Central gravity high 21.24°N 89.58°W; max mantle uplift 21.38°N 89.52°W (NE of centre). | [W] | Collins 2020 (citing Hildebrand 1995, 1998); Morgan 2016 |
-| Crater centre at 66 Ma (paleo-coords) | **lon −74.55, lat 21.92** per GPlates Web Service, MULLER2019 model (verified by the tech-research agent, see `docs/tech/prior-art.md`). Differs by model — record which one we use. | [M] | GWS |
+| Crater centre at 66 Ma (paleo-coords) | **lon −74.55, lat 21.92** per GPlates Web Service, MULLER2019 model (verified during research, see `docs/tech/prior-art.md`). Differs by model — record which one we use. | [M] | GWS |
 | Rim-to-rim diameter | **~180–200 km** multi-ring basin; inner rim at 70–85 km radius; outer ring faults to 70–130 km radius (Sharpton's 300 km "outer ring" is not consensus) | [W] | Gulick 2013; Morgan 2016; Hildebrand 1991 |
 | Peak ring | **~80–90 km diameter**, relief ~400 m; drilled at 45.6 km radius; rocks are shocked (10–35 GPa) granitic basement uplifted from **8–12 km depth**, moved > 20 km during collapse | [W] | Morgan 2016; Collins 2020 |
 | Transient cavity | ~80–100 km diameter, ~25–35 km deep | [M] | Gulick 2013, 2019; Schulte 2010; Collins 2020 |

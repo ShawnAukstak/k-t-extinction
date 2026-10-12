@@ -391,7 +391,8 @@ interface CatalogSource { id: string; name: string; credit: string; ship: boolea
 topbar.onAbout = () => {
   const sources = (catalog as { sources: CatalogSource[] }).sources;
   const credits = sources
-    .map((s) => `<li>${s.landing ? `<a href="${s.landing}" target="_blank" rel="noopener noreferrer">${s.credit}</a>` : s.credit}${s.ship ? '' : ' <em>(local development only: licence not yet confirmed)</em>'}</li>`)
+    .filter((s) => s.ship)
+    .map((s) => `<li>${s.landing ? `<a href="${s.landing}" target="_blank" rel="noopener noreferrer">${s.credit}</a>` : s.credit}</li>`)
     .join('');
   panel.showHtml('about', `
     <div class="kt-kicker">About</div>

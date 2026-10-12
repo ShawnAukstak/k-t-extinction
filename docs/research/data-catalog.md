@@ -1,6 +1,6 @@
 # Data catalog (consolidated)
 
-> Every downloadable dataset identified across the four research reports, with licence status. This is the human-readable precursor to `data/catalog.yaml`. Verification: **[V]** URL/licence verified this session (fetched, downloaded, or HTTP-checked) · **[S]** seen in a search snippet · **[U]** unverified.
+> Every downloadable dataset identified across the four research reports, with licence status. This is the human-readable precursor to `data/catalog.yaml`. Verification: **[V]** URL/licence verified during research (fetched, downloaded, or HTTP-checked) · **[S]** seen in a search snippet · **[U]** unverified.
 >
 > **Licence policy:** only **CC0 / CC BY / public domain / US-Gov** datasets go into the shipped app. GPL *services* may be called over HTTP (not linked in). "No licence stated" = ask before shipping or re-derive from a licensed source.
 

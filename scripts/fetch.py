@@ -17,6 +17,7 @@ import datetime as dt
 import fnmatch
 import gzip
 import hashlib
+import io
 import json
 import shutil
 import sys
@@ -93,24 +94,78 @@ def download(url: str, dest: Path, size: int | None = None, md5: str | None = No
     raise SystemExit(f"giving up on {url}")
 
 
+class RemoteFile(io.RawIOBase):
+    """A file on a server that honours HTTP Range requests, readable and seekable like a local one."""
+
+    def __init__(self, url: str):
+        r = requests.head(url, headers=UA, allow_redirects=True, timeout=60)
+        r.raise_for_status()
+        self.url, self.size, self.pos = r.url, int(r.headers["Content-Length"]), 0
+
+    def readable(self) -> bool:
+        return True
+
+    def seekable(self) -> bool:
+        return True
+
+    def tell(self) -> int:
+        return self.pos
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        self.pos = offset if whence == 0 else self.pos + offset if whence == 1 else self.size + offset
+        return self.pos
+
+    def readinto(self, b) -> int:  # type: ignore[no-untyped-def]
+        if not len(b) or self.pos >= self.size:
+            return 0
+        end = min(self.size, self.pos + len(b)) - 1
+        r = requests.get(self.url, headers={**UA, "Range": f"bytes={self.pos}-{end}"}, timeout=60)
+        if r.status_code != 206:
+            raise IOError(f"{self.url} ignored a range request ({r.status_code})")
+        b[: len(r.content)] = r.content
+        self.pos += len(r.content)
+        return len(r.content)
+
+
+def _wanted(patterns: list[str]):  # type: ignore[no-untyped-def]
+    def wanted(name: str) -> bool:
+        base = name.rsplit("/", 1)[-1]
+        return any(fnmatch.fnmatch(name, p) or fnmatch.fnmatch(base, p) for p in patterns)
+    return wanted
+
+
+def _extract_zip(z: zipfile.ZipFile, out_dir: Path, patterns: list[str]) -> list[Path]:
+    wanted, out = _wanted(patterns), []
+    for m in z.infolist():
+        if m.is_dir() or not wanted(m.filename) or "__MACOSX" in m.filename:
+            continue
+        target = out_dir / m.filename
+        if not target.exists() or target.stat().st_size != m.file_size:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with z.open(m) as src, target.open("wb") as dst:
+                shutil.copyfileobj(src, dst)
+        out.append(target)
+    return out
+
+
+def extract_remote(url: str, archive: Path, patterns: list[str]) -> list[Path]:
+    """Like extract(), straight from a zip on the server: only the wanted members are downloaded."""
+    out_dir = archive.parent / archive.name.split(".")[0]
+    with zipfile.ZipFile(io.BufferedReader(RemoteFile(url), 1 << 20)) as z:
+        out = _extract_zip(z, out_dir, patterns)
+    for p in out:
+        print(f"  extract {p.relative_to(RAW)} (remote)")
+    return out
+
+
 def extract(archive: Path, patterns: list[str]) -> list[Path]:
     """Extract members matching any glob into <archive dir>/<archive stem>/ (zip and tar only)."""
     out_dir = archive.parent / archive.name.split(".")[0]
     out: list[Path] = []
-    def wanted(name: str) -> bool:
-        base = name.rsplit("/", 1)[-1]
-        return any(fnmatch.fnmatch(name, p) or fnmatch.fnmatch(base, p) for p in patterns)
+    wanted = _wanted(patterns)
     if zipfile.is_zipfile(archive):
         with zipfile.ZipFile(archive) as z:
-            for m in z.infolist():
-                if m.is_dir() or not wanted(m.filename) or "__MACOSX" in m.filename:
-                    continue
-                target = out_dir / m.filename
-                if not target.exists() or target.stat().st_size != m.file_size:
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    with z.open(m) as src, target.open("wb") as dst:
-                        shutil.copyfileobj(src, dst)
-                out.append(target)
+            out = _extract_zip(z, out_dir, patterns)
     elif tarfile.is_tarfile(archive):
         with tarfile.open(archive) as t:
             for m in t.getmembers():
@@ -145,6 +200,11 @@ def fetch_source(src: dict) -> dict:
     record: dict = {"fetched": dt.date.today().isoformat(), "files": []}
     for f in src.get("files", []):
         dest = RAW / f["path"]
+        if f.get("remote"):
+            # Large zip, few members needed: read just those over HTTP ranges.
+            for p in extract_remote(f["url"], dest, f["extract"]):
+                record["files"].append({"path": str(p.relative_to(RAW)), "md5": md5sum(p)})
+            continue
         download(f["url"], dest, f.get("size"), f.get("md5"))
         record["files"].append({"path": f["path"], "md5": md5sum(dest)})
         if f.get("extract"):

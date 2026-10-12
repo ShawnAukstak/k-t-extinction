@@ -7,7 +7,7 @@
 # Known deviations (see docs/research/impact-event.md section 6): ejecta thickness and air-blast
 # overpressure at Chicxulub scale differ from the paper's own table by up to ~2x (undocumented
 # program details); eq. 41c uses 3.399, not the printed 6.399 (see the comment there).
-# Written by a research agent on 2026-10-11; not yet independently reviewed.
+# AI-assisted port, 2026-10-11; not yet independently reviewed.
 
 """Re-implementation of the Earth Impact Effects Program scaling equations
 (Collins, Melosh & Marcus 2005, Meteoritics & Planetary Science 40:817-840).
