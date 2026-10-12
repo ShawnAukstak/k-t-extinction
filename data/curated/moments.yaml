@@ -1,0 +1,86 @@
+# Moments worth seeing: a place, a time and a view, shown as picture cards at the top of Explore.
+# Navigation, not claims: the event cards they open carry the science and the sources.
+#
+#   id       unique, also the thumbnail's name (app/public/moments/<id>.jpg, tools/moment-thumbs.mjs)
+#   title    short
+#   blurb    one sentence on what to look at
+#   view     a deep link (the part after #; see README "Deep links"); playing unless it says p=1
+#   event    optional timeline event (data/curated/timeline.yaml) whose card opens alongside
+#   action   optional: animals = fly down to the nearest herd at the view's place (k=…) and open its card
+moments:
+  - id: start
+    title: Watch from the start
+    blurb: The whole story, from an hour before the impact.
+    view: t=-3600&m=cine
+
+  - id: approach
+    title: The asteroid
+    blurb: A rock about 13 km across, half an hour out, against the Earth of 66 million years ago.
+    view: t=-1800&m=cine&p=1
+    event: approach
+
+  - id: entry
+    title: Atmospheric entry
+    blurb: Seconds from the ground, the air ahead of it glows white-hot.
+    view: t=-2&c=25.6,-70.8,350000,148,82&p=1
+    event: entry
+
+  - id: fireball
+    title: The fireball rises
+    blurb: Vaporised rock and water climb out of the atmosphere.
+    view: t=12&c=25.6,-70.8,900000,148,78&p=1
+    event: fireball
+
+  - id: curtain
+    title: The ejecta curtain
+    blurb: An inverted cone of debris thrown out of the opening crater.
+    view: t=75&c=25.6,-70.8,900000,148,78&p=1
+    event: transient-cavity
+
+  - id: cloud
+    title: The cloud spreads
+    blurb: Ten minutes on, the ejecta cloud spreads out over the Gulf and the sky glows where it falls.
+    view: t=600&m=cine&p=1
+    event: thermal-pulse
+
+  - id: tanis
+    title: Tanis, as the surge arrives
+    blurb: About 3,000 km away, the shaking sends a surge up the river, burying fish in impact glass.
+    view: t=780&c=51.6738,-79.5993,900,160,78&p=1
+    event: tanis-seiche
+
+  - id: tsunami
+    title: The tsunami leaves the Gulf
+    blurb: Waves over 100 m high near the crater, heading for the open ocean.
+    view: t=3600&c=28,-78,4500000,0,0&p=1
+    event: tsunami-gulf
+
+  - id: herd
+    title: Hell Creek, the last morning
+    blurb: Fly down to the dinosaurs living on the floodplain an hour before the impact.
+    view: t=-3600&k=hell-creek&p=1
+    action: animals
+
+  - id: dark
+    title: A dark planet
+    blurb: A month on, soot and dust block nearly all sunlight.
+    view: t=2592000&c=25,-75,16000000,0,0&p=1
+    event: darkness
+
+  - id: winter
+    title: Impact winter on the ground
+    blurb: Ten years on at Hell Creek, the forest is dead and snow lies on the ground.
+    view: t=315576000&c=53.5066,-82.4061,60,300,82&p=1
+    event: impact-winter
+
+  - id: ferns
+    title: The fern spike
+    blurb: A thousand years on, ferns cover the ground among the fallen trunks.
+    view: t=31557600000&c=53.5066,-82.4061,60,300,82&p=1
+    event: fern-spike
+
+  - id: mammals
+    title: The mammals' world
+    blurb: 900,000 years on at Corral Bluffs, the forest has returned and mammals have grown large.
+    view: t=2.84e13&k=corral-bluffs&p=1
+    action: animals

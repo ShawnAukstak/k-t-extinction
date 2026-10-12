@@ -535,3 +535,34 @@
   .kt-share-btn { display: none; }
   .kt-share-mini { display: inline-flex; align-items: center; }
 }
+
+/* ── moments (Explore) ───────────────────────────────────────────────────── */
+.kt-moments {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 2px 0 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.kt-moments li { flex: none; scroll-snap-align: start; }
+.kt-moment {
+  display: block;
+  width: 150px;
+  padding: 0;
+  border: 1px solid var(--kt-faint);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--kt-fg);
+  font: var(--kt-font);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.kt-moment img { display: block; width: 150px; height: 84px; object-fit: cover; background: #111; }
+.kt-moment span { display: block; padding: 6px 8px 7px; line-height: 1.3; min-height: 2.6em; }
+.kt-moment:hover { border-color: var(--kt-accent); }
+.kt-moment:focus-visible { outline: 2px solid var(--kt-accent); outline-offset: 2px; }

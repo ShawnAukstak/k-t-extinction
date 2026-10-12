@@ -12,7 +12,7 @@ An explorable, scientifically grounded 3D simulation of the Chicxulub impact and
   - impact winter from the Tabor et al. model runs, switchable between soot, SO₂ and dust.
 - **Camera:** cinematic, fixed and free modes, plus procedural audio.
 - **"What happened here?":** tap anywhere for that place's local history.
-- **Places:** fossil sites, and "Where was my city?", which reconstructs modern cities to their 65 Ma positions.
+- **Explore:** picture cards of moments worth seeing (a place, a time and a view, from "Watch from the start" to the fireball, the Tanis surge, the dark planet, the fern spike and the mammals' world; `data/curated/moments.yaml`), fossil sites, and "Where was my city?", which reconstructs modern cities to their 65 Ma positions.
 - **Sky and sea:** illustrative clouds that follow the general circulation (seen from above and below), wind waves with sun glitter and sky reflection, stars and a faint Milky Way.
 - **Ground level:**
   - terrain down to ~5 m on a Cretaceous forest floor (litter, ferns, horsetails; no grass), with sun shadows;
@@ -31,7 +31,7 @@ Next: the licensed climate source (PhanDA) before any public sharing, then the d
 - **Node.js** 20.19+ or 22.12+ (needed by Vite 8; developed on 23.6).
 - **Python** 3.12 (for the data scripts).
 - **About 2 GB of disk** for the downloaded source data.
-- macOS or Linux. On macOS the browser tests use the real GPU (ANGLE/Metal). ImageMagick is needed only for the screenshot tools in `app/tools/` (`contact-sheet`, `ground-shot`, `animal-sheet`, `model-sheet` for every species' body, `perf-probe` for frame times, `og-image` for the link-preview picture).
+- macOS or Linux. On macOS the browser tests use the real GPU (ANGLE/Metal). ImageMagick is needed only for the screenshot tools in `app/tools/` (`contact-sheet`, `ground-shot`, `animal-sheet`, `model-sheet` for every species' body, `perf-probe` for frame times, `og-image` for the link-preview picture, `moment-thumbs` to re-render the Explore cards after editing `moments.yaml`).
 
 ## Run it locally
 

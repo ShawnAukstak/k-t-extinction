@@ -10,6 +10,8 @@ import { detectTier, TIER_SETTINGS } from './core/device';
 import { latLonToVec, vecToLatLon, type LatLon } from './core/geo';
 import { localHistory } from './core/local-history';
 import { Plates, type PlatesData } from './core/plates';
+import { EVENTS } from './core/events';
+import { MOMENTS, type Moment } from './core/moments';
 import { POIS, poiById, type Poi } from './core/pois';
 import { sunDirection } from './core/sun';
 import { formatAge, formatRelative } from './core/timeline';
@@ -143,10 +145,10 @@ function scheduleHashUpdate(): void {
 }
 controls.onUserInput = scheduleHashUpdate;
 timeline.onUserInput = scheduleHashUpdate;
-window.addEventListener('hashchange', () => {
-  if (location.hash === lastHash) return;
-  const v = parseHash(location.hash);
-  if (v.camera && v.mode !== 'cine') { controls.setPose(v.camera); setMode('free'); }
+/** Go to a view (a link opened in this tab, or a moment). */
+function applyView(v: ViewState): void {
+  // Free mode first: switching to it seats the controls on the current (cinematic) view.
+  if (v.camera && v.mode !== 'cine') { setMode('free'); controls.setPose(v.camera); }
   if (v.mode === 'cine') setMode('cine');
   if (v.t !== undefined) clock.seek(v.t);
   if (v.paused !== undefined) clock.setPlaying(!v.paused);
@@ -154,6 +156,10 @@ window.addEventListener('hashchange', () => {
   if (v.query) setQuery(v.query, v.queryName ?? null);
   if (v.preset) { const p = poiById(v.preset); if (p) goToPlace(p); }
   if (v.scenario && v.scenario !== scenario) void setScenario(v.scenario);
+}
+window.addEventListener('hashchange', () => {
+  if (location.hash === lastHash) return;
+  applyView(parseHash(location.hash));
 });
 
 // ── camera mode ──────────────────────────────────────────────────────────────
@@ -249,7 +255,25 @@ function goToPlace(p: Poi, fly = true): void {
   scheduleHashUpdate();
 }
 markers.onSelect = (p) => goToPlace(p);
-topbar.onPlaces = () => panel.showPlaces(POIS);
+topbar.onPlaces = () => panel.showExplore(MOMENTS, POIS);
+
+// ── moments ──────────────────────────────────────────────────────────────────
+/** Open a moment: its view at normal speed, playing unless it says paused, then its card or animals. */
+function goMoment(m: Moment): void {
+  if (query) setQuery(null);
+  place = null;
+  clock.setSpeed(1);
+  applyView({ ...m.state, paused: m.state.paused ?? false });
+  const ev = m.event ? EVENTS.find((e) => e.id === m.event) : undefined;
+  if (ev) panel.showEvent(ev);
+  else if (!m.state.preset) panel.close();
+  if (m.action === 'animals' && m.state.preset) {
+    const p = poiById(m.state.preset);
+    if (p) void findAnimals(p);
+  }
+  writeHash();
+}
+panel.onMoment = (id) => { const m = MOMENTS.find((x) => x.id === id); if (m) goMoment(m); };
 panel.onPlaceAction = (action, id) => {
   const p = poiById(id);
   if (!p) return;
@@ -527,10 +551,12 @@ declare global {
       fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; share: ShareSheet; shadows: SunShadows; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
       mode: () => 'cine' | 'free';
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
+      goMoment: (id: string) => void;
     };
   }
 }
 window.__kt = {
   renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, share, shadows, tier, asteroid, vegetation, herds, mode: () => mode,
   renderNow, setQuery, effectsReady: () => ensureEffectData(true),
+  goMoment: (id) => { const m = MOMENTS.find((x) => x.id === id); if (m) goMoment(m); },
 };

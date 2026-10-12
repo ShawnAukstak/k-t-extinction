@@ -5,6 +5,7 @@
 import type { Confidence } from '../config';
 import type { TimelineEvent } from '../core/events';
 import type { LocalHistory } from '../core/local-history';
+import type { Moment } from '../core/moments';
 import type { Poi } from '../core/pois';
 import type { FaunaEntry, SpeciesDef } from '../life/fauna';
 import { FEATHERED } from '../life/bodies';
@@ -61,6 +62,8 @@ export class InfoPanel {
   onNeedCities: (() => Promise<void>) | null = null;
   onCity: ((c: InfoPanel['cities'][number]) => void) | null = null;
   onLocate: (() => void) | null = null;
+  /** A moment card was picked (Explore). */
+  onMoment: ((id: string) => void) | null = null;
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('aside');
@@ -76,6 +79,8 @@ export class InfoPanel {
       if (row) this.onSeek?.(Number(row.dataset.seek));
       const act = target.closest<HTMLElement>('[data-place-action]');
       if (act) this.onPlaceAction?.(act.dataset.placeAction as 'here' | 'fly' | 'animals', act.dataset.place!);
+      const mom = target.closest<HTMLElement>('[data-moment]');
+      if (mom) this.onMoment?.(mom.dataset.moment!);
     });
     parent.append(this.root);
   }
@@ -137,12 +142,26 @@ export class InfoPanel {
     this.open('place');
   }
 
-  showPlaces(list: readonly Poi[]): void {
+  /** Explore: moments (place + time), then "where was my city?", then places. */
+  showExplore(moments: readonly Moment[], list: readonly Poi[]): void {
+    const base = import.meta.env.BASE_URL;
+    const cards = moments
+      .map((m) => `<li><button type="button" class="kt-moment" data-moment="${esc(m.id)}" title="${esc(m.blurb)}">
+          <img src="${base}moments/${esc(m.id)}.jpg" alt="" loading="lazy" width="160" height="90" />
+          <span>${esc(m.title)}</span></button></li>`)
+      .join('');
+    this.showPlaces(list, `
+      <div class="kt-kicker">Moments</div>
+      <ul class="kt-moments" data-testid="moments">${cards}</ul>`);
+    this.kind = 'places';
+  }
+
+  showPlaces(list: readonly Poi[], before = ''): void {
     const items = list
       .map((p) => `<li><button type="button" data-place-action="fly" data-place="${esc(p.id)}">${esc(p.name)}<small>${esc(p.note.split('. ')[0])}.</small></button></li>`)
       .join('');
-    this.body.innerHTML = `
-      <div class="kt-kicker">Where do you live today?</div>
+    this.body.innerHTML = `${before}
+      <div class="kt-kicker"${before ? ' style="margin-top:14px"' : ''}>Where do you live today?</div>
       <div class="kt-search">
         <input type="search" placeholder="Search a city…" aria-label="Search a city" autocomplete="off" />
         <button type="button" class="kt-locate" title="Uses your device's location; nothing is sent anywhere">Use my location</button>

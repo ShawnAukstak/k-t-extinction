@@ -32,7 +32,7 @@ export class TopBar {
           <select aria-label="Impact winter scenario">${options}</select>
           <span class="kt-chip kt-chip-contested">Contested</span>
         </label>
-        <button type="button" class="kt-tool" data-testid="places" title="Places worth visiting">Places</button>
+        <button type="button" class="kt-tool" data-testid="places" title="Moments worth seeing, places, and where your city was">Explore</button>
         <button type="button" class="kt-tool" aria-pressed="true" data-testid="cinematic-toggle" title="Follow the scripted camera; drag the globe to take over">Cinematic</button>
         <button type="button" class="kt-tool" aria-pressed="false" data-testid="overlay-toggle" title="Show fronts: air blast, earthquake, ejecta, tsunami (O)">Overlay</button>
         <button type="button" class="kt-tool" aria-pressed="false" data-testid="sound-toggle" title="Sound (an interpretation: space is silent)">Sound</button>
