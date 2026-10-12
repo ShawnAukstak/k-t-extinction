@@ -8,6 +8,7 @@
  *   uSunDir      vec3   unit vector to the Sun (world)
  *   uSunScale    float  sunlight multiplier (impact winter dims this)
  *   uHaze        float  extra aerosol optical depth multiplier (dust/soot), 0 = clear
+ *   uMoon        float  night fill as a fraction of sunlight (main.ts; 0 = none)
  */
 export const atmosphereChunk = /* glsl */ `
 const float PR = 6371.0;
@@ -23,6 +24,16 @@ const float SUN_E = 22.0;
 uniform vec3 uSunDir;
 uniform float uSunScale;
 uniform float uHaze;
+uniform float uMoon;
+
+// Night fill: cool light after sunset, coming from the side away from the Sun (where a full Moon would
+// be), so places stay readable after dark instead of turning black. Its strength is an exposure choice
+// (stronger near the ground, faint from orbit; main.ts), not a claim about the Moon that night, whose
+// phase is unknown. Returns light per unit albedo, before the surface's own shading.
+const vec3 MOON_TINT = vec3(0.55, 0.68, 1.0);
+vec3 moonFill(vec3 up, vec3 L) {
+  return MOON_TINT * (uMoon * SUN_E / 3.14159265) * smoothstep(0.08, -0.22, dot(up, L));
+}
 
 // Ray–sphere intersection with a numerically stable 'c' for rays starting near the surface.
 vec2 raySphere(vec3 ro, vec3 rd, float r) {

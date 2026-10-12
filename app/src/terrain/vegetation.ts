@@ -211,7 +211,7 @@ void main() {
   vec3 L = uSunDir;
   vec3 pKm = (cellWorld + base) / 1000.0;
   vSunT = sunTransmittance(pKm + up * 0.05, L) * winter.x * SUN_E * uSunScale / PI;
-  vSky = vec3(0.05, 0.075, 0.11) * smoothstep(-0.15, 0.25, dot(up, L)) * uSunScale * winter.x;
+  vSky = (vec3(0.05, 0.075, 0.11) * smoothstep(-0.15, 0.25, dot(up, L)) + moonFill(up, L)) * uSunScale * winter.x;
 
   vec4 mv = modelViewMatrix * vec4(base + rel, 1.0);
   float dist = length(mv.xyz);

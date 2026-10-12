@@ -219,7 +219,9 @@ void main() {
   // Sky fill: a little blue light on the day side, fading through twilight.
   float dayness = smoothstep(-0.15, 0.25, dot(n, L));
   vec3 sky = vec3(0.05, 0.075, 0.11) * dayness * uSunScale * winter.x;
-  vec3 radiance = albedo * (sunT * SUN_E * uSunScale * ndl / PI + sky) + albedo * 0.0008;
+  // After dark: the night fill, lighting slopes from the side away from the Sun so relief still shows.
+  vec3 moon = moonFill(n, L) * uSunScale * winter.x;
+  vec3 radiance = albedo * (sunT * SUN_E * uSunScale * ndl / PI + sky + moon * (0.3 + 0.7 * max(0.0, dot(nrm, -L)))) + albedo * 0.0008;
 
   vec3 rd = normalize(uViewToWorld * vViewPos);
   // Water: wind waves as scrolling noise normals at five scales (two directions each, moving at the
@@ -273,7 +275,7 @@ void main() {
     vec3 cT = sunTransmittance(n * (PR + CLOUD_KM), L) * winter.x;
     float cdl = max(0.0, dot(n, L));
     vec3 cAlb = mix(vec3(0.58, 0.62, 0.68), vec3(0.86, 0.87, 0.88), cl.g);
-    vec3 cRad = cAlb * (cT * SUN_E * uSunScale * (cdl * relief + 0.04 * smoothstep(-0.1, 0.1, dot(n, L))) / PI + sky * 1.4);
+    vec3 cRad = cAlb * (cT * SUN_E * uSunScale * (cdl * relief + 0.04 * smoothstep(-0.1, 0.1, dot(n, L))) / PI + sky * 1.4 + moon);
     radiance = mix(radiance, cRad, cl.r * clouds);
   }
 
@@ -373,6 +375,7 @@ export class Globe {
         uSunDir: { value: new Vector3(1, 0, 0) },
         uSunScale: { value: 1 },
         uHaze: { value: 0 },
+        uMoon: { value: 0 },
         uViewToWorld: { value: this.viewToWorld },
         uCamPosKm: { value: this.camKm },
         ...extraUniforms,

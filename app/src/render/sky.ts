@@ -70,6 +70,11 @@ void main() {
     ins += sunDisc * 40.0 * uSunScale * T;
   }
   float avgT = dot(T, vec3(1.0 / 3.0));
+  // After dark, a faint moonlit sky (brighter toward the horizon), so the land has a skyline.
+  if (!hitsPlanet) {
+    vec3 up = normalize(uCamPosKm);
+    ins += moonFill(up, uSunDir) * uSunScale * 0.06 * (1.0 - 0.6 * max(0.0, dot(rd, up))) * smoothstep(-0.02, 0.06, dot(rd, up) + 0.04) * (1.0 - smoothstep(20.0, 80.0, length(uCamPosKm) - PR));
+  }
   // Clouds overhead, seen from below their base: the baked field for where they are, km-scale billows
   // for their shape, lit from above (dark thick bases, bright thin edges, silver linings near the Sun).
   if (!hitsPlanet && uCloudsOn > 0.0) {
@@ -190,7 +195,7 @@ export class Sky {
     this.skyMaterial = new ShaderMaterial({
       vertexShader: skyVertex, fragmentShader: skyFragment,
       uniforms: {
-        uSunDir: { value: new Vector3(1, 0, 0) }, uSunScale: { value: 1 }, uHaze: { value: 0 },
+        uSunDir: { value: new Vector3(1, 0, 0) }, uSunScale: { value: 1 }, uHaze: { value: 0 }, uMoon: { value: 0 },
         uViewToWorld: { value: this.viewToWorld }, uCamPosKm: { value: this.camKm }, uTanHalf: { value: [1, 1] },
         uBlastDustCam: { value: 0 }, uBlastDustColor: { value: new Vector3() },
         uBlastFront: { value: new Vector4() }, uBlastWall: { value: 0 },

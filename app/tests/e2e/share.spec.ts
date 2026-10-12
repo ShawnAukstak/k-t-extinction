@@ -42,7 +42,10 @@ test('Share freezes the moment and gives a link that reopens the same time and v
   await waitForGlobe(other);
   const st = await other.evaluate(() => { const k = (window as any).__kt; return { t: k.clock.t, playing: k.clock.playing, pose: k.controls.getPose() }; });
   expect(st.playing).toBe(false);
-  expect(Math.abs(st.t - t)).toBeLessThan(0.051);
+  // Links keep a tenth of a second below T+1000 s and whole seconds after (url-state.ts fmtTime).
+  const linked = Number(/#t=([\d.]+)/.exec(url)![1]);
+  expect(st.t).toBe(linked);
+  expect(Math.abs(linked - t)).toBeLessThanOrEqual(t < 1000 ? 0.05 : 0.5);
   expect(st.pose.lat).toBeCloseTo(40.5, 4);
   expect(st.pose.heading).toBeCloseTo(20, 4);
   await expectNoErrors(errors);

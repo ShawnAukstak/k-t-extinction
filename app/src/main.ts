@@ -84,14 +84,15 @@ gu.uCloudsOn.value = 1;
 sky.skyMaterial.uniforms.uClouds.value = clouds.target.texture;
 sky.skyMaterial.uniforms.uCloudsOn.value = 1;
 sky.skyMaterial.uniforms.uT = fx.uniforms.uT;
+sky.skyMaterial.uniforms.uMoon = gu.uMoon;
 const vegetation = new Vegetation(globe.heights, fx.crater, {
-  ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
+  ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uMoon: gu.uMoon, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
 scene.add(vegetation.group);
 // The ground's forest floor fades exactly with the drawn plants.
 Object.assign(globe.material.uniforms, vegetation.viewUniforms);
 const herds = new Herds(globe.heights, vegetation.map, fx.crater, {
-  ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
+  ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uMoon: gu.uMoon, uCamPosKm: gu.uCamPosKm,
 }, settings.herds, [], []);
 // The species cards load the first time the camera is low enough for animals.
 herds.requestRoster = () => void loadRoster().then((r) => herds.setRoster(r.species, r.regions));
@@ -473,6 +474,15 @@ function updateSun(out: Vector3): void {
   lapseSun.copy(camera.position).normalize().addScaledVector(_right, -0.55).addScaledVector(_up, 0.45).normalize();
   out.copy(physicalSun).lerp(lapseSun, timeLapseLighting).normalize();
 }
+// Night fill (render/shaders/atmosphere.ts moonFill), as a fraction of sunlight: enough to see a place
+// after dark from near the ground, faint from orbit so the night side still looks like night.
+const MOON_NEAR = 0.35;
+const MOON_FAR = 0.025;
+function updateMoon(): void {
+  const alt = Math.max(1, camera.position.length() - EARTH_RADIUS);
+  const k = Math.min(1, Math.max(0, (Math.log10(alt) - 4.5) / 2)); // 30 km → 3,000 km
+  gu.uMoon.value = MOON_NEAR + (MOON_FAR - MOON_NEAR) * k * k * (3 - 2 * k);
+}
 
 // ── loop ─────────────────────────────────────────────────────────────────────
 const sun = new Vector3();
@@ -482,6 +492,7 @@ function renderNow(dt = 0): void {
   if (mode === 'cine') cine.apply(clock.t, camera);
   else controls.update(dt);
   updateSun(sun);
+  updateMoon();
   asteroid.update(clock.t, sun);
   fx.update(clock.t);
   fx.updateCamera(camera.position, sun, 1);
