@@ -85,6 +85,8 @@ const vegetation = new Vegetation(globe.heights, fx.crater, {
   ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
 scene.add(vegetation.group);
+// The ground's forest floor fades exactly with the drawn plants.
+Object.assign(globe.material.uniforms, vegetation.viewUniforms);
 const herds = new Herds(globe.heights, vegetation.map, fx.crater, {
   ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, settings.herds, [], []);

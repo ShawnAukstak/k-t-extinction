@@ -31,7 +31,7 @@ varying vec3 vShadow;
 float sunShadow(float bias) {
   if (uShadowOn < 0.5) return 1.0;
   vec3 c = vShadow;
-  vec2 e = smoothstep(0.0, 0.15, c.xy) * smoothstep(1.0, 0.85, c.xy);
+  vec2 e = smoothstep(0.0, 0.25, c.xy) * smoothstep(1.0, 0.75, c.xy);
   float edge = e.x * e.y * step(0.0, c.z) * step(c.z, 1.0) * uShadowOn;
   if (edge <= 0.0) return 1.0;
   float z = c.z - bias;
@@ -100,7 +100,8 @@ export class SunShadows {
     this.uniforms.uShadowOn.value = this.active ? Math.min(1, (sunUp - 0.03) / 0.05) * Math.min(1, (this.opt.maxAltitude - groundAlt) / (0.3 * this.opt.maxAltitude)) : 0;
     if (!this.active) return;
     // Centre: the ground under the camera, pushed ahead along the view so more of what is seen is covered.
-    this.radius = Math.min(400, Math.max(70, groundAlt * 1.3 + 60));
+    // Wide enough to cover most of the drawn plants, so shadows don't end in a line among them.
+    this.radius = Math.min(900, Math.max(150, groundAlt * 1.5 + 150));
     const fwd = this._b.set(0, 0, -1).applyQuaternion(camera.quaternion);
     fwd.addScaledVector(up, -fwd.dot(up));
     if (fwd.lengthSq() > 1e-6) fwd.normalize();

@@ -45,6 +45,21 @@ export interface VegetationOptions {
   mapSize: number;
 }
 
+/**
+ * Where plants are drawn, shared with the ground shader so the forest floor and the trees fade together:
+ * full inside the radius the plant cells always cover around the camera (by horizontal distance, so
+ * there is no square edge), fading out toward it, and fading as the camera climbs.
+ */
+export const PLANT_FADE_GLSL = /* glsl */ `
+uniform vec3 uCamUpView;     // local up at the camera, in view space
+uniform float uCamAltM;      // camera height above the ground, m
+uniform float uPlantR;       // radius around the camera that always has plants, m
+uniform float uPlantAltMax;  // plants are gone by this camera height, m
+float plantFade(vec3 viewPos, float radius) {
+  float hd = length(viewPos - uCamUpView * dot(viewPos, uCamUpView));
+  return (1.0 - smoothstep(radius * 0.55, radius, hd)) * (1.0 - smoothstep(uPlantAltMax * 0.4, uPlantAltMax, uCamAltM));
+}`;
+
 /** Vegetation classes, in the order scripts/process_globe.py writes them. */
 export const VEG_CLASSES = ['water', 'desert', 'arid_shrub', 'fern_savanna', 'tropical_forest', 'warm_forest', 'cool_forest', 'wetland', 'rock'];
 
@@ -103,7 +118,8 @@ attribute float aAO;          // occlusion inside the crown
 attribute vec4 aInst;         // x variation, y heat exposure / ignition, z blast arrival (s), w blast wind (m/s)
 uniform vec3 uCamPosKm;
 uniform vec3 uFogColor;
-uniform float uFadeM;         // distance over which plants are drawn (fades out over the last quarter)
+uniform float uFadeM;         // radius this layer always covers around the camera (horizontal), m
+${PLANT_FADE_GLSL}
 varying vec2 vUv;
 varying vec3 vBase;
 varying vec3 vN;
@@ -206,7 +222,7 @@ void main() {
   vec3 f1 = fxBlastFog(mix(vec3(1.0), uFogColor * winter.x, haze), dist, bd, up, up, 0.0, uBlastDustColor);
   vFogB = f0;
   vFogA = f1 - f0;
-  vFade = 1.0 - smoothstep(0.75, 1.0, dist / uFadeM);
+  vFade = plantFade(mv.xyz, uFadeM);
 #ifdef SHADOW_PASS
   vFade = 1.0;
 #else
@@ -310,6 +326,13 @@ export class Vegetation {
   readonly group = new Group();
   readonly material: ShaderMaterial;
   private readonly coverMaterial: ShaderMaterial;
+  /** Camera/plant-extent uniforms, shared with the ground shader (PLANT_FADE_GLSL). */
+  readonly viewUniforms = {
+    uCamUpView: { value: new Vector3(0, 1, 0) },
+    uCamAltM: { value: 1e7 },
+    uPlantR: { value: 1000 },
+    uPlantAltMax: { value: 2500 },
+  };
   /** Depth-only variant for the sun's shadow map (same shapes, foliage cut-outs). */
   readonly shadowMaterial: ShaderMaterial;
   readonly map = new VegetationMap();
@@ -336,16 +359,21 @@ export class Vegetation {
     }
     this.ignition = treeIgnitionMJm2(crater.energyMt);
     // Foliage cards are single planes: both sides drawn; cut-out edges smoothed by alpha-to-coverage.
-    const uniforms = { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) }, uAtlas: { value: makeFoliageAtlas() } };
+    // The radius plant cells always cover around the camera (it can sit anywhere in its own cell).
+    const cellSize = ((Math.PI / 2) * EARTH_RADIUS) / 2 ** CELL_LEVEL;
+    const coverSize = ((Math.PI / 2) * EARTH_RADIUS) / 2 ** COVER_LEVEL;
+    this.viewUniforms.uPlantR.value = opt.radiusCells * cellSize;
+    this.viewUniforms.uPlantAltMax.value = opt.maxAltitude;
+    const uniforms = { ...sharedUniforms, ...this.viewUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) }, uAtlas: { value: makeFoliageAtlas() } };
     this.material = new ShaderMaterial({
-      vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: { value: 1800 } }, side: DoubleSide, alphaToCoverage: true,
+      vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: this.viewUniforms.uPlantR }, side: DoubleSide, alphaToCoverage: true,
     });
     this.shadowMaterial = new ShaderMaterial({
       vertexShader, fragmentShader, uniforms: this.material.uniforms, side: DoubleSide, defines: { SHADOW_PASS: '' },
     });
     // Ground cover shares everything but its (short) drawing distance.
     this.coverMaterial = new ShaderMaterial({
-      vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: { value: 120 } }, side: DoubleSide, alphaToCoverage: true,
+      vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: { value: Math.max(1, opt.coverCells) * coverSize } }, side: DoubleSide, alphaToCoverage: true,
     });
   }
 
@@ -474,6 +502,9 @@ export class Vegetation {
     (this.material.uniforms.uFogColor.value as Vector3).copy(fogColor);
     const camDir = camera.position.clone().normalize();
     const alt = camera.position.length() - EARTH_RADIUS - Math.max(0, this.heights.height(camDir, 200));
+    // Local up in view space (for horizontal distances in the shaders) and the camera's height.
+    this.viewUniforms.uCamAltM.value = alt;
+    this.viewUniforms.uCamUpView.value.copy(camDir).transformDirection(camera.matrixWorldInverse);
     if (!this.map.ready && !this.loading && alt < this.opt.maxAltitude * 4) {
       this.loading = true;
       this.map.load(this.opt.baseUrl, this.opt.mapSize).catch((e) => console.warn('vegetation map unavailable', e));

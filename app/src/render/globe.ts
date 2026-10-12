@@ -18,6 +18,7 @@ import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
 import { FACE_NAMES } from './cube';
 import { CLOUD_SAMPLE_GLSL, SIMPLEX_GLSL } from './clouds';
 import { SHADOW_FRAG, SHADOW_VERT } from './shadows';
+import { PLANT_FADE_GLSL } from '../terrain/vegetation';
 import { atmosphereChunk } from './shaders/atmosphere';
 import { effectsChunk } from './shaders/effects';
 
@@ -85,6 +86,7 @@ varying vec3 vGeoNormal;
 varying float vHeight;
 
 ${SHADOW_FRAG}
+${PLANT_FADE_GLSL}
 
 // Simplex noise (render/clouds.ts) for the landscape mosaic seen from mid altitudes.
 ${SIMPLEX_GLSL}
@@ -136,8 +138,13 @@ void main() {
     // The forest floor where plants are drawn (within ~1.5 km): no grass in the Cretaceous, so leaf
     // litter, bare soil, mosses, and fern and horsetail ground cover in the open, instead of the
     // canopy colour the map shows from above.
-    float floorK = (1.0 - smoothstep(600.0, 1800.0, distKm0 * 1000.0)) * smoothstep(0.02, 0.2, trees + 0.1);
-    if (floorK > 0.0) {
+    // Within ~40 km the ground is drawn as what is really there: the forest floor (litter, soil, mosses,
+    // fern and horsetail cover; no grass in the Cretaceous) under the plants where they are drawn, and
+    // beyond them that same floor partly hidden by tree crowns as seen from above, so the drawn plants
+    // fade into ground that looks like them. Exactly where plants are drawn: PLANT_FADE_GLSL.
+    float floorK = plantFade(vViewPos, uPlantR) * smoothstep(0.02, 0.2, trees + 0.1);
+    float groundK = (1.0 - smoothstep(4.0, 40.0, distKm0)) * smoothstep(0.02, 0.2, trees + 0.1);
+    if (max(floorK, groundK) > 0.0) {
       vec4 f1 = texture2D(uDetail, vDetail / 8.0), f2 = texture2D(uDetail, vDetail / 2.0 + 0.37);
       // Drier, sparser country (low plant density) has more bare ground, coloured like the map there.
       float lush = smoothstep(0.08, 0.45, trees);
@@ -146,8 +153,14 @@ void main() {
       litter = mix(soil, litter, lush);
       vec3 ferns = mix(vec3(0.05, 0.08, 0.028), vec3(0.08, 0.11, 0.035), f1.a);
       float green = smoothstep(0.3, 0.5, f1.r * 0.6 + f2.a * 0.4 + 0.15 * (1.0 - trees)) * mix(0.3, 1.0, lush);
-      vec3 floorC = mix(mix(litter, soil, smoothstep(0.6, 0.8, f2.r) * 0.5), ferns, green);
-      albedo = mix(albedo, floorC * (0.85 + 0.3 * shade), floorK);
+      vec3 floorC = mix(mix(litter, soil, smoothstep(0.6, 0.8, f2.r) * 0.5), ferns, green) * (0.85 + 0.3 * shade);
+      // Crowns from above: clumps at tree spacing, covering more where the forest is denser.
+      vec4 c1 = texture2D(uDetail, vDetail / 32.0 + 0.11), c2 = texture2D(uDetail, vDetail / 128.0 + 0.6);
+      float clump = c1.r * 0.6 + c2.a * 0.4;
+      float cover = clamp(trees * 0.75, 0.0, 0.75) * smoothstep(0.3, 0.6, clump + 0.25 * trees);
+      vec3 crownC = mix(vec3(0.035, 0.06, 0.025), vec3(0.065, 0.095, 0.035), c1.a);
+      vec3 farC = mix(floorC, crownC, cover);
+      albedo = mix(albedo, mix(farC, floorC, floorK), max(floorK, groundK));
     }
     // Perturb the normal in the tangent plane (east/north from the geometry normal).
     vec3 gn = normalize(vGeoNormal);
