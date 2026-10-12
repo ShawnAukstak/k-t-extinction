@@ -59,6 +59,25 @@ float snoise(vec3 v) {
   return 105.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
 }`;
 
+/**
+ * Sampling the baked clouds: drift with the zonal winds for the first three days (shared by the globe,
+ * seen from above, and the sky, seen from below). Needs uClouds, uT and PR (atmosphere chunk).
+ */
+export const CLOUD_SAMPLE_GLSL = /* glsl */ `
+const float CLOUD_KM = 6.0;
+vec3 cloudDrift(vec3 p) {
+  float tc = clamp(uT, -259200.0, 259200.0);
+  float lat = asin(clamp(p.y, -1.0, 1.0));
+  float alat = abs(degrees(lat));
+  // Zonal wind (m/s): trade easterlies, mid-latitude westerlies, polar easterlies.
+  float u = -7.0 * exp(-pow(alat / 16.0, 2.0)) + 15.0 * exp(-pow((alat - 45.0) / 12.0, 2.0)) - 4.0 * smoothstep(65.0, 80.0, alat);
+  float a = -u * tc / (PR * 1000.0 * max(0.1, cos(lat)));
+  float c = cos(a), s = sin(a);
+  return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+}
+vec2 cloudAt(vec3 p) { return textureCube(uClouds, cloudDrift(p)).rg; }
+`;
+
 const bakeVertex = /* glsl */ `
 varying vec3 vDir;
 void main() {

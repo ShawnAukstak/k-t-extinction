@@ -16,6 +16,7 @@ import { makeDetailTexture } from '../terrain/detail';
 import { Heightfield } from '../terrain/heightfield';
 import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
 import { FACE_NAMES } from './cube';
+import { CLOUD_SAMPLE_GLSL } from './clouds';
 import { atmosphereChunk } from './shaders/atmosphere';
 import { effectsChunk } from './shaders/effects';
 
@@ -80,19 +81,7 @@ varying vec3 vGeoNormal;
 varying float vHeight;
 
 // Clouds (render/clouds.ts): drift with the zonal winds for the first days, then hold.
-const float CLOUD_KM = 6.0;
-vec3 cloudDrift(vec3 p) {
-  float tc = clamp(uT, -259200.0, 259200.0);
-  float lat = asin(clamp(p.y, -1.0, 1.0));
-  float alat = abs(degrees(lat));
-  // Zonal wind (m/s): trade easterlies, mid-latitude westerlies, polar easterlies.
-  float u = -7.0 * exp(-pow(alat / 16.0, 2.0)) + 15.0 * exp(-pow((alat - 45.0) / 12.0, 2.0)) - 4.0 * smoothstep(65.0, 80.0, alat);
-  float a = -u * tc / (PR * 1000.0 * max(0.1, cos(lat)));
-  float c = cos(a), s = sin(a);
-  return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
-}
-vec2 cloudAt(vec3 p) { return textureCube(uClouds, cloudDrift(p)).rg; }
-
+${CLOUD_SAMPLE_GLSL}
 void main() {
   #include <logdepthbuf_fragment>
   vec3 n = normalize(vDir);
@@ -135,6 +124,19 @@ void main() {
     // Forest canopy reads as darker clumps; open ground as lighter patches.
     float canopy = trees * smoothstep(0.45, 0.6, texture2D(uDetail, vDetail / 32.0).a);
     albedo *= 1.0 + 0.45 * shade - 0.35 * canopy * close;
+    // The forest floor where plants are drawn (within ~1.5 km): no grass in the Cretaceous, so leaf
+    // litter, bare soil, mosses, and fern and horsetail ground cover in the open, instead of the
+    // canopy colour the map shows from above.
+    float floorK = (1.0 - smoothstep(600.0, 1800.0, distKm0 * 1000.0)) * smoothstep(0.02, 0.2, trees + 0.1);
+    if (floorK > 0.0) {
+      vec4 f1 = texture2D(uDetail, vDetail / 8.0), f2 = texture2D(uDetail, vDetail / 2.0 + 0.37);
+      vec3 litter = mix(vec3(0.085, 0.062, 0.04), vec3(0.13, 0.1, 0.065), f2.r);
+      vec3 soil = vec3(0.11, 0.085, 0.06);
+      vec3 ferns = mix(vec3(0.05, 0.08, 0.028), vec3(0.08, 0.11, 0.035), f1.a);
+      float green = smoothstep(0.3, 0.5, f1.r * 0.6 + f2.a * 0.4 + 0.15 * (1.0 - trees));
+      vec3 floorC = mix(mix(litter, soil, smoothstep(0.6, 0.8, f2.r) * 0.5), ferns, green);
+      albedo = mix(albedo, floorC * (0.85 + 0.3 * shade), floorK);
+    }
     // Perturb the normal in the tangent plane (east/north from the geometry normal).
     vec3 gn = normalize(vGeoNormal);
     vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), gn) + vec3(1e-5, 0.0, 0.0));
@@ -284,6 +286,8 @@ export class Globe {
   readonly terrain: Quadtree;
   /** Called once terrain heights are available (e.g. to lift the camera off the ground). */
   onHeights: (() => void) | null = null;
+  /** Anisotropic filtering for the surface textures (sharp ground at grazing angles); set before load. */
+  anisotropy = 1;
 
   constructor(terrain: QuadtreeOptions, extraUniforms: Record<string, { value: unknown }> = {}) {
     this.group.name = 'globe';
@@ -365,6 +369,7 @@ export class Globe {
     normal.colorSpace = NoColorSpace;
     height.colorSpace = NoColorSpace;
     for (const t of [color, normal]) {
+      t.anisotropy = this.anisotropy;
       t.generateMipmaps = true;
       t.minFilter = LinearMipmapLinearFilter;
       t.magFilter = LinearFilter;

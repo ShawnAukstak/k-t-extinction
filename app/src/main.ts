@@ -65,11 +65,18 @@ sky.skyMaterial.uniforms.uBlastWall = fx.uniforms.uBlastWall;
 const globe = new Globe(settings.terrain, fx.uniforms);
 scene.add(globe.group);
 const gu = globe.material.uniforms;
+// Sharp ground at grazing angles (most of what you see from a low camera).
+globe.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+(gu.uDetail.value as { anisotropy: number; needsUpdate: boolean }).anisotropy = globe.anisotropy;
+(gu.uDetail.value as { anisotropy: number; needsUpdate: boolean }).needsUpdate = true;
 // Clouds: baked once on the GPU (a few ms), sampled by the globe.
 const clouds = new Clouds(settings.faceSize);
 clouds.bake(renderer);
 gu.uClouds.value = clouds.target.texture;
 gu.uCloudsOn.value = 1;
+sky.skyMaterial.uniforms.uClouds.value = clouds.target.texture;
+sky.skyMaterial.uniforms.uCloudsOn.value = 1;
+sky.skyMaterial.uniforms.uT = fx.uniforms.uT;
 const vegetation = new Vegetation(globe.heights, fx.crater, {
   ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });

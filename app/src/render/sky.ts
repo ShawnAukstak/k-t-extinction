@@ -7,6 +7,7 @@ import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CustomBlending, Matrix3, Mesh, OneFactor,
   type PerspectiveCamera, Points, ShaderMaterial, SrcAlphaFactor, Vector3, Vector4,
 } from 'three';
+import { CLOUD_SAMPLE_GLSL } from './clouds';
 import { atmosphereChunk } from './shaders/atmosphere';
 
 const skyVertex = /* glsl */ `
@@ -27,7 +28,18 @@ uniform float uBlastDustCam;   // blast-raised dust around the camera (0–1): t
 uniform vec3 uBlastDustColor;
 uniform vec4 uBlastFront;      // xyz toward the crater (horizontal), w distance to the approaching front (m)
 uniform float uBlastWall;      // dust strength behind that front
+uniform samplerCube uClouds;   // render/clouds.ts
+uniform float uCloudsOn;
+uniform float uT;
 varying vec2 vNdc;
+${CLOUD_SAMPLE_GLSL}
+float ch3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float cvn(vec3 p) {
+  vec3 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(ch3(i), ch3(i + vec3(1, 0, 0)), f.x), mix(ch3(i + vec3(0, 1, 0)), ch3(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(ch3(i + vec3(0, 0, 1)), ch3(i + vec3(1, 0, 1)), f.x), mix(ch3(i + vec3(0, 1, 1)), ch3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
 void main() {
   vec3 rdView = normalize(vec3(vNdc * uTanHalf, -1.0));
   vec3 rd = normalize(uViewToWorld * rdView);
@@ -51,6 +63,32 @@ void main() {
     ins += sunDisc * 40.0 * uSunScale * T;
   }
   float avgT = dot(T, vec3(1.0 / 3.0));
+  // Clouds overhead, seen from below their base: the baked field for where they are, km-scale billows
+  // for their shape, lit from above (dark thick bases, bright thin edges, silver linings near the Sun).
+  if (!hitsPlanet && uCloudsOn > 0.0) {
+    vec3 up = normalize(uCamPosKm);
+    float camAlt = length(uCamPosKm) - PR;
+    float below = 1.0 - smoothstep(CLOUD_KM - 2.5, CLOUD_KM - 0.5, camAlt);
+    vec2 tc = raySphere(uCamPosKm, rd, PR + CLOUD_KM);
+    if (below > 0.0 && tc.y > 0.0) {
+      vec3 hp = uCamPosKm + rd * tc.y;
+      vec3 cn = normalize(hp);
+      vec2 cov = cloudAt(cn);
+      vec3 q = cloudDrift(cn) * (PR + CLOUD_KM) / 1.7;
+      float d = cvn(q) * 0.5 + cvn(q * 2.3 + 7.1) * 0.3 + cvn(q * 5.3 + 3.7) * 0.2;
+      float a = smoothstep(0.3, 0.62, cov.r * 0.85 + (d - 0.5) * 0.95);
+      a *= below * uCloudsOn * exp(-tc.y / 110.0) * smoothstep(0.0, 0.08, dot(rd, up));
+      if (a > 0.0) {
+        float thick = clamp(cov.g * 0.6 + d * 0.6 - 0.1, 0.0, 1.0);
+        vec3 cT = sunTransmittance(hp, uSunDir);
+        float lit = 0.3 + 0.7 * max(0.0, dot(cn, uSunDir));
+        float silver = pow(max(0.0, dot(rd, uSunDir)), 8.0) * (1.0 - thick) * 2.0;
+        vec3 cRad = vec3(0.85) * mix(1.0, 0.38, thick) * cT * SUN_E * uSunScale * (lit + silver) / PI * 0.5;
+        ins = mix(ins, cRad + ins * 0.3, a);
+        avgT *= 1.0 - a;
+      }
+    }
+  }
   float bd = min(0.97, uBlastDustCam * 1.5);
   // The approaching dust wall: rays that reach the front below the top of the ~2 km dust layer.
   if (uBlastFront.w > 0.0 && uBlastWall > 0.0) {
@@ -148,6 +186,7 @@ export class Sky {
         uViewToWorld: { value: this.viewToWorld }, uCamPosKm: { value: this.camKm }, uTanHalf: { value: [1, 1] },
         uBlastDustCam: { value: 0 }, uBlastDustColor: { value: new Vector3() },
         uBlastFront: { value: new Vector4() }, uBlastWall: { value: 0 },
+        uClouds: { value: null }, uCloudsOn: { value: 0 }, uT: { value: 0 },
       },
       depthTest: false, depthWrite: false, transparent: false,
       blending: CustomBlending, blendSrc: OneFactor, blendDst: SrcAlphaFactor,
