@@ -1,0 +1,68 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+# Early Paleocene (Danian) recovery animal: absent before the impact; it appears at `recovery.appears_years`.
+id: carsioptychus
+name: Carsioptychus
+species: [C. coarctatus]
+# mammal_small is the app's only mammal body plan; it is used here for a ~25 kg animal.
+group: mammal_small
+body_plan: quadruped
+age:
+  formation: Denver Fm (Corral Bluffs, Colorado); Nacimiento Fm (San Juan Basin, New Mexico); also Puercan beds in Utah and Wyoming (PBDB)
+  ma_range: [65.75, 65.27]
+  latest_maastrichtian: false
+  epoch: early Paleocene (Danian), Puercan land-mammal age (Pu2–Pu3)
+  note: >-
+    The range is the Corral Bluffs record (Lyson et al. 2019, GPTS 2012 age model). PBDB files the species under
+    Periptychus (P. coarctatus); Lyson et al. 2019 use Carsioptychus.
+regions: [hell-creek, south-laramidia]
+size:
+  length_m: {typical: 0.9, range: [0.8, 1.0], confidence: chosen, note: "head and body; scaled from a living mammal of similar mass (peccary); no skeleton-based length in our sources"}
+  hip_height_m: 0.4
+  hip_height_note: "estimated"
+  mass_kg:
+    value: 24
+    range: [13, 30]
+    source: lyson2019
+    confidence: model
+    note: >-
+      Lyson et al. 2019 (data S13, S14): three skulls give 22.0, 24.2 and 29.3 kg (cranial-size regression of Kirk et
+      al. 2014, mean estimates); lower first molars give 12.7–30.4 kg (four Legendre 1986 regressions). The value is
+      the middle skull estimate.
+appearance:
+  integument: fur
+  colour: unknown; the app uses a muted brown
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 3], confidence: chosen}
+  diet: herbivore (a hard-object feeder with enlarged premolars; Lyson et al. 2019)
+  activity: [browse_low, walk, rest]
+  speed_m_s: {walk: 0.8, max: 6.0, source: null, confidence: chosen}
+  habitat_note: "found mostly in floodplain and pond mudstones rather than river-channel sandstones (7:3, n = 26; Lyson et al. 2019)"
+abundance:
+  hell-creek: {relative: 0.20, source: lyson2019, confidence: chosen, note: "ordinal common; the most frequently found mammal at Corral Bluffs (26 occurrences in the facies analysis)"}
+  south-laramidia: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon; PBDB lists 10 Puercan occurrences (as Periptychus coarctatus) in New Mexico and Utah"}
+recovery:
+  appears_years: 291000
+  range_years: [179000, 320000]
+  confidence: known
+  source: lyson2019
+  note: >-
+    First record at Corral Bluffs: a worn lower jaw 49.85 m above the boundary, 291 kyr after it on the GPTS 2012
+    age model and 179 kyr on the Clyde et al. 2016 model (Lyson et al. 2019, data S11, S14). It was not found in
+    place and may come from up to ~5 m higher (~320 kyr). Lyson et al. put the Pu1/Pu2 change, ~300 kyr after the
+    impact, at this level; the next finds are at ~480 kyr.
+  by_region:
+    south-laramidia:
+      appears_years: 360000
+      range_years: [350000, 420000]
+      confidence: model
+      source: flynn2020
+      note: >-
+        San Juan Basin: no mammals are known from beds older than chron C29n; the lowest Puercan (Pu2) horizon is
+        dated 65.68–65.63 Ma (±0.01 Myr; Flynn et al. 2020), i.e. ~360–410 kyr after the impact. PBDB lists this
+        species from the Puercan of the Nacimiento Fm; its exact lowest horizon there is not checked.
+sources: [lyson2019, clyde2016, fuentes2019, flynn2020, pbdb]
+notes: >-
+  A stocky plant-eater about as heavy as a small pig, with enlarged cheek teeth thought to be for crushing hard
+  plant food such as nuts. It appears in Colorado about 300,000 years after the impact, and its arrival marks a
+  three-fold jump in the size of the largest mammals there.

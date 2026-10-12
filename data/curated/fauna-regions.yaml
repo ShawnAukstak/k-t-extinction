@@ -34,6 +34,16 @@
 #   Records older than ~67 Ma are labelled per D12 ('representative / older record'): see each species card's
 #   `age.context_only` / `age.why`, and the region's `latest_maastrichtian` / `record_age`.
 #
+# RECOVERY (EARLY PALEOCENE) ANIMALS
+#   Cards with a `recovery` block are animals that were NOT there before the impact (fauna entries say "Paleocene").
+#   recovery.appears_years  first record in the region, in years after the impact, on the published age model named
+#                           in its note (Denver Basin: GPTS 2012, boundary at 66.04 Ma, the app's impact age)
+#   recovery.range_years    the same horizon on the alternative age model (Clyde et al. 2016, boundary 66.021 Ma),
+#                           or the stated dating / placement uncertainty
+#   recovery.by_region      optional per-region override ({region id: same fields}) where that region's record
+#                           starts at a different time (e.g. the San Juan Basin, Flynn et al. 2020)
+#   A first find is the latest possible arrival; the animal may have been there somewhat earlier.
+#
 # Absolute densities are not set here. The app should derive them from body mass (Damuth scaling) and these
 # relative weights; the one published absolute estimate is for T. rex (marshall2021; see tyrannosaurus.yaml).
 
@@ -52,6 +62,17 @@ regions:
     n_collections: 620
     r50_km: 208
     r90_km: 460
+    # Subcenters (added 2026-10-11 for the Paleocene recovery fauna). The Denver Basin lies 735 km from the centre,
+    # inside both this disc and the south-laramidia disc, and the nearer-relative-centre rule put Corral Bluffs in
+    # south-laramidia (0.65 vs 0.72). Its latest-Cretaceous Denver Fm fauna is the northern one (see south-laramidia
+    # below) and its earliest Paleocene mammals are this region's, so it gets its own disc here. Positions:
+    # PBDB collection coordinates reconstructed to 65 Ma with scripts/kt/plates.py (plate 101): Corral Bluffs DMNH
+    # localities 44.94, -83.11; West Bijou 45.40, -82.91; Alexander 45.73, -83.03; South Table Mountain 45.71, -83.49;
+    # centre = their spherical mean (all four within 57 km). The core disc repeats the region disc so the region keeps
+    # its footprint if subcenters are ever used on their own.
+    subcenters:
+      - {name: "Hell Creek, Lance, Frenchman and Scollard Fms (core)", lat: 51.98, lon: -81.61, radius_km: 1100, n_collections: 620}
+      - {name: "Denver Basin (Denver Fm: Corral Bluffs, West Bijou, South Table Mountain)", lat: 45.44, lon: -83.13, radius_km: 250, n_collections: 90, note: "PBDB Danian mammal collections in Colorado"}
     habitat: [floodplain, forest, swamp, river, coastal_plain]
     latest_maastrichtian: true
     record_age: latest Maastrichtian (C30n–C29r); the census and the bird fauna lie within ~300 kyr to ~2 Myr of the boundary
@@ -75,7 +96,15 @@ regions:
       - {species: borealosuchus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: freshwater, group: [1, 3], confidence: chosen}
       - {species: avisaurus, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 2], confidence: chosen}
       - {species: azhdarchid, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: air, group: [1, 8], confidence: chosen, note: "Infernodrakon"}
-    sources: [horner2011, pearson2002, archibald1990, wilson2013, holroyd2014, longrich2011, thomas2024, pbdb]
+      # Early Paleocene recovery mammals (absent before the impact; timing in each card's `recovery` block).
+      - {species: baioconodon, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 1], confidence: chosen, note: "Paleocene; from ~93 kyr after the impact (Denver Basin)"}
+      - {species: purgatorius, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_small, group: [1, 2], confidence: chosen, note: "Paleocene; from ~139 kyr (Montana); under 1 kg, not drawn"}
+      - {species: carsioptychus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_small, group: [1, 3], confidence: chosen, note: "Paleocene; from ~291 kyr; the commonest mammal at Corral Bluffs"}
+      - {species: ectoconus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 2], confidence: chosen, note: "Paleocene; from ~417 kyr"}
+      - {species: loxolophus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 1], confidence: chosen, note: "Paleocene; from ~509 kyr"}
+      - {species: eoconodon, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_small, group: [1, 1], confidence: chosen, note: "Paleocene; from ~651 kyr"}
+      - {species: taeniolabis, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 2], confidence: chosen, note: "Paleocene; from ~718 kyr; near rivers"}
+    sources: [horner2011, pearson2002, archibald1990, wilson2013, holroyd2014, longrich2011, thomas2024, lyson2019, fuentes2019, krause2021, wilsonmantilla2021, pbdb]
 
   - id: south-laramidia
     name: Southern Laramidia (Javelina, Black Peaks, Ojo Alamo, North Horn; northern Mexico)
@@ -83,7 +112,7 @@ regions:
     # 131 PBDB collections (278 occurrences). r50 535 km, r90 801 km. The southern 'Alamosaurus fauna' and the
     # northern 'Triceratops fauna' do not split along one latitude: the North Horn Fm (Utah, 46.4°N at 65 Ma) has
     # Alamosaurus while the Denver Fm (45.7°N) has the northern fauna. Where this disc overlaps hell-creek, use the
-    # nearer centre.
+    # nearer centre (the Denver Basin itself is a hell-creek subcenter).
     paleo_center: {lat: 39.83, lon: -86.98}
     radius_km: 1000
     n_collections: 131
@@ -107,7 +136,15 @@ regions:
       - {species: brachychampsa, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: freshwater, group: [1, 3], confidence: chosen, proxy_for: "crocodylians of the Javelina Fm"}
       - {species: quetzalcoatlus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: air, group: [1, 2], confidence: chosen}
       - {species: azhdarchid, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: air, group: [1, 8], confidence: chosen, note: "Quetzalcoatlus lawsoni, Wellnhopterus"}
-    sources: [andres2021, fowler2011, sampson2005, benson2014, pbdb]
+      # Early Paleocene recovery mammals of the Nacimiento Fm (San Juan Basin) and North Horn Fm (Utah) (absent before
+      # the impact; timing in each card's `recovery` block, with San Juan Basin overrides in `recovery.by_region`).
+      # No mammals are known from San Juan Basin beds older than ~360 kyr after the impact (Flynn et al. 2020).
+      - {species: ectoconus, relative_abundance: 0.20, basis: ordinal, ordinal: common, guild: land_small, group: [1, 2], confidence: chosen, note: "Paleocene; from ~360 kyr (San Juan Basin Pu2)"}
+      - {species: carsioptychus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 3], confidence: chosen, note: "Paleocene; from ~360 kyr (San Juan Basin Pu2)"}
+      - {species: loxolophus, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 1], confidence: chosen, note: "Paleocene; from ~509 kyr (Corral Bluffs timing)"}
+      - {species: eoconodon, relative_abundance: 0.02, basis: ordinal, ordinal: rare, guild: land_small, group: [1, 1], confidence: chosen, note: "Paleocene; from ~651 kyr (Corral Bluffs timing)"}
+      - {species: taeniolabis, relative_abundance: 0.08, basis: ordinal, ordinal: uncommon, guild: land_small, group: [1, 2], confidence: chosen, note: "Paleocene; from ~770 kyr (San Juan Basin Pu3)"}
+    sources: [andres2021, fowler2011, sampson2005, benson2014, flynn2020, lyson2019, pbdb]
 
   - id: appalachia
     name: Appalachia (eastern North America)

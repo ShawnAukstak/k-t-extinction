@@ -1,0 +1,66 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+# Early Paleocene (Danian) recovery animal: absent before the impact; it appears at `recovery.appears_years`.
+id: ectoconus
+name: Ectoconus
+species: [E. ditrigonus]
+# mammal_small is the app's only mammal body plan; it is used here for a ~30 kg animal.
+group: mammal_small
+body_plan: quadruped
+age:
+  formation: Denver Fm (Corral Bluffs, Colorado); Nacimiento Fm (San Juan Basin, New Mexico); also Puercan beds in Utah and Wyoming (PBDB)
+  ma_range: [65.62, 65.03]
+  latest_maastrichtian: false
+  epoch: early Paleocene (Danian), Puercan land-mammal age (Pu2–Pu3)
+  note: >-
+    Its first appearance defines the start of the Pu2 interval zone (Lofgren et al. 2004, as used by Lyson et al.
+    2019). Range: first in-place find at Corral Bluffs (~65.62 Ma, GPTS 2012 age model) to the end of the San Juan
+    Basin Pu3 faunas (65.03 Ma; Flynn et al. 2020).
+regions: [hell-creek, south-laramidia]
+size:
+  length_m: {typical: 1.0, range: [0.9, 1.2], confidence: chosen, note: "head and body; scaled from a living mammal of similar mass; no skeleton-based length in our sources"}
+  hip_height_m: 0.45
+  hip_height_note: "estimated"
+  mass_kg:
+    value: 28.6
+    range: [23, 40]
+    source: lyson2019
+    confidence: model
+    note: >-
+      Lyson et al. 2019 (data S13, S14): two skulls give 23.0 and 28.6 kg (cranial-size regression of Kirk et al.
+      2014, mean estimates; full lower-upper span 14.1–46.6 kg); two lower first molars give 27.3–40.1 kg (four
+      Legendre 1986 regressions).
+appearance:
+  integument: fur
+  colour: unknown; the app uses a muted brown
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 2], confidence: chosen}
+  diet: herbivore (assumed for a large periptychid 'archaic ungulate'; its diet is not analysed in our sources)
+  activity: [browse_low, walk, rest]
+  speed_m_s: {walk: 0.8, max: 6.0, source: null, confidence: chosen}
+  habitat_note: "found mostly in floodplain and pond mudstones (8:2, n = 9; Lyson et al. 2019)"
+abundance:
+  hell-creek: {relative: 0.08, source: lyson2019, confidence: chosen, note: "ordinal uncommon; 9 occurrences at Corral Bluffs against 26 for Carsioptychus"}
+  south-laramidia: {relative: 0.20, source: pbdb, confidence: chosen, note: "ordinal common; the index fossil of the San Juan Basin's lower Puercan 'Ectoconus zone'; PBDB lists 15 Puercan occurrences in New Mexico and Utah"}
+recovery:
+  appears_years: 417000
+  range_years: [299000, 417000]
+  confidence: known
+  source: lyson2019
+  note: >-
+    First in-place record at Corral Bluffs: a cranium (DMNH EPV.130985) 69.75 m above the boundary, 417 kyr after it
+    on the GPTS 2012 age model and 299 kyr on the Clyde et al. 2016 model (Lyson et al. 2019, data S11).
+  by_region:
+    south-laramidia:
+      appears_years: 360000
+      range_years: [350000, 420000]
+      confidence: model
+      source: flynn2020
+      note: >-
+        San Juan Basin: the Pu2 ('Ectoconus zone') horizons begin at 65.68–65.63 Ma (±0.01 Myr; Flynn et al. 2020),
+        ~360–410 kyr after the impact; no mammals are known there from older beds.
+sources: [lyson2019, clyde2016, fuentes2019, flynn2020, pbdb]
+notes: >-
+  A sturdy plant-eater of about 25–30 kg. Large mammals of its family, the periptychids, spread across western North
+  America a few hundred thousand years after the impact, and the first appearance of Ectoconus is used to mark that
+  new stage of the recovery.

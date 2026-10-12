@@ -328,10 +328,11 @@ export class Herds {
               const v = 0.85 + 0.3 * r();
               const burnt = fx.fireballVisible && fx.thermalMJm2 > this.burnLethal;
               let dieAt = Infinity, fallAway = false, bornAt = -Infinity, rebornAt: number | undefined;
-              if (sp.recovery) {
-                // Arrives after the impact: its first appearance (within the published uncertainty), then
+              const rec = f.recovery ?? sp.recovery;
+              if (rec) {
+                // Arrives after the impact: its first appearance here (within the published uncertainty), then
                 // numbers build up over a further ~30 % of that time (chosen).
-                const [y0, y1] = sp.recovery.rangeYears ?? [sp.recovery.appearsYears, sp.recovery.appearsYears];
+                const [y0, y1] = rec.rangeYears ?? [rec.appearsYears, rec.appearsYears];
                 bornAt = YEAR * (y0 + r() * (y1 - y0)) * (1 + 0.3 * r());
               } else {
                 // Fate: heat (near), blast (regional), or the impact winter (everywhere else).

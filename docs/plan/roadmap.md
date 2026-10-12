@@ -68,9 +68,9 @@ Built: places with offline plate reconstruction (matches GWS) and `k=` links; "w
 - Fixed-camera presets at POIs (Tanis, Hell Creek, Yucatán platform, Tremp, Seymour, Deccan, antipode).
 - Free-roam at ground level.
 
-## Phase 5 — Life — **first pass done** (5a, 5b)
+## Phase 5 — Life — **done except better models** (5a–5c)
 
-Built: procedural low-poly bodies by body plan (D10 placeholders), herds placed at Damuth densities in clearings, simple walk/graze animation, per-animal fate (heat, blast, winter), tap-for-species-card and "Find dinosaurs nearby". Next: curated species and regional rosters (`data/curated/species/`, `fauna-regions.yaml`), survivors and recovery, then better models.
+Built: procedural low-poly bodies by body plan (D10 placeholders), herds placed at Damuth densities in clearings, simple walk/graze animation, per-animal fate (heat, blast, winter), tap-for-species-card and "Find dinosaurs nearby". Curated species cards and 19 land/sea regions (`data/curated/species/`, `fauna-regions.yaml`); plants die, rot and regrow (fern spike, returning forests); surviving lineages rebound; early Paleocene mammals arrive on the published first-appearance dates (Corral Bluffs, Lyson et al. 2019; San Juan Basin, Flynn et al. 2020, via `recovery.by_region`); the air blast raises a dust wall (illustration) and throws herds. Next: better models (D10) — the ~30 kg Paleocene mammals currently share the small-mammal body and look leggy.
 
 - Herd pipeline: glTF → VAT → InstancedMesh with LOD/impostors; measured on device.
 - 3–6 POIs with curated species lists, group sizes and behaviours from the species cards; densities from Damuth scaling.

@@ -22,11 +22,13 @@ export interface SpeciesDef {
   survival?: { note?: string; source?: string };
   /** Set for D12 'representative / older record' cards: why the record is older than the impact. */
   olderRecord?: string;
-  /** Recovery fauna: first present this many years after the impact. */
-  recovery?: { appearsYears: number; rangeYears?: [number, number]; confidence?: string; source?: string; note?: string };
+  /** Recovery fauna: first present this many years after the impact (byRegion: where a region's record starts at another time). */
+  recovery?: Recovery & { byRegion?: Record<string, Recovery> };
   notes?: string;
   sources: string[];
 }
+
+export interface Recovery { appearsYears: number; rangeYears?: [number, number]; confidence?: string; source?: string; note?: string }
 
 export interface FaunaEntry {
   species: string;
@@ -38,6 +40,8 @@ export interface FaunaEntry {
   proxyFor?: string;
   confidence?: string;
   note?: string;
+  /** This region's recovery timing, where it differs from the species card's. */
+  recovery?: Recovery;
 }
 
 export interface RegionDef {
@@ -112,6 +116,7 @@ export function fromCurated(species: Record<string, unknown>[], regions: Record<
       sources: Array.isArray(s.sources) ? (s.sources as string[]) : [],
     };
   });
+  const byId = new Map(sp.map((x) => [x.id, x]));
   const rg: RegionDef[] = regions.map((r) => {
     const ll = (v: unknown): LatLon | null => {
       const c = v as { lat?: unknown; lon?: unknown } | null | undefined;
@@ -131,6 +136,7 @@ export function fromCurated(species: Record<string, unknown>[], regions: Record<
         species: String(f.species), abundance: num(f.relative_abundance ?? f.abundance, 0.1),
         guild: str(f.guild), group: f.group as [number, number] | undefined,
         proxyFor: str(f.proxy_for), confidence: str(f.confidence), note: str(f.note),
+        recovery: byId.get(String(f.species))?.recovery?.byRegion?.[String(r.id)],
       })),
     };
   });
@@ -138,12 +144,22 @@ export function fromCurated(species: Record<string, unknown>[], regions: Record<
 }
 
 function recoveryOf(v: unknown): SpeciesDef['recovery'] {
-  const r = v as { appears_years?: unknown; range_years?: unknown; confidence?: unknown; source?: unknown; note?: unknown } | undefined;
-  if (!r || typeof r.appears_years !== 'number') return undefined;
-  const rg = Array.isArray(r.range_years) && r.range_years.length === 2 && r.range_years.every((x) => typeof x === 'number')
-    ? (r.range_years as [number, number]) : undefined;
-  const s = (x: unknown) => (typeof x === 'string' && x.trim() ? x.trim() : undefined);
-  return { appearsYears: r.appears_years, rangeYears: rg, confidence: s(r.confidence), source: s(r.source), note: s(r.note) };
+  const one = (v: unknown): Recovery | undefined => {
+    const r = v as { appears_years?: unknown; range_years?: unknown; confidence?: unknown; source?: unknown; note?: unknown } | undefined;
+    if (!r || typeof r.appears_years !== 'number') return undefined;
+    const rg = Array.isArray(r.range_years) && r.range_years.length === 2 && r.range_years.every((x) => typeof x === 'number')
+      ? (r.range_years as [number, number]) : undefined;
+    const s = (x: unknown) => (typeof x === 'string' && x.trim() ? x.trim() : undefined);
+    return { appearsYears: r.appears_years, rangeYears: rg, confidence: s(r.confidence), source: s(r.source), note: s(r.note) };
+  };
+  const base = one(v);
+  if (!base) return undefined;
+  const byRegion: Record<string, Recovery> = {};
+  for (const [id, x] of Object.entries(((v as { by_region?: unknown }).by_region ?? {}) as Record<string, unknown>)) {
+    const r = one(x);
+    if (r) byRegion[id] = r;
+  }
+  return Object.keys(byRegion).length ? { ...base, byRegion } : base;
 }
 
 /**

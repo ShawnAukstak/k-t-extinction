@@ -176,7 +176,7 @@ export class InfoPanel {
     const title = proxy ? proxy[0].toUpperCase() + proxy.slice(1) : sp.name;
     const conf = (c?: string) => (c === 'known' || c === 'model' || c === 'contested' || c === 'chosen' ? c : 'model');
     const note = sp.survival?.note ? sp.survival.note.replace(/^(yes|no)\b[.;,:]?\s*/i, '') : '';
-    const rec = sp.recovery;
+    const rec = entry?.recovery ?? sp.recovery;
     const survived = rec
       ? `<p class="kt-note">${chip(conf(rec.confidence))} <strong>After the extinction:</strong> first appears about ${esc(formatYears(rec.appearsYears))} after the impact${rec.note ? ` — ${esc(rec.note)}` : ''}.</p>`
       : `<p><strong>Survived the extinction:</strong> ${sp.survives ? 'yes' : 'no'}${note ? ` — ${esc(note[0].toUpperCase() + note.slice(1)).replace(/\.?$/, '.')}` : '.'}</p>`;

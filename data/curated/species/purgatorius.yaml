@@ -1,0 +1,50 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+# Early Paleocene (Danian) recovery animal: absent before the impact; it appears at `recovery.appears_years`.
+# Below ~1 kg: the app does not draw it; the card is for the species list and the timeline.
+id: purgatorius
+name: Purgatorius
+species: [P. janisae, P. mckeeveri]
+group: mammal_small
+body_plan: quadruped
+age:
+  formation: Tullock Mb of the Fort Union Fm (Garfield and McCone Counties, Montana); also Saskatchewan (PBDB)
+  ma_range: [65.94, 65.36]
+  latest_maastrichtian: false
+  epoch: early Paleocene (Danian), Puercan land-mammal age (Pu1–Pu3)
+  note: >-
+    Range: the Pu1 Harley's Point locality (likely 105–139 kyr after the boundary) to the likely age of the Pu3
+    Garbani Channel fauna (584–691 kyr after it), both from Wilson Mantilla et al. 2021 (boundary at 66.052 Ma).
+    Purgatoriids persist later, in smaller numbers.
+regions: [hell-creek]
+size:
+  length_m: {typical: 0.12, range: [0.1, 0.15], confidence: chosen, note: "head and body; known only from teeth, jaws and ankle bones; scaled from a small treeshrew"}
+  hip_height_m: 0.04
+  hip_height_note: "estimated"
+  mass_kg: {value: 0.05, source: null, confidence: chosen, note: "no published body-mass estimate in our sources; tens of grams, chosen by comparison with small treeshrews"}
+appearance:
+  integument: fur
+  colour: unknown; the app uses a muted brown
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 2], confidence: chosen}
+  diet: omnivore (insects and fruit; teeth suited to omnivory and fruit-eating, Wilson Mantilla et al. 2021)
+  activity: [walk, rest]
+  speed_m_s: {walk: 0.3, max: 2.0, source: null, confidence: chosen}
+  habitat_note: "a tree-dweller: its ankle bones show the mobile joints of climbing mammals (Chester et al. 2015); the app has no climbing animation"
+abundance:
+  hell-creek: {relative: 0.02, source: wilsonmantilla2021, confidence: chosen, note: "ordinal rare at first: plesiadapiforms are under 5 % of mammal individuals in the earliest faunas that have them, rising to 25 % in the Garbani Channel fauna (~0.6 Myr)"}
+recovery:
+  appears_years: 139000
+  range_years: [105000, 208000]
+  confidence: model
+  source: wilsonmantilla2021
+  note: >-
+    Harley's Point locality (Pu1, Tullock Mb, Montana): within 208 kyr after the boundary, and likely 105–139 kyr
+    (Wilson Mantilla et al. 2021, from stratigraphy, mammal biochronology and dated ashes). It is absent from the
+    well-sampled earlier faunas at ~25 kyr (Z-Line) and ~80 kyr (Worm Coulee 1), so it probably arrived as an
+    immigrant.
+sources: [wilsonmantilla2021, chester2015, pbdb]
+notes: >-
+  One of the oldest known relatives of primates: a small tree-climber, perhaps the size of a mouse or a small
+  squirrel, that ate insects and fruit. It reached Montana within roughly 100,000–200,000 years of the impact and
+  became common later.

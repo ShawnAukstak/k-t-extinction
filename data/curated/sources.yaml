@@ -251,6 +251,18 @@ sources:
     verified: true
     volume: "111"
     year: 2014
+  chester2015:
+    authors: "Chester, S. G. B., Bloch, J. I., Boyer, D. M., et al."
+    doi: "10.1073/pnas.1421707112"
+    journal: "Proceedings of the National Academy of Sciences"
+    open_access: true
+    pages: "1487–1492"
+    short: "Chester et al. 2015"
+    title: "Oldest known euarchontan tarsals and affinities of Paleocene Purgatorius to Primates"
+    url: "https://doi.org/10.1073/pnas.1421707112"
+    verified: true
+    volume: "112"
+    year: 2015
   chiarenza2019:
     authors: "Chiarenza, A. A., Mannion, P. D., Lunt, D. J., et al."
     doi: "10.1038/s41467-019-08997-2"
@@ -544,6 +556,19 @@ sources:
     verified: true
     volume: "385"
     year: 2024
+  flynn2020:
+    authors: "Flynn, A. G., Davis, A. J., Williamson, T. E., et al."
+    doi: "10.1130/B35481.1"
+    journal: "GSA Bulletin"
+    note: "Ages read from the open submitted version (OSF preprint 10.31233/osf.io/6mwfy, Table 1 and conclusions)."
+    open_access: true
+    pages: "2154–2174"
+    short: "Flynn et al. 2020"
+    title: "Early Paleocene Magnetostratigraphy and Revised Biostratigraphy of the Ojo Alamo Sandstone and Lower Nacimiento Formation, San Juan Basin, New Mexico, USA"
+    url: "https://doi.org/10.1130/B35481.1"
+    verified: true
+    volume: "132"
+    year: 2020
   fondevilla2019:
     authors: "Fondevilla, V., Riera, V., Vila, B., et al."
     doi: "10.1016/j.earscirev.2019.01.007"
@@ -568,6 +593,18 @@ sources:
     verified: true
     volume: "56"
     year: 2011
+  fuentes2019:
+    authors: "Fuentes, A. J., Clyde, W. C., Weissenburger, K., et al."
+    doi: "10.24872/rmgjournal.54.2.133"
+    journal: "Rocky Mountain Geology"
+    open_access: true
+    pages: "133–153"
+    short: "Fuentes et al. 2019"
+    title: "Constructing a time scale of biotic recovery across the Cretaceous–Paleogene boundary, Corral Bluffs, Denver Basin, Colorado, U.S.A."
+    url: "https://doi.org/10.24872/rmgjournal.54.2.133"
+    verified: true
+    volume: "54"
+    year: 2019
   godefroit2012:
     authors: "Godefroit, P., Bolotsky, Y. L., & Bolotsky, I. Y."
     doi: "10.4202/app.2011.0051"
@@ -785,6 +822,18 @@ sources:
     verified: true
     volume: "213"
     year: 2021
+  krause2021:
+    authors: "Krause, D. W., Hoffmann, S., Lyson, T. R., et al."
+    doi: "10.1007/s10914-021-09584-3"
+    journal: "Journal of Mammalian Evolution"
+    open_access: true
+    pages: "1083–1143"
+    short: "Krause et al. 2021"
+    title: "New Skull Material of Taeniolabis taoensis (Multituberculata, Taeniolabididae) from the Early Paleocene (Danian) of the Denver Basin, Colorado"
+    url: "https://doi.org/10.1007/s10914-021-09584-3"
+    verified: true
+    volume: "28"
+    year: 2021
   kring2002:
     authors: "Kring, D. A., & Durda, D. D."
     doi: "10.1029/2001JE001532"
@@ -934,6 +983,7 @@ sources:
     authors: "Lyson, T. R., Miller, I. M., Bercovici, A. D., et al."
     doi: "10.1126/science.aay2268"
     journal: "Science"
+    note: "The recovery species cards use its supplementary data files S11 (localities with ages), S13 and S14 (mammal body masses)."
     open_access: false
     pages: "977–983"
     short: "Lyson et al. 2019"
@@ -1665,6 +1715,18 @@ sources:
     verified: true
     volume: "7"
     year: 2016
+  wilsonmantilla2021:
+    authors: "Wilson Mantilla, G. P., Chester, S. G. B., Clemens, W. A., et al."
+    doi: "10.1098/rsos.210050"
+    journal: "Royal Society Open Science"
+    open_access: true
+    pages: "210050"
+    short: "Wilson Mantilla et al. 2021"
+    title: "Earliest Palaeocene purgatoriids and the initial radiation of stem primates"
+    url: "https://doi.org/10.1098/rsos.210050"
+    verified: true
+    volume: "8"
+    year: 2021
   witton2010:
     authors: "Witton, M. P., & Habib, M. B."
     doi: "10.1371/journal.pone.0013982"

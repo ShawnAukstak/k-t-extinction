@@ -38,6 +38,31 @@ describe('curated fauna', async () => {
     expect([...missing]).toEqual([]);
   });
 
+  it('recovery timing is consistent, sourced, and regional overrides name regions the species lives in', () => {
+    const recovery = roster.species.filter((s) => s.recovery);
+    expect(recovery.length).toBeGreaterThan(3);
+    for (const s of recovery) {
+      const all = [['card', s.recovery!] as const, ...Object.entries(s.recovery!.byRegion ?? {})];
+      for (const [where, r] of all) {
+        expect(r.appearsYears, `${s.id} ${where}`).toBeGreaterThan(0);
+        if (r.rangeYears) {
+          expect(r.appearsYears, `${s.id} ${where}`).toBeGreaterThanOrEqual(Math.min(...r.rangeYears));
+          expect(r.appearsYears, `${s.id} ${where}`).toBeLessThanOrEqual(Math.max(...r.rangeYears));
+        }
+        if (r.source) expect(SOURCES[r.source], `${s.id} ${where}: ${r.source}`).toBeTruthy();
+      }
+      for (const id of Object.keys(s.recovery!.byRegion ?? {})) {
+        const entry = roster.regions.find((r) => r.id === id)?.fauna.find((f) => f.species === s.id);
+        expect(entry, `${s.id} by_region ${id}`).toBeTruthy();
+        expect(entry!.recovery).toBe(s.recovery!.byRegion![id]);
+      }
+    }
+    // Ectoconus: San Juan Basin record from ~360 kyr (Flynn et al. 2020); Corral Bluffs from ~417 kyr (Lyson et al. 2019).
+    const fa = (region: string) => roster.regions.find((r) => r.id === region)!.fauna.find((f) => f.species === 'ectoconus')!;
+    expect(fa('south-laramidia').recovery?.appearsYears).toBe(360000);
+    expect(fa('hell-creek').recovery).toBeUndefined();
+  });
+
   it('only non-avian dinosaurs, pterosaurs and marine reptiles are all-dead groups', () => {
     const survivors = roster.species.filter((s) => s.survives).map((s) => s.group);
     for (const g of survivors) expect(['crocodylian', 'champsosaur', 'turtle', 'mammal_small', 'bird', 'frog', 'lizard']).toContain(g);
@@ -48,6 +73,8 @@ describe('curated fauna', async () => {
     const sea = (lat: number, lon: number) => regionAt(roster.regions, { lat, lon }, 'sea', dist)?.id;
     expect(land(51.674, -79.599)).toBe('hell-creek'); // Tanis
     expect(land(34.61, -0.47)).toBe('ibero-armorica'); // Tremp
+    expect(land(44.94, -83.11)).toBe('hell-creek'); // Corral Bluffs, Denver Basin (northern fauna, not Alamosaurus)
+    expect(land(39.83, -86.98)).toBe('south-laramidia');
     expect(sea(25.11, -71.58)).toBe('gulf-atlantic-wis'); // Chicxulub
     expect(sea(0, -150)).toBe('open-ocean'); // mid-Pacific
   });

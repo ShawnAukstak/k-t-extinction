@@ -1,0 +1,56 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+# Early Paleocene (Danian) recovery animal: absent before the impact; it appears at `recovery.appears_years`.
+id: baioconodon
+name: Baioconodon
+species: [B. nordicus, B. denverensis, B. cannoni]
+group: mammal_small
+body_plan: quadruped
+age:
+  formation: Denver Fm (West Bijou, South Table Mountain, Alexander locality, Colorado); Tullock Mb of the Fort Union Fm and other Pu1 beds of Montana (PBDB)
+  ma_range: [65.95, 65.75]
+  latest_maastrichtian: false
+  epoch: early Paleocene (Danian), early Puercan land-mammal age (Pu1)
+  note: >-
+    Denver Basin ages are from the Lyson et al. 2019 data (GPTS 2012 age model): West Bijou DMNH Loc. 2560 ~65.95 Ma,
+    South Table Mountain ~65.93 Ma, Alexander locality (top of Pu1) ~65.75 Ma.
+regions: [hell-creek]
+size:
+  length_m: {typical: 0.45, range: [0.3, 0.6], confidence: chosen, note: "head and body; scaled from a living mammal of similar mass (raccoon); no skeleton-based length in our sources"}
+  hip_height_m: 0.18
+  hip_height_note: "estimated"
+  mass_kg:
+    value: 3.9
+    range: [1.2, 10.2]
+    source: lyson2019
+    confidence: model
+    note: >-
+      Lyson et al. 2019 (data S13, S14). Skull of B. denverensis: 3.9 kg (cranial-size regression of Kirk et al.
+      2014; 2.4–6.1 kg). Lower first molars: B. nordicus 1.2–2.4 kg, B. denverensis 4.9–8.0 kg, B. cannoni 6.5–10.2 kg
+      (Legendre 1986 regressions). Lyson et al. call B. denverensis (~6 kg) the largest known mammal of the first
+      ~100 kyr.
+appearance:
+  integument: fur
+  colour: unknown; the app uses a muted brown
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: omnivore (Lyson et al. 2019 describe the earliest Paleocene mammals as largely omnivorous or insect-eating)
+  activity: [walk, roam, rest]
+  speed_m_s: {walk: 0.5, max: 4.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.08, source: wilsonmantilla2021, confidence: chosen, note: "ordinal uncommon; 'archaic ungulates' are 12 % or less of mammal individuals in NE Montana faunas until ~1 Myr (Wilson Mantilla et al. 2021); PBDB lists ~40 Puercan Baioconodon occurrences in Montana"}
+recovery:
+  appears_years: 93000
+  range_years: [57000, 93000]
+  confidence: known
+  source: lyson2019
+  note: >-
+    First record in the Denver Basin: B. nordicus at West Bijou (DMNH Loc. 2560), 9 m above the boundary, ~93 kyr
+    after it on the GPTS 2012 age model and ~57 kyr on the Clyde et al. 2016 model (Lyson et al. 2019, data S14).
+    B. denverensis follows at South Table Mountain at ~108 kyr (~66 kyr). Montana has Baioconodon in its Pu1 faunas
+    too (PBDB), but we have not checked how early.
+sources: [lyson2019, clyde2016, wilsonmantilla2021, pbdb]
+notes: >-
+  One of the first sizeable mammals to appear after the impact, from rabbit-sized to small-dog-sized depending on
+  the species. Within about 100,000 years the largest kind weighed around 6 kg, close to the size of the largest
+  mammals living just before the impact.

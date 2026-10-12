@@ -1,0 +1,56 @@
+# Species card. Field conventions: see the header of data/curated/fauna-regions.yaml.
+# Early Paleocene (Danian) recovery animal: absent before the impact; it appears at `recovery.appears_years`.
+id: loxolophus
+name: Loxolophus
+species: [L. hyattianus, L. faulkneri, Loxolophus spp.]
+group: mammal_small
+body_plan: quadruped
+age:
+  formation: Denver Fm (Corral Bluffs, Colorado); Nacimiento Fm (San Juan Basin, New Mexico); also Puercan beds in Montana, Wyoming, Utah and Saskatchewan (PBDB)
+  ma_range: [65.53, 65.03]
+  latest_maastrichtian: false
+  epoch: early Paleocene (Danian), Puercan land-mammal age
+  note: >-
+    Lyson et al. 2019 list L. hyattianus, L. aff. L. hyattianus and L. faulkneri at Corral Bluffs. Range: first find
+    at Corral Bluffs (~65.53 Ma, GPTS 2012 age model) to the end of the San Juan Basin Pu3 faunas (65.03 Ma; Flynn et
+    al. 2020).
+regions: [hell-creek, south-laramidia]
+size:
+  length_m: {typical: 0.4, range: [0.3, 0.5], confidence: chosen, note: "head and body; scaled from a living mammal of similar mass (house cat); no skeleton-based length in our sources"}
+  hip_height_m: 0.15
+  hip_height_note: "estimated"
+  mass_kg:
+    value: 3.9
+    range: [1.0, 6.2]
+    source: lyson2019
+    confidence: model
+    note: >-
+      Lyson et al. 2019 (data S13, S14): a skull (DMNH 132501) gives 3.9 kg (cranial-size regression of Kirk et al.
+      2014; 2.5–6.2 kg); a smaller skull (DMNH 95282) gives 1.0 kg, while the same animal's lower first molar gives
+      1.9–3.6 kg. The two skulls may belong to different species.
+appearance:
+  integument: fur
+  colour: unknown; the app uses a muted brown
+  confidence: model
+behaviour:
+  group_size: {typical: [1, 1], confidence: chosen}
+  diet: omnivore (assumed for an arctocyonid 'archaic ungulate'; its diet is not analysed in our sources)
+  activity: [walk, roam, rest]
+  speed_m_s: {walk: 0.5, max: 4.0, source: null, confidence: chosen}
+abundance:
+  hell-creek: {relative: 0.08, source: lyson2019, confidence: chosen, note: "ordinal uncommon; a handful of skulls, jaws and a partial skeleton at Corral Bluffs; PBDB lists 11 Puercan occurrences in Colorado and Montana"}
+  south-laramidia: {relative: 0.08, source: pbdb, confidence: chosen, note: "ordinal uncommon; PBDB lists 18 Puercan occurrences in New Mexico and Utah"}
+recovery:
+  appears_years: 509000
+  range_years: [414000, 509000]
+  confidence: known
+  source: lyson2019
+  note: >-
+    First record at Corral Bluffs: partial skeletons (DMNH Loc. 6289) 83.09 m above the boundary, 509 kyr after it on
+    the GPTS 2012 age model and 414 kyr on the Clyde et al. 2016 model (Lyson et al. 2019, data S11, S13). This is the
+    first find in a record biased towards large animals, so the genus may have arrived earlier. The same timing is
+    used for the San Juan Basin, where its Puercan records (PBDB) are all younger than ~360 kyr (Flynn et al. 2020).
+sources: [lyson2019, clyde2016, fuentes2019, flynn2020, pbdb]
+notes: >-
+  A cat-sized mammal, probably an omnivore, from one of several early mammal families that spread after the
+  impact. Skulls and skeletons from Colorado show it there about half a million years after the asteroid struck.
