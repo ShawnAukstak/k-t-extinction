@@ -113,7 +113,9 @@ export function formatHash(v: ViewState): string {
     const c = v.camera;
     const lonWrapped = ((((c.lon + 180) % 360) + 360) % 360) - 180;
     const heading = ((c.heading % 360) + 360) % 360;
-    parts.push(`c=${[fmt(c.lat, 4), fmt(lonWrapped, 4), fmt(c.range, 0), fmt(heading, 1), fmt(c.tilt, 1)].join(',')}`);
+    // Close-ups need finer positions: 4 decimals of a degree is ~11 m, a whole animal at ground level.
+    const d = c.range < 300 ? 6 : c.range < 30_000 ? 5 : 4;
+    parts.push(`c=${[fmt(c.lat, d), fmt(lonWrapped, d), fmt(c.range, c.range < 100 ? 1 : 0), fmt(heading, 1), fmt(c.tilt, 1)].join(',')}`);
   }
   if (v.query) parts.push(`q=${fmt(v.query.lat, 3)},${fmt(((((v.query.lon + 180) % 360) + 360) % 360) - 180, 3)}`);
   if (v.query && v.queryName) parts.push(`qn=${encodeURIComponent(v.queryName.slice(0, 80))}`);

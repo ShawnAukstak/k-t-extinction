@@ -308,6 +308,10 @@
 
 @media (max-width: 640px) {
   .kt-title span { display: none; }
+  .kt-tools { gap: 5px; }
+  .kt-tool { padding: 5px 10px; font-size: 12.5px; }
+  .kt-scenario { padding: 2px 4px 2px 10px; font-size: 12.5px; }
+  .kt-scenario .kt-chip { font-size: 9px; padding: 1px 4px; }
   .kt-scenario > span:first-child { display: none; }
   .kt-scenario select { max-width: 110px; }
   .kt-panel {
@@ -412,4 +416,122 @@
   padding: 6px 10px;
   cursor: pointer;
   white-space: nowrap;
+}
+
+/* ── share ───────────────────────────────────────────────────────────────── */
+.kt-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--kt-accent);
+  border-color: var(--kt-accent);
+  color: #1a0d03;
+  font-weight: 700;
+  padding: 6px 13px 6px 10px;
+}
+.kt-share-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.kt-share-btn:hover { background: #ff9d5c; }
+.kt-share-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.kt-share-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.45);
+}
+.kt-share-backdrop[hidden] { display: none; }
+.kt-share {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  box-sizing: border-box;
+  background: var(--kt-glass-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--kt-faint);
+  border-radius: 16px;
+  color: var(--kt-fg);
+  font: var(--kt-font);
+  padding: 16px 18px 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.kt-share h2 { margin: 2px 28px 10px 0; font-size: 18px; }
+.kt-share-shot { margin: 0; display: flex; justify-content: center; }
+.kt-share-shot img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 34vh;
+  border-radius: 10px;
+  border: 1px solid var(--kt-faint);
+  background: #000;
+}
+.kt-share-mini { display: none; width: auto; padding: 0 10px 0 8px; gap: 4px; color: var(--kt-accent); font: var(--kt-font); font-weight: 700; }
+.kt-share-mini svg { width: 18px; height: 18px; }
+.kt-share-what { margin: 10px 0; color: #d3d8e0; line-height: 1.45; }
+.kt-share-modes {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--kt-faint);
+}
+.kt-share-modes button {
+  border: 0;
+  background: transparent;
+  color: var(--kt-dim);
+  font: var(--kt-font);
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.kt-share-modes button[aria-checked='true'] { background: rgba(255, 255, 255, 0.16); color: var(--kt-fg); }
+.kt-share-modes button:focus-visible { outline: 2px solid var(--kt-accent); outline-offset: 1px; }
+.kt-share-link { display: flex; gap: 6px; margin-top: 12px; }
+.kt-share-link input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--kt-faint);
+  border-radius: 8px;
+  color: var(--kt-fg);
+  font: var(--kt-mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 10px;
+}
+.kt-share-link input:focus { outline: 2px solid var(--kt-accent); outline-offset: 1px; }
+.kt-share-copy {
+  flex: none;
+  min-width: 104px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--kt-accent);
+  color: #1a0d03;
+  font: var(--kt-font);
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.kt-share-copy:hover { background: #ff9d5c; }
+.kt-share-copy:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.kt-share .kt-btn-row { margin-top: 10px; }
+.kt-share .kt-btn-row button[hidden] { display: none; }
+.kt-share-status { min-height: 1em; margin-top: 6px; font-size: 12px; color: var(--kt-known); }
+
+@media (max-width: 640px) {
+  .kt-share-backdrop { place-items: end center; padding: 0; }
+  .kt-share {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    max-height: 88vh;
+  }
+  .kt-share-shot img { max-height: 30vh; }
+  .kt-share-btn { display: none; }
+  .kt-share-mini { display: inline-flex; align-items: center; }
 }

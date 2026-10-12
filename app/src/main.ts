@@ -12,6 +12,7 @@ import { localHistory } from './core/local-history';
 import { Plates, type PlatesData } from './core/plates';
 import { POIS, poiById, type Poi } from './core/pois';
 import { sunDirection } from './core/sun';
+import { formatAge, formatRelative } from './core/timeline';
 import { formatHash, parseHash, type CameraPose, type ViewState } from './core/url-state';
 import { CRATER_OBSERVED, ImpactEffects, type WinterScenario } from './effects/impact-effects';
 import { Asteroid } from './render/asteroid';
@@ -23,6 +24,7 @@ import { loadRoster } from './life/roster';
 import { Sky } from './render/sky';
 import { Markers } from './ui/markers';
 import { chip, InfoPanel, sourceLinks } from './ui/panel';
+import { ShareSheet } from './ui/share';
 import { TimelineBar } from './ui/timeline-bar';
 import { TopBar } from './ui/topbar';
 
@@ -101,11 +103,15 @@ topbar.setCinematic(mode === 'cine');
 let lastHash = '';
 let hashTimer = 0;
 let lastHashWrite = 0;
-function writeHash(): void {
-  const hash = formatHash({
+/** Everything a link carries: time, camera, playback, the open location card, the scenario. */
+function currentView(): ViewState {
+  return {
     t: clock.t, camera: mode === 'free' ? controls.getPose() : undefined, mode, speed: clock.speed, paused: !clock.playing,
     query: query ?? undefined, queryName: queryName ?? undefined, scenario, preset: place ?? undefined,
-  });
+  };
+}
+function writeHash(): void {
+  const hash = formatHash(currentView());
   lastHashWrite = performance.now();
   if (hash !== lastHash) {
     lastHash = hash;
@@ -275,6 +281,34 @@ panel.onLocate = () => {
     const r = plates.reconstruct(pos.coords.latitude, pos.coords.longitude);
     if (r) showPaleoSpot(r, 'Where you are');
   }, () => { /* permission denied: nothing to do */ }, { maximumAge: 600_000, timeout: 15_000 });
+};
+
+// ── share ────────────────────────────────────────────────────────────────────
+// Sharing freezes the moment: playback pauses while the sheet is open, so the link, the preview and
+// the screen agree. The preview is read from the canvas straight after drawing it.
+const share = new ShareSheet(document.body);
+let resumeAfterShare = false;
+topbar.onShare = timeline.onShare = () => {
+  if (share.isOpen) return;
+  resumeAfterShare = clock.playing;
+  clock.setPlaying(false);
+  renderNow(0);
+  const view = currentView();
+  const base = location.href.split('#')[0];
+  share.open({
+    when: formatRelative(clock.t),
+    age: formatAge(clock.t, IMPACT.ageMa.value),
+    caption: timeline.captionText,
+    frame: renderer.domElement,
+    cinematic: mode === 'cine',
+    link: (playing) => base + formatHash({ ...view, paused: !playing }),
+  });
+  writeHash();
+};
+share.onClose = () => {
+  if (resumeAfterShare) clock.setPlaying(true);
+  resumeAfterShare = false;
+  scheduleHashUpdate();
 };
 
 // ── scenario, overlay, about ─────────────────────────────────────────────────
@@ -461,13 +495,13 @@ declare global {
   interface Window {
     __kt: {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
-      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
+      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; share: ShareSheet; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
       mode: () => 'cine' | 'free';
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
     };
   }
 }
 window.__kt = {
-  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, tier, asteroid, vegetation, herds, mode: () => mode,
+  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, share, tier, asteroid, vegetation, herds, mode: () => mode,
   renderNow, setQuery, effectsReady: () => ensureEffectData(true),
 };

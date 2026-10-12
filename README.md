@@ -80,10 +80,13 @@ Tap any animal to see its species card. Press Play to watch the impact arrive.
 | `+` / `−` | Faster / slower |
 | `O` | Toggle the data overlay |
 | Esc | Close the panel |
+| **Share** (top right; in the control bar on phones) | Freeze this moment and get a link to it, paused or playing on, plus a captioned image |
 
 ## Deep links
 
-Every view is a URL hash, so any moment can be shared. The address bar updates as you move.
+Every view is a URL hash, so any moment can be shared. The address bar updates as you move, and the
+**Share** button gives the same link for the frame on screen (it pauses playback while open, so the link,
+the preview and the screen agree).
 
 | Key | Meaning |
 |---|---|

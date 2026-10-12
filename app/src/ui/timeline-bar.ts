@@ -6,6 +6,7 @@ import { IMPACT } from '../config';
 import type { Clock } from '../core/clock';
 import { currentMarker, MARKERS, nextMarker, prevMarker, type TimelineEvent } from '../core/events';
 import { barToTime, formatAge, formatRate, formatRelative, SEGMENTS, segmentIndexAt, segmentStart, timeToBar } from '../core/timeline';
+import { SHARE_ICON } from './share';
 
 const ICONS = {
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>',
@@ -27,6 +28,8 @@ export class TimelineBar {
   onEvent: ((e: TimelineEvent) => void) | null = null;
   /** Called on any user interaction with the timeline. */
   onUserInput: (() => void) | null = null;
+  /** The bar's own Share button (phones, where the top bar has no room for it). */
+  onShare: (() => void) | null = null;
 
   private readonly rel = el('div', 'kt-rel');
   private readonly age = el('span', 'kt-age');
@@ -104,7 +107,13 @@ export class TimelineBar {
     faster.setAttribute('aria-label', 'Faster');
     speed.append(slower, this.speedVal, faster);
 
-    bar.append(transport, this.track, speed);
+    const share = el('button', 'kt-btn kt-share-mini', `${SHARE_ICON}<span>Share</span>`);
+    share.type = 'button';
+    share.setAttribute('aria-label', 'Share this moment');
+    share.setAttribute('data-testid', 'share-mini');
+    share.addEventListener('click', () => this.onShare?.());
+
+    bar.append(transport, this.track, share, speed);
     this.root.append(top, bar);
     parent.append(this.root);
 
@@ -216,6 +225,11 @@ export class TimelineBar {
       this.caption.textContent = cap;
       this.caption.hidden = !cap;
     }
+  }
+
+  /** The event caption on screen now ('' if none). */
+  get captionText(): string {
+    return this.lastCaption;
   }
 
   dispose(): void {

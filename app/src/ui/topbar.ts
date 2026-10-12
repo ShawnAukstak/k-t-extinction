@@ -1,5 +1,6 @@
-/** Title, science overlay toggle, impact-winter scenario (contested), About. */
+/** Title, science overlay toggle, impact-winter scenario (contested), About, Share. */
 import { WINTER_LOOK, type WinterScenario } from '../effects/impact-effects';
+import { SHARE_ICON } from './share';
 
 export class TopBar {
   readonly root: HTMLElement;
@@ -9,6 +10,7 @@ export class TopBar {
   onCinematic: (() => void) | null = null;
   onSound: ((on: boolean) => void) | null = null;
   onPlaces: (() => void) | null = null;
+  onShare: (() => void) | null = null;
   private readonly soundBtn: HTMLButtonElement;
   private readonly cineBtn: HTMLButtonElement;
   private readonly overlayBtn: HTMLButtonElement;
@@ -35,6 +37,7 @@ export class TopBar {
         <button type="button" class="kt-tool" aria-pressed="false" data-testid="overlay-toggle" title="Show fronts: air blast, earthquake, ejecta, tsunami (O)">Overlay</button>
         <button type="button" class="kt-tool" aria-pressed="false" data-testid="sound-toggle" title="Sound (an interpretation: space is silent)">Sound</button>
         <button type="button" class="kt-tool" data-testid="about" title="About the data">About</button>
+        <button type="button" class="kt-tool kt-share-btn" data-testid="share" title="Share this moment: a link to this time and view">${SHARE_ICON}<span>Share</span></button>
       </div>`;
     parent.append(this.root);
     this.overlayBtn = this.root.querySelector('[data-testid="overlay-toggle"]')!;
@@ -56,6 +59,7 @@ export class TopBar {
     this.scenarioSel.addEventListener('change', () => this.onScenario?.(this.scenarioSel.value as WinterScenario));
     this.root.querySelector('[data-testid="about"]')!.addEventListener('click', () => this.onAbout?.());
     this.root.querySelector('[data-testid="places"]')!.addEventListener('click', () => this.onPlaces?.());
+    this.root.querySelector('[data-testid="share"]')!.addEventListener('click', () => this.onShare?.());
   }
 
   setOverlay(on: boolean): void {

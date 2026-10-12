@@ -28,6 +28,13 @@ describe('url state', () => {
     expect(v.queryName).toBe('Tokyo, Japan');
     expect(parseHash('#qn=Nowhere').queryName).toBeUndefined(); // needs q
   });
+  it('keeps close-up cameras precise enough to frame one animal', () => {
+    const h = formatHash({ camera: { lat: 53.5066123, lon: -82.4061987, range: 12.34, heading: 30, tilt: 70 } });
+    expect(h).toContain('c=53.506612,-82.406199,12.3,30,70');
+    const c = parseHash(h).camera!;
+    // Within ~0.1 m on the ground.
+    expect(Math.abs(c.lat - 53.5066123) * 111_000).toBeLessThan(0.1);
+  });
   it('wraps longitude when formatting', () => {
     expect(formatHash({ camera: { lat: 0, lon: 200, range: 10, heading: -90, tilt: 0 } })).toContain('c=0,-160,10,270,0');
   });
