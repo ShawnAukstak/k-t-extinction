@@ -3,16 +3,19 @@
  * of simulation time. Canonical simulation time `t` is float64 seconds since first contact
  * (negative = before impact). See docs/tech/ux-timeline-camera-sharing.md §1.
  *
- * Within a segment the bar position maps to time either linearly or logarithmically. Playback moves
- * the playhead at a constant speed along each segment, so log segments speed up through sim time:
- * the event "slows down" near the impact and accelerates through the aftermath.
+ * Within a segment the bar position maps to time linearly, logarithmically, or as an inverse
+ * hyperbolic sine (log-like on both sides of zero with a linear core). Playback moves the playhead at
+ * a constant speed along each segment, so log and asinh segments ease through sim time: the event
+ * slows down smoothly into the impact and accelerates through the aftermath.
  */
 import { YEAR_S } from '../config';
 
 export type SegmentScale =
   | 'linear'
   /** log of |t| — for segments wholly before or wholly after t = 0. */
-  | 'log';
+  | 'log'
+  /** asinh(t / core) — spans t = 0: slowest (about real time) within ±core of it, log-like beyond. */
+  | 'asinh';
 
 export interface Segment {
   id: string;
@@ -25,13 +28,17 @@ export interface Segment {
   width: number;
   /** Wall-clock seconds to play the whole segment at 1× speed. */
   playSeconds: number;
+  /** asinh scale: the half-width of the slow core, seconds. */
+  core?: number;
 }
 
 const MIN = 60, HOUR = 3600, DAY = 86_400;
 
 export const SEGMENTS: readonly Segment[] = [
   { id: 'approach', label: 'Approach',       t0: -HOUR,    t1: -MIN,        scale: 'log',    width: 0.08, playSeconds: 12 },
-  { id: 'impact',   label: 'Impact',         t0: -MIN,     t1: MIN,         scale: 'linear', width: 0.14, playSeconds: 120 },
+  // Eases from the approach's ~20× down to ~1.4× at the impact itself and back up to the crater's 20×,
+  // so the final minute plays in ~10 s with only the entry and impact in near-real time.
+  { id: 'impact',   label: 'Impact',         t0: -MIN,     t1: MIN,         scale: 'asinh',  width: 0.14, playSeconds: 20, core: 4 },
   { id: 'crater',   label: 'Crater',   t0: MIN,      t1: 15 * MIN,    scale: 'linear', width: 0.10, playSeconds: 42 },
   { id: 'hours',    label: 'First day',      t0: 15 * MIN, t1: DAY,         scale: 'log',    width: 0.18, playSeconds: 45 },
   { id: 'weeks',    label: 'First weeks',    t0: DAY,      t1: 60 * DAY,    scale: 'log',    width: 0.10, playSeconds: 20 },
@@ -71,6 +78,10 @@ export function segmentIndexAt(t: number): number {
 export function localToTime(seg: Segment, f: number): number {
   const ff = Math.min(1, Math.max(0, f));
   if (seg.scale === 'linear') return seg.t0 + (seg.t1 - seg.t0) * ff;
+  if (seg.scale === 'asinh') {
+    const c = seg.core ?? 1, a = Math.asinh(seg.t0 / c), b = Math.asinh(seg.t1 / c);
+    return c * Math.sinh(a + (b - a) * ff);
+  }
   // log: both ends share a sign
   const sign = seg.t0 < 0 ? -1 : 1;
   const a = Math.abs(seg.t0), b = Math.abs(seg.t1);
@@ -81,6 +92,10 @@ export function localToTime(seg: Segment, f: number): number {
 export function timeToLocal(seg: Segment, t: number): number {
   const tc = Math.min(Math.max(t, Math.min(seg.t0, seg.t1)), Math.max(seg.t0, seg.t1));
   if (seg.scale === 'linear') return (tc - seg.t0) / (seg.t1 - seg.t0);
+  if (seg.scale === 'asinh') {
+    const c = seg.core ?? 1, a = Math.asinh(seg.t0 / c), b = Math.asinh(seg.t1 / c);
+    return (Math.asinh(tc / c) - a) / (b - a);
+  }
   const a = Math.abs(seg.t0), b = Math.abs(seg.t1);
   return Math.log(Math.abs(tc) / a) / Math.log(b / a);
 }
@@ -139,9 +154,14 @@ export function advance(t: number, dtWall: number, speed: number): number {
 export function rateAt(t: number): number {
   const seg = SEGMENTS[segmentIndexAt(t)];
   if (seg.scale === 'linear') return (seg.t1 - seg.t0) / seg.playSeconds;
+  if (seg.scale === 'asinh') {
+    // dt/df = c·cosh(asinh(t/c))·(b − a) = √(c² + t²)·(b − a)
+    const c = seg.core ?? 1, tc = clampTime(t);
+    return (Math.hypot(c, tc) * (Math.asinh(seg.t1 / c) - Math.asinh(seg.t0 / c))) / seg.playSeconds;
+  }
   const a = Math.abs(seg.t0), b = Math.abs(seg.t1);
-  // dt/df = |t| ln(b/a)
-  return (Math.abs(clampTime(t)) * Math.log(b / a)) / seg.playSeconds;
+  // |dt/df| = |t|·|ln(b/a)| (b < a before the impact, where time runs toward zero)
+  return (Math.abs(clampTime(t)) * Math.abs(Math.log(b / a))) / seg.playSeconds;
 }
 
 // ── formatting ────────────────────────────────────────────────────────────────
@@ -189,6 +209,7 @@ export function formatRate(simPerWall: number): string {
   const r = Math.abs(simPerWall);
   if (r < 0.95) return `${r.toFixed(2)}× (slow motion)`;
   if (r < 1.05) return 'real time';
+  if (r < 2.95) return `×${r.toFixed(1)}`;
   if (r < 120) return `×${Math.round(r)}`;
   if (r < 0.95 * HOUR) return `${Math.round(r / 60)} min / s`;
   if (r < 0.95 * DAY) return `${Math.round(r / HOUR)} h / s`;

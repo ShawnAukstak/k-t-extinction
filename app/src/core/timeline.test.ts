@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SEGMENTS, T_END, T_START, advance, barToTime, formatAge, formatRate, formatRelative, rateAt,
-  segmentIndexAt, timeToBar,
+  segmentIndexAt, timeToBar, timeToLocal,
 } from './timeline';
 import { YEAR_S } from '../config';
 
@@ -41,20 +41,35 @@ describe('bar <-> time', () => {
 });
 
 describe('advance', () => {
-  it('plays the Impact minute in real time', () => {
-    expect(advance(0, 1, 1)).toBeCloseTo(1, 9);
-    expect(rateAt(10)).toBeCloseTo(1, 9);
+  it('eases into the impact without a sudden slowdown, and plays the final minute in ~10 s', () => {
+    // Close to real time at the impact itself…
+    expect(rateAt(0)).toBeGreaterThan(1);
+    expect(rateAt(0)).toBeLessThan(2);
+    // …and no jump in pace where the Impact segment meets its neighbours (within 5 %).
+    for (let i = 1; i < 3; i++) {
+      const b = SEGMENTS[i].t0;
+      expect(rateAt(b - 1e-6) / rateAt(b), SEGMENTS[i].id).toBeCloseTo(1, 1);
+    }
+    const impact = SEGMENTS.find((s) => s.id === 'impact')!;
+    const wall = (t0: number, t1: number) => (timeToLocal(impact, t1) - timeToLocal(impact, t0)) * impact.playSeconds;
+    expect(wall(-60, 0)).toBeGreaterThan(7);
+    expect(wall(-60, 0)).toBeLessThan(13);
+    expect(wall(-5, 0)).toBeGreaterThan(2); // the entry still gets a couple of seconds
+    // advance() and rateAt() agree.
+    expect((advance(0, 0.01, 1) - 0) / 0.01).toBeCloseTo(rateAt(0), 1);
   });
   it('crosses segment boundaries, carrying the remainder', () => {
     const impact = SEGMENTS.find((s) => s.id === 'impact')!;
     const crater = SEGMENTS.find((s) => s.id === 'crater')!;
-    // 2 s before the end of Impact, advance 5 wall seconds: 2 s in Impact + 3 s of Crater pacing
+    // 2 s before the end of Impact, advance 5 wall seconds: the rest of Impact, then Crater pacing
+    const left = (1 - timeToLocal(impact, impact.t1 - 2)) * impact.playSeconds;
     const t = advance(impact.t1 - 2, 5, 1);
     const craterRate = (crater.t1 - crater.t0) / crater.playSeconds;
-    expect(t).toBeCloseTo(crater.t0 + 3 * craterRate, 6);
+    expect(t).toBeCloseTo(crater.t0 + (5 - left) * craterRate, 6);
   });
   it('runs backwards with negative speed and stops at the ends', () => {
-    expect(advance(5, 2, -1)).toBeCloseTo(3, 9);
+    const impact = SEGMENTS.find((s) => s.id === 'impact')!;
+    expect(timeToLocal(impact, advance(5, 2, -1))).toBeCloseTo(timeToLocal(impact, 5) - 2 / impact.playSeconds, 9);
     expect(advance(T_START + 1, 1000, -1)).toBe(T_START);
     expect(advance(T_END - 1, 1000, 1)).toBeCloseTo(T_END, -3);
   });
@@ -82,6 +97,7 @@ describe('formatting', () => {
   });
   it('formats rates', () => {
     expect(formatRate(1)).toBe('real time');
+    expect(formatRate(1.36)).toBe('×1.4');
     expect(formatRate(28)).toBe('×28');
     expect(formatRate(3600)).toBe('1 h / s');
     expect(formatRate(3 * YEAR_S)).toBe('3 yr / s');

@@ -3,16 +3,17 @@ import { expectNoErrors, trackErrors, waitForGlobe } from './helpers';
 
 const t = (page: import('@playwright/test').Page) => page.evaluate(() => (window as any).__kt.clock.t as number);
 
-test('plays in real time through the impact minute and pauses', async ({ page }) => {
+test('slows to near real time at the impact and pauses', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-30&v=1');
+  await page.goto('/#t=-3&v=1');
   await waitForGlobe(page);
   const t0 = await t(page);
   await page.waitForTimeout(1500);
   const t1 = await t(page);
-  expect(t1 - t0).toBeGreaterThan(0.8);
-  expect(t1 - t0).toBeLessThan(3);
-  await expect(page.getByTestId('timeline')).toContainText('real time');
+  // ~1.4–2× around the impact (the eased Impact segment), not the ×20 of the minute's edges
+  expect(t1 - t0).toBeGreaterThan(1);
+  expect(t1 - t0).toBeLessThan(5);
+  await expect(page.getByTestId('timeline')).toContainText(/×1\.\d|×2\.\d/);
 
   await page.getByRole('button', { name: 'Pause' }).click();
   const paused = await t(page);

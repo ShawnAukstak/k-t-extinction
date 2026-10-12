@@ -3,8 +3,8 @@
  * timeline scrubs the camera too. Shots are blended in spherical coordinates around Earth's centre
  * (radius in log space, direction by slerp) so transitions never cut through the planet.
  *
- *   ride     beside the asteroid on its last hour in, Earth growing ahead          t < −45 s
- *   hold     ~350 km south of the crater, looking north, watching entry and impact  −35 s … 3 s
+ *   ride     beside the asteroid on its last hour in, Earth growing ahead          t < −25 s
+ *   hold     ~350 km south of the crater, looking north, watching entry and impact  −10 s … 3 s
  *   aftermath over the crater, pulling back as the plume and fireball rise          25 s … 30 min
  *   global   the whole hemisphere, slowly turning, for hours to millennia          > 2 h
  *
@@ -108,8 +108,8 @@ export class Cinematic {
   /** Camera frame at sim time t, for a screen of this width / height. */
   frame(t: number, aspect = 1.6): CameraFrame {
     const shots: [CameraFrame, number][] = [];
-    const wRide = 1 - smooth(-45, -35, t);
-    const wHold = smooth(-45, -35, t) * (1 - smooth(3, 25, t));
+    const wRide = 1 - smooth(-25, -10, t); // ~2.5 s on screen at the eased Impact pacing
+    const wHold = smooth(-25, -10, t) * (1 - smooth(3, 25, t));
     const wAfter = smooth(3, 25, t) * (1 - smooth(1800, 7200, t));
     const wGlobal = smooth(1800, 7200, t);
     if (wRide > 1e-4) shots.push([this.ride(t, aspect), wRide]);
