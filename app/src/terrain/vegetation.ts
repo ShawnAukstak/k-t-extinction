@@ -21,10 +21,12 @@ import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
 import type { Heightfield } from './heightfield';
 import { simplex3 } from './noise';
-import { plantGeometry, plantMix, type PlantKind } from './plants';
+import { makeFoliageAtlas } from './foliage-atlas';
+import { plantGeometry, plantMix, type PlantKind, type PlantLod } from './plants';
 
-const KINDS: PlantKind[] = ['conifer', 'broadleaf', 'palm', 'treefern', 'cycad', 'shrub', 'fern'];
+const KINDS: PlantKind[] = ['conifer', 'araucaria', 'broadleaf', 'palm', 'treefern', 'cycad', 'shrub', 'fern', 'horsetail'];
 const CELL_LEVEL = 14; // ~611 m cells
+const COVER_LEVEL = 18; // ~38 m cells for the dense ground cover near the camera
 
 export interface VegetationOptions {
   /** Cells either side of the camera's cell (desktop 2 → 5×5). */
@@ -34,6 +36,9 @@ export interface VegetationOptions {
   /** Only grow plants when the camera is lower than this, m. */
   maxAltitude: number;
   buildsPerFrame: number;
+  /** Ground cover (small ferns and horsetails) near the camera: cells either side, clumps per ~38 m cell. */
+  coverCells: number;
+  coverPerCell: number;
   /** Where the vegetation map lives (…/data/globe) and its face size. */
   baseUrl: string;
   mapSize: number;
@@ -90,12 +95,27 @@ const vertexShader = /* glsl */ `
 #include <logdepthbuf_pars_vertex>
 ${atmosphereChunk}
 ${effectsChunk}
-attribute float part;
-attribute float pioneer;      // 1 for plants that recolonise first (ferns, shrubs, tree ferns, cycads)
+attribute float part;         // 0 wood, 1 foliage
+attribute float pioneer;      // 1 for plants that recolonise first (ferns, shrubs, tree ferns, cycads, horsetails)
+attribute vec3 aCrown;        // the crown's volume normal (soft lighting for cards)
+attribute float aAO;          // occlusion inside the crown
 attribute vec4 aInst;         // x variation, y heat exposure / ignition, z blast arrival (s), w blast wind (m/s)
 uniform vec3 uCamPosKm;
 uniform vec3 uFogColor;
-varying vec3 vColor;
+uniform float uFadeM;         // distance over which plants are drawn (fades out over the last quarter)
+varying vec2 vUv;
+varying vec3 vBase;
+varying vec3 vN;
+varying vec3 vC;
+varying vec3 vUp;
+varying float vAO;
+varying float vFoliage;
+varying float vLeafLoss;
+varying vec3 vSunT;
+varying vec3 vSky;
+varying vec3 vFogA;
+varying vec3 vFogB;
+varying vec3 vView;
 varying float vFade;
 
 vec3 rotateAxis(vec3 v, vec3 k, float a) {
@@ -109,6 +129,7 @@ void main() {
   vec3 up = normalize(cellWorld + base);
   vec3 rel = rel4.xyz - base;
   vec3 nrm = normalize(mat3(instanceMatrix) * normal);
+  vec3 crown = normalize(mat3(instanceMatrix) * aCrown);
 
   // Fate: killed by the fireball's heat, flattened by the air blast, or by the impact winter (the
   // scenario's severity sets what fraction). Then dead crowns drop their leaves, standing trunks fall
@@ -127,17 +148,20 @@ void main() {
   float dead = max(max(burnt, flatten), frozen);
   float grow = dead > 0.0 ? smoothstep(r3 * 0.8, r3 * 0.8 + 0.2, mix(uLife.z, uLife.y, pioneer)) : 0.0;
 
-  vec3 leaf = mix(vec3(0.045, 0.085, 0.035), vec3(0.075, 0.11, 0.04), aInst.x);
-  vec3 bark = vec3(0.09, 0.07, 0.05);
+  vec3 leaf = mix(vec3(0.04, 0.075, 0.03), vec3(0.075, 0.105, 0.038), aInst.x);
+  vec3 bark = vec3(0.085, 0.066, 0.048) * (0.8 + 0.4 * r2);
   vec3 c = foliage ? leaf : bark;
+  vLeafLoss = 0.0;
   if (grow > 0.0) {
     rel *= grow; // the replacement: upright, green, growing
   } else {
     if (foliage) {
-      // Survivors yellow under the veil; the dead brown, thin and lose their leaves within a year or two.
+      // Survivors yellow under the veil; the dead brown and lose their leaves within a year or two;
+      // burnt foliage is gone at once.
       c = mix(c, vec3(0.11, 0.085, 0.055), max(dead, 0.4 * uLife.x * (1.0 - uLife.y)));
-      rel = mix(rel, up * dot(rel, up), 0.55 * dead);
-      rel *= 1.0 - max(burnt, dead * smoothstep(0.4, 1.6, yrs));
+      rel = mix(rel, up * dot(rel, up), 0.25 * dead);
+      rel *= 1.0 - burnt;
+      vLeafLoss = dead * smoothstep(0.15, 1.4, yrs);
     }
     c = mix(c, vec3(0.025, 0.022, 0.02), burnt);
     float tFall = 5.0 + 25.0 * r3, tRot = tFall + 20.0 + 60.0 * r2;
@@ -152,27 +176,35 @@ void main() {
       vec3 axis = normalize(cross(up, normalize(dir + 1e-6)));
       rel = rotateAxis(rel, axis, fall);
       nrm = rotateAxis(nrm, axis, fall);
+      crown = rotateAxis(crown, axis, fall);
     }
   }
   vec3 winter = fxWinter(up);
-  float snow = smoothstep(-1.0, -8.0, winter.y) * smoothstep(-2.0, -6.0, winter.z) * smoothstep(0.2, 0.8, dot(nrm, up));
-  c = mix(c, vec3(0.75, 0.78, 0.82), snow);
+  float snow = smoothstep(-1.0, -8.0, winter.y) * smoothstep(-2.0, -6.0, winter.z) * smoothstep(0.2, 0.8, dot(crown, up));
+  vBase = mix(c, vec3(0.75, 0.78, 0.82), snow);
+  vUv = uv;
+  vN = nrm;
+  vC = crown;
+  vUp = up;
+  vAO = aAO;
+  vFoliage = part;
 
-  // Lighting (per vertex: plants are small and many).
+  // Light reaching the plant (per vertex: smooth over a plant), sky fill, and haze/dust as an affine map.
   vec3 L = uSunDir;
   vec3 pKm = (cellWorld + base) / 1000.0;
-  vec3 sunT = sunTransmittance(pKm + up * 0.05, L) * winter.x;
-  float ndl = max(0.0, dot(nrm, L)) * 0.8 + 0.2 * max(0.0, dot(up, L));
-  vec3 skyFill = vec3(0.05, 0.075, 0.11) * smoothstep(-0.15, 0.25, dot(up, L)) * uSunScale * winter.x;
-  vec3 radiance = c * (sunT * SUN_E * uSunScale * ndl / PI + skyFill);
+  vSunT = sunTransmittance(pKm + up * 0.05, L) * winter.x * SUN_E * uSunScale / PI;
+  vSky = vec3(0.05, 0.075, 0.11) * smoothstep(-0.15, 0.25, dot(up, L)) * uSunScale * winter.x;
 
   vec4 mv = modelViewMatrix * vec4(base + rel, 1.0);
   float dist = length(mv.xyz);
-  // Simple aerial perspective for the short distances plants are drawn at.
+  vView = normalize(transpose(mat3(viewMatrix)) * -mv.xyz);
   float haze = 1.0 - exp(-dist / 45000.0);
-  vColor = mix(radiance, uFogColor * winter.x, haze);
-  vColor = fxBlastFog(vColor, dist, fxBlastDust(fxAngle(up)), up, up, 0.0, uBlastDustColor);
-  vFade = 1.0 - smoothstep(0.75, 1.0, dist / 1800.0);
+  float bd = fxBlastDust(fxAngle(up));
+  vec3 f0 = fxBlastFog(uFogColor * winter.x * haze, dist, bd, up, up, 0.0, uBlastDustColor);
+  vec3 f1 = fxBlastFog(mix(vec3(1.0), uFogColor * winter.x, haze), dist, bd, up, up, 0.0, uBlastDustColor);
+  vFogB = f0;
+  vFogA = f1 - f0;
+  vFade = 1.0 - smoothstep(0.75, 1.0, dist / uFadeM);
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>
 }
@@ -181,14 +213,56 @@ void main() {
 const fragmentShader = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_fragment>
-varying vec3 vColor;
+uniform sampler2D uAtlas;
+uniform vec3 uSunDir;
+varying vec2 vUv;
+varying vec3 vBase;
+varying vec3 vN;
+varying vec3 vC;
+varying vec3 vUp;
+varying float vAO;
+varying float vFoliage;
+varying float vLeafLoss;
+varying vec3 vSunT;
+varying vec3 vSky;
+varying vec3 vFogA;
+varying vec3 vFogB;
+varying vec3 vView;
 varying float vFade;
+
 void main() {
   #include <logdepthbuf_fragment>
   // Dithered fade at the edge of the planted area, so cells don't pop.
   float d = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
   if (d > vFade) discard;
-  gl_FragColor = vec4(vColor, 1.0);
+  vec3 V = normalize(vView);
+  vec3 n = normalize(vN);
+  if (dot(n, V) < 0.0) n = -n;
+  vec3 col, N;
+  float alpha = 1.0, trans = 0.0;
+  if (vFoliage > 0.5) {
+    vec4 tx = texture2D(uAtlas, vUv);
+    // Mip levels average the cut-out away: boost alpha with distance so crowns stay full, then
+    // sharpen it into a crisp edge (anti-aliased by alpha-to-coverage).
+    vec2 du = dFdx(vUv * 1024.0), dv = dFdy(vUv * 1024.0);
+    float lod = 0.5 * log2(max(dot(du, du), dot(dv, dv)) + 1e-6);
+    float a = tx.a * (1.0 + max(0.0, lod) * 0.28);
+    float cut = 0.5 + 0.45 * vLeafLoss;
+    alpha = clamp((a - cut) / max(fwidth(a), 1e-3) + 0.5, 0.0, 1.0);
+    if (alpha < 0.3) discard;
+    col = vBase * (0.5 + 0.95 * tx.r);
+    N = normalize(mix(n, normalize(vC), 0.6));
+    // Sunlight through the leaves when looking toward the Sun.
+    trans = pow(max(0.0, dot(-V, uSunDir)), 3.0) * 0.55 * (1.0 - 0.4 * vAO);
+  } else {
+    // Bark: vertical fissures.
+    float f = fract(sin(floor(vUv.x * 18.0) * 12.9898) * 43758.5453);
+    col = vBase * (0.75 + 0.5 * f);
+    N = n;
+  }
+  float ndl = max(0.0, (dot(N, uSunDir) + 0.3) / 1.3);
+  vec3 radiance = col * (vSunT * (ndl * mix(0.45, 1.0, vAO) + trans) + vSky * (0.45 + 0.55 * max(0.0, dot(N, vUp))) * vAO);
+  gl_FragColor = vec4(radiance * vFogA + vFogB, alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
@@ -209,15 +283,16 @@ function treeIgnitionMJm2(energyMt: number): number {
   return 0.25 * energyMt ** (1 / 6);
 }
 
-interface Cell { key: string; group: Group; lastUsed: number }
+interface Cell { key: string; group: Group; lastUsed: number; lod?: PlantLod; meshes: { mesh: InstancedMesh; hi: BufferGeometry; lo: BufferGeometry }[] }
 
 export class Vegetation {
   readonly group = new Group();
   readonly material: ShaderMaterial;
-  private readonly fronds: ShaderMaterial;
+  private readonly coverMaterial: ShaderMaterial;
   readonly map = new VegetationMap();
-  private readonly geoms = new Map<PlantKind, BufferGeometry>();
+  private readonly geoms = new Map<string, BufferGeometry>();
   private readonly cells = new Map<string, Cell>();
+  private readonly cover = new Map<string, Cell>();
   private frame = 0;
   private readonly ignition: number;
   private loading = false;
@@ -230,24 +305,25 @@ export class Vegetation {
     private readonly opt: VegetationOptions,
   ) {
     this.group.name = 'vegetation';
-    for (const k of KINDS) {
-      const g = plantGeometry(k);
-      const pioneer = k === 'shrub' || k === 'treefern' || k === 'cycad' || k === 'fern' ? 1 : 0;
+    for (const k of KINDS) for (const lod of ['hi', 'lo'] as const) {
+      const g = plantGeometry(k, lod);
+      const pioneer = k === 'shrub' || k === 'treefern' || k === 'cycad' || k === 'fern' || k === 'horsetail' ? 1 : 0;
       g.setAttribute('pioneer', new BufferAttribute(new Float32Array(g.attributes.position.count).fill(pioneer), 1));
-      this.geoms.set(k, g);
+      this.geoms.set(`${k}/${lod}`, g);
     }
     this.ignition = treeIgnitionMJm2(crater.energyMt);
+    // Foliage cards are single planes: both sides drawn; cut-out edges smoothed by alpha-to-coverage.
+    const uniforms = { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) }, uAtlas: { value: makeFoliageAtlas() } };
     this.material = new ShaderMaterial({
-      vertexShader, fragmentShader,
-      uniforms: { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) } },
+      vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: { value: 1800 } }, side: DoubleSide, alphaToCoverage: true,
     });
-    // Fronds and palm leaves are single planes: draw both sides (closed crowns keep back-face culling).
-    this.fronds = this.material.clone();
-    this.fronds.uniforms = this.material.uniforms;
-    this.fronds.side = DoubleSide;
+    // Ground cover shares everything but its (short) drawing distance.
+    this.coverMaterial = new ShaderMaterial({
+      vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: { value: 120 } }, side: DoubleSide, alphaToCoverage: true,
+    });
   }
 
-  private buildCell(face: number, cx: number, cy: number): Group {
+  private buildCell(face: number, cx: number, cy: number): Cell {
     const n = 2 ** CELL_LEVEL;
     const rnd = hash(face + 1, cx, cy);
     const center = faceDirection(face, (cx + 0.5) / n, (cy + 0.5) / n, new Vector3());
@@ -286,7 +362,9 @@ export class Vegetation {
       const open = clearing(d);
       if (veg.cls !== 'arid_shrub' && rnd() < 0.25 + 0.35 * open) {
         faceDirection(face, (cx + (i + rnd()) / per) / n, (cy + (j + rnd()) / per) / n, d2);
-        place('fern', d2, 0.2);
+        // Horsetails where it is wet (wetlands, and low ground near the coast), ferns elsewhere.
+        const wet = veg.cls === 'wetland' || this.heights.height(d2, 30) < 25;
+        place(wet && rnd() < 0.6 ? 'horsetail' : 'fern', d2, 0.1);
       }
       // Clumpy: thin by density, with clearings.
       if (rnd() > veg.density * (1 - 0.9 * open) * (0.75 + 0.5 * rnd())) continue;
@@ -295,23 +373,72 @@ export class Vegetation {
       for (const [k, w] of mix) { if ((r -= w) <= 0) { kind = k; break; } }
       place(kind, d, 0.6);
     }
+    return this.makeCell(`${face}/${cx}/${cy}`, centerPos, lists, this.material);
+  }
+
+  /** Instanced meshes for a cell: one per kind, with a near and a far geometry sharing the instance data. */
+  private makeCell(key: string, centerPos: Vector3, lists: Map<PlantKind, { m: Matrix4; inst: number[] }[]>, material: ShaderMaterial): Cell {
     const g = new Group();
     g.position.copy(centerPos);
+    const meshes: Cell['meshes'] = [];
     for (const [kind, list] of lists) {
-      const flat = kind === 'palm' || kind === 'treefern' || kind === 'cycad' || kind === 'fern';
-      const mesh = new InstancedMesh(this.geoms.get(kind)!, flat ? this.fronds : this.material, list.length);
       const inst = new Float32Array(list.length * 4);
+      const attr = new InstancedBufferAttribute(inst, 4);
+      const [hi, lo] = (['hi', 'lo'] as const).map((lod) => {
+        const geo = this.geoms.get(`${kind}/${lod}`)!.clone();
+        geo.setAttribute('aInst', attr);
+        return geo;
+      });
+      const mesh = new InstancedMesh(hi, material, list.length);
       list.forEach((e, i) => { mesh.setMatrixAt(i, e.m); inst.set(e.inst, i * 4); });
-      mesh.geometry = this.geoms.get(kind)!.clone();
-      mesh.geometry.setAttribute('aInst', new InstancedBufferAttribute(inst, 4));
       mesh.instanceMatrix.needsUpdate = true;
       mesh.frustumCulled = false;
       mesh.renderOrder = 3;
       g.add(mesh);
+      meshes.push({ mesh, hi, lo });
       this.instances += list.length;
     }
     g.updateMatrixWorld(true);
-    return g;
+    return { key, group: g, lastUsed: this.frame, lod: 'hi', meshes };
+  }
+
+  /** Small ferns and horsetails, densely, in ~38 m cells right around the camera. */
+  private buildCoverCell(face: number, cx: number, cy: number): Cell {
+    const n = 2 ** COVER_LEVEL;
+    const rnd = hash(face + 101, cx, cy);
+    const center = faceDirection(face, (cx + 0.5) / n, (cy + 0.5) / n, new Vector3());
+    const centerPos = center.clone().multiplyScalar(EARTH_RADIUS + Math.max(0, this.heights.height(center, 30)));
+    const lists = new Map<PlantKind, { m: Matrix4; inst: number[] }[]>();
+    const veg = this.map.sample(center);
+    const rKm = centralAngle(IMPACT.site.value, vecToLatLon(center)) * 6371;
+    const fx = atDistance(this.crater, Math.max(1, rKm));
+    const heat = fx.fireballVisible ? fx.thermalMJm2 / this.ignition : 0;
+    const count = veg.cls === 'water' || veg.cls === 'desert' || veg.cls === 'rock' ? 0
+      : Math.round(this.opt.coverPerCell * (veg.cls === 'arid_shrub' ? 0.15 : 0.35 + 0.65 * Math.min(1, veg.density + 0.3)));
+    const wetCell = veg.cls === 'wetland';
+    const d = new Vector3(), q = new Quaternion(), yaw = new Quaternion(), pos = new Vector3(), scl = new Vector3(), m = new Matrix4();
+    for (let i = 0; i < count; i++) {
+      faceDirection(face, (cx + rnd()) / n, (cy + rnd()) / n, d);
+      const h = this.heights.height(d, 30);
+      if (h < 1) continue;
+      const kind = (wetCell || h < 25) && rnd() < 0.55 ? 'horsetail' : 'fern';
+      pos.copy(d).multiplyScalar(EARTH_RADIUS + h - 0.05).sub(centerPos);
+      q.setFromUnitVectors(new Vector3(0, 1, 0), d);
+      yaw.setFromAxisAngle(new Vector3(0, 1, 0), rnd() * Math.PI * 2);
+      q.multiply(yaw);
+      const sc = 0.45 + rnd() * 0.6;
+      scl.set(sc, sc * (0.8 + 0.4 * rnd()), sc);
+      m.compose(pos, q, scl);
+      let list = lists.get(kind);
+      if (!list) lists.set(kind, (list = []));
+      list.push({ m: m.clone(), inst: [rnd(), heat * (0.8 + 0.4 * rnd()), fx.blastArrivalS, fx.windMs * (0.85 + 0.3 * rnd())] });
+    }
+    return this.makeCell(`${face}/${cx}/${cy}`, centerPos, lists, this.coverMaterial);
+  }
+
+  private dropCell(cell: Cell): void {
+    this.group.remove(cell.group);
+    for (const { mesh, hi, lo } of cell.meshes) { hi.dispose(); lo.dispose(); mesh.dispose(); this.instances -= mesh.count; }
   }
 
   update(camera: PerspectiveCamera, fogColor: Vector3): void {
@@ -331,25 +458,54 @@ export class Vegetation {
     const cx = Math.floor(s * n), cy = Math.floor(t * n);
     let builds = 0;
     const R = this.opt.radiusCells;
+    const cellSize = ((Math.PI / 2) * EARTH_RADIUS) / n;
     for (const c of cellsAround(face, cx, cy, R, n)) {
       const key = `${c.face}/${c.x}/${c.y}`;
       let cell = this.cells.get(key);
       if (!cell) {
         if (builds >= this.opt.buildsPerFrame) continue;
         builds++;
-        cell = { key, group: this.buildCell(c.face, c.x, c.y), lastUsed: this.frame };
+        cell = this.buildCell(c.face, c.x, c.y);
         this.cells.set(key, cell);
         this.group.add(cell.group);
       }
       cell.lastUsed = this.frame;
+      // Full detail in the cells around the camera, fewer and larger cards beyond.
+      const lod: PlantLod = cell.group.position.distanceTo(camera.position) < cellSize * 1.6 ? 'hi' : 'lo';
+      if (lod !== cell.lod) {
+        cell.lod = lod;
+        for (const m of cell.meshes) m.mesh.geometry = lod === 'hi' ? m.hi : m.lo;
+      }
+    }
+    // Ground cover, only when close to the ground.
+    if (alt < 300 && this.opt.coverCells > 0) {
+      const { face: cf, s: cs, t: ct } = directionToFace(camDir);
+      const nc = 2 ** COVER_LEVEL;
+      let coverBuilds = 0;
+      for (const c of cellsAround(cf, Math.floor(cs * nc), Math.floor(ct * nc), this.opt.coverCells, nc)) {
+        const key = `${c.face}/${c.x}/${c.y}`;
+        let cell = this.cover.get(key);
+        if (!cell) {
+          if (coverBuilds >= 4) continue;
+          coverBuilds++;
+          cell = this.buildCoverCell(c.face, c.x, c.y);
+          this.cover.set(key, cell);
+          this.group.add(cell.group);
+        }
+        cell.lastUsed = this.frame;
+        const coverSize = ((Math.PI / 2) * EARTH_RADIUS) / nc;
+        const lod: PlantLod = cell.group.position.distanceTo(camera.position) < coverSize * 1.6 ? 'hi' : 'lo';
+        if (lod !== cell.lod) {
+          cell.lod = lod;
+          for (const m of cell.meshes) m.mesh.geometry = lod === 'hi' ? m.hi : m.lo;
+        }
+      }
     }
     // Drop cells that are out of range.
-    for (const [key, cell] of this.cells) {
+    for (const map of [this.cells, this.cover]) for (const [key, cell] of map) {
       if (cell.lastUsed === this.frame) continue;
-      this.group.remove(cell.group);
-      for (const ch of cell.group.children) (ch as InstancedMesh).geometry.dispose();
-      for (const ch of cell.group.children) this.instances -= (ch as InstancedMesh).count;
-      this.cells.delete(key);
+      this.dropCell(cell);
+      map.delete(key);
     }
   }
 }

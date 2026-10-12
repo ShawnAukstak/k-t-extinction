@@ -112,7 +112,7 @@ void main() {
     vec3 dn = vec3(0.0);
     float shade = 0.0;
     float wsum = 0.0;
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 5; k++) {
       float scale = 512.0 / pow(4.0, float(k));
       float w = 1.0 - smoothstep(scale * 30.0, scale * 120.0, distKm0 * 1000.0);
       if (w <= 0.0) continue;
@@ -130,10 +130,13 @@ void main() {
     float floorK = (1.0 - smoothstep(600.0, 1800.0, distKm0 * 1000.0)) * smoothstep(0.02, 0.2, trees + 0.1);
     if (floorK > 0.0) {
       vec4 f1 = texture2D(uDetail, vDetail / 8.0), f2 = texture2D(uDetail, vDetail / 2.0 + 0.37);
+      // Drier, sparser country (low plant density) has more bare ground, coloured like the map there.
+      float lush = smoothstep(0.08, 0.45, trees);
       vec3 litter = mix(vec3(0.085, 0.062, 0.04), vec3(0.13, 0.1, 0.065), f2.r);
-      vec3 soil = vec3(0.11, 0.085, 0.06);
+      vec3 soil = mix(albedo * 0.85, vec3(0.11, 0.085, 0.06), lush);
+      litter = mix(soil, litter, lush);
       vec3 ferns = mix(vec3(0.05, 0.08, 0.028), vec3(0.08, 0.11, 0.035), f1.a);
-      float green = smoothstep(0.3, 0.5, f1.r * 0.6 + f2.a * 0.4 + 0.15 * (1.0 - trees));
+      float green = smoothstep(0.3, 0.5, f1.r * 0.6 + f2.a * 0.4 + 0.15 * (1.0 - trees)) * mix(0.3, 1.0, lush);
       vec3 floorC = mix(mix(litter, soil, smoothstep(0.6, 0.8, f2.r) * 0.5), ferns, green);
       albedo = mix(albedo, floorC * (0.85 + 0.3 * shade), floorK);
     }
