@@ -2,7 +2,7 @@
 
 > Phases, not dates. Each phase ends with something runnable or shareable. Decisions are in `decisions.md`.
 >
-> **Status (2026-10-11):** Phases 0–4 done; Phase 5 (life) first pass done — placeholder bodies, curated rosters in progress. All tested locally (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit; `npm run check`). Not deployed (local only, D8).
+> **Status (2026-10-12):** Phases 0–5 done, plus a graphics pass (asteroid, clouds, animal models) and Share. All tested (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit; `npm run check`). Deployed as an unlisted Render preview (D8).
 
 ## Phase 0 — Data foundation *(the big initial task)* — **core done**
 
@@ -68,9 +68,9 @@ Built: places with offline plate reconstruction (matches GWS) and `k=` links; "w
 - Fixed-camera presets at POIs (Tanis, Hell Creek, Yucatán platform, Tremp, Seymour, Deccan, antipode).
 - Free-roam at ground level.
 
-## Phase 5 — Life — **done except better models** (5a–5c)
+## Phase 5 — Life — **done** (5a–5d)
 
-Built: procedural low-poly bodies by body plan (D10 placeholders), herds placed at Damuth densities in clearings, simple walk/graze animation, per-animal fate (heat, blast, winter), tap-for-species-card and "Find dinosaurs nearby". Curated species cards and 19 land/sea regions (`data/curated/species/`, `fauna-regions.yaml`); plants die, rot and regrow (fern spike, returning forests); surviving lineages rebound; early Paleocene mammals arrive on the published first-appearance dates (Corral Bluffs, Lyson et al. 2019; San Juan Basin, Flynn et al. 2020, via `recovery.by_region`); the air blast raises a dust wall (illustration) and throws herds. Next: better models (D10) — the ~30 kg Paleocene mammals currently share the small-mammal body and look leggy.
+Built: procedural low-poly bodies by body plan (D10 placeholders), herds placed at Damuth densities in clearings, simple walk/graze animation, per-animal fate (heat, blast, winter), tap-for-species-card and "Find dinosaurs nearby". Curated species cards and 19 land/sea regions (`data/curated/species/`, `fauna-regions.yaml`); plants die, rot and regrow (fern spike, returning forests); surviving lineages rebound; early Paleocene mammals arrive on the published first-appearance dates (Corral Bluffs, Lyson et al. 2019; San Juan Basin, Flynn et al. 2020, via `recovery.by_region`); the air blast raises a dust wall (illustration) and throws herds. Better models (5d, 2026-10-12): one continuous skin lofted along a curved spine per animal, jointed limbs that bend at the knee, the features that identify each group (frills, horns, osteoderms, crests, domes, beaks, feathered wings, scutes), eyes and toes; two levels of detail; per-pixel skin, scale, feather and horn shading. Stocky condylarths and rodent-like multituberculates now have their own proportions. Still procedural (no sculpted or rigged models).
 
 - Herd pipeline: glTF → VAT → InstancedMesh with LOD/impostors; measured on device.
 - 3–6 POIs with curated species lists, group sizes and behaviours from the species cards; densities from Damuth scaling.

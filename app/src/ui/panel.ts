@@ -7,6 +7,7 @@ import type { TimelineEvent } from '../core/events';
 import type { LocalHistory } from '../core/local-history';
 import type { Poi } from '../core/pois';
 import type { FaunaEntry, SpeciesDef } from '../life/fauna';
+import { FEATHERED } from '../life/bodies';
 import { SOURCES } from '../core/sources';
 import { formatRelative } from '../core/timeline';
 
@@ -190,7 +191,7 @@ export class InfoPanel {
       ${sp.notes ? `<p>${esc(sp.notes)}</p>` : ''}
       ${survived}
       ${extra}
-      <p class="kt-note">${chip('chosen')} The 3-D model is a simplified stand-in with the right overall proportions; colours are unknown for these animals and are a guess.</p>
+      <p class="kt-note">${chip('chosen')} The 3-D model is a simplified reconstruction: proportions from skeletal reconstructions, ${FEATHERED.has(sp.group) ? 'feathered as its close relatives are known to have been' : 'scaly or bare skin as current evidence suggests'}. Colours and patterns are unknown and are a guess.</p>
       <div class="kt-sources"><span>Sources</span>${sourceLinks([...sp.sources, ...[sp.survival?.source, rec?.source].filter((x): x is string => !!x)])}</div>`;
     this.open('species');
   }

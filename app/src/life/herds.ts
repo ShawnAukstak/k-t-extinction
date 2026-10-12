@@ -11,7 +11,7 @@
  * Carcasses remain for about a month.
  */
 import {
-  type BufferGeometry, Group, InstancedBufferAttribute, InstancedMesh, type Raycaster, Matrix4, type PerspectiveCamera, Quaternion,
+  BufferAttribute, type BufferGeometry, Group, InstancedBufferAttribute, InstancedMesh, type Raycaster, Matrix4, type PerspectiveCamera, Quaternion,
   ShaderMaterial, Vector3,
 } from 'three';
 import { EARTH_RADIUS, IMPACT } from '../config';
@@ -22,7 +22,7 @@ import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
 import type { Heightfield } from '../terrain/heightfield';
 import { clearing, type VegetationMap } from '../terrain/vegetation';
-import { bodyGeometry } from './bodies';
+import { bodyGeometry, type Lod } from './bodies';
 import { densityPerKm2, regionAt, type FaunaEntry, type RegionDef, type SpeciesDef } from './fauna';
 
 const CELL_LEVEL = 11; // ~4.9 km cells
@@ -70,6 +70,9 @@ interface Herd {
   away: number;
 }
 
+interface Item { herd: Herd; a: Animal; /** World position (m), updated as it moves. */ pos: Vector3 }
+interface LodMesh { mesh: InstancedMesh; anim: InstancedBufferAttribute; look: InstancedBufferAttribute }
+
 interface Cell {
   key: string;
   group: Group;
@@ -79,7 +82,8 @@ interface Cell {
   /** Instance matrices have been set at least once. */
   animated?: boolean;
   herds: Herd[];
-  meshes: Map<string, { mesh: InstancedMesh; anim: InstancedBufferAttribute; look: InstancedBufferAttribute; items: { herd: Herd; a: Animal }[] }>;
+  /** Per species: a detailed and a simple mesh; each frame, near animals go to the first, far ones to the second. */
+  meshes: Map<string, { lods: LodMesh[]; items: Item[] }>;
   lastUsed: number;
 }
 
@@ -90,11 +94,22 @@ ${atmosphereChunk}
 ${effectsChunk}
 attribute float part;
 attribute vec3 pivot;
-attribute float tint;
+attribute vec4 aChain;  // x position along the chain (limbs: knee/elbow at 0.5), yzw the limb's middle joint
+attribute float tint;   // surface: 0 skin, 1 keratin, 2 feathers, 3 membrane, 4 eye, 5 belly
+attribute float aInvH;  // 1 / hip height: patterns scale with the animal
 attribute vec4 aAnim;   // x gait phase (cycles), y walk amount 0–1, z graze 0–1, w fallen 0–1
 attribute vec4 aLook;   // xyz base colour, w time it burnt (s; 0 = never)
 uniform vec3 uFogColor;
-varying vec3 vColor;
+varying vec3 vN;        // world normal
+varying vec3 vUp;
+varying vec3 vPat;      // rest-pose position / hip height, for skin patterns
+varying vec3 vBase;
+varying float vTint;
+varying vec3 vSunT;     // sunlight reaching the animal (after the impact winter)
+varying vec3 vSky;
+varying vec3 vFogA;     // fog as an affine map: colour·A + B
+varying vec3 vFogB;
+varying vec3 vView;     // world direction from the animal toward the camera
 varying float vFade;
 
 vec3 rotX(vec3 v, float a) { float c = cos(a), s = sin(a); return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z); }
@@ -104,21 +119,31 @@ vec3 rotZ(vec3 v, float a) { float c = cos(a), s = sin(a); return vec3(c * v.x -
 void main() {
   vec3 p = position;
   vec3 nrm = normal;
+  vPat = position * aInvH;
   float ph = aAnim.x * 6.2831853;
   float walk = aAnim.y * (1.0 - aAnim.w);
-  // Legs: diagonal pairs swing together.
+  float s = aChain.x;
   if (part > 2.5 && part < 6.5) {
+    // Legs: diagonal pairs move together (bipeds simply alternate). The knee or elbow flexes while the
+    // foot swings forward, so the foot clears the ground.
     float off = (part == 3.0 || part == 6.0) ? 0.0 : 3.14159;
-    float a = sin(ph + off) * 0.5 * walk;
+    float a = sin(ph + off) * 0.42 * walk;
+    vec3 knee = aChain.yzw;
+    if (s > 0.45 && dot(knee, knee) > 0.0) {
+      float flex = max(0.0, -cos(ph + off)) * 0.75 * walk * smoothstep(0.45, 0.56, s);
+      p = knee + rotX(p - knee, flex);
+      nrm = rotX(nrm, flex);
+    }
     p = pivot + rotX(p - pivot, a);
     nrm = rotX(nrm, a);
   } else if (part == 1.0) {
-    // Head: down to graze, a little bob when walking.
-    float a = 0.85 * aAnim.z * (1.0 - walk) + 0.06 * sin(ph * 2.0) * walk;
+    // Neck and head: bend down to graze (more toward the head, so the neck curves), bob when walking.
+    float a = (0.8 * aAnim.z * (1.0 - walk) + 0.05 * sin(ph * 2.0) * walk) * smoothstep(0.0, 1.0, s);
     p = pivot + rotX(p - pivot, a);
     nrm = rotX(nrm, a);
   } else if (part == 2.0) {
-    float a = 0.15 * sin(ph + 1.3) * (0.3 + walk);
+    // Tail: a wave travelling back along it, larger toward the tip.
+    float a = 0.2 * sin(ph - s * 2.5) * (0.3 + walk) * s;
     p = pivot + rotY(p - pivot, a);
     nrm = rotY(nrm, a);
   }
@@ -133,24 +158,30 @@ void main() {
   vec3 base = instanceMatrix[3].xyz;
   vec3 cellWorld = modelMatrix[3].xyz;
   vec3 up = normalize(cellWorld + base);
-  vec3 wn = normalize(mat3(instanceMatrix) * nrm);
+  vUp = up;
+  vN = normalize(mat3(instanceMatrix) * nrm);
+  vTint = tint;
 
-  // Colour: chosen (skin colours are unknown) — countershaded, lighter belly; frills/horns/clubs paler.
-  vec3 c = aLook.xyz * mix(0.75, 1.25, smoothstep(0.6, -0.4, dot(wn, up)));
-  c = mix(c, vec3(0.42, 0.38, 0.30), tint * 0.6);
-  c = mix(c, vec3(0.03, 0.025, 0.02), aLook.w > 0.0 ? step(aLook.w, uT) * step(uT, aLook.w + 31557600.0) : 0.0);
+  // Colour: chosen (skin colours are unknown); burnt animals are charred for a year.
+  vec3 c = aLook.xyz;
+  vBase = mix(c, vec3(0.03, 0.025, 0.02), aLook.w > 0.0 ? step(aLook.w, uT) * step(uT, aLook.w + 31557600.0) : 0.0);
   vec3 winter = fxWinter(up);
   vec3 L = uSunDir;
   vec3 pKm = (cellWorld + base) / 1000.0;
-  vec3 sunT = sunTransmittance(pKm + up * 0.05, L) * winter.x;
-  float ndl = max(0.0, dot(wn, L));
-  vec3 skyFill = vec3(0.05, 0.075, 0.11) * smoothstep(-0.15, 0.25, dot(up, L)) * uSunScale * winter.x;
-  vec3 radiance = c * (sunT * SUN_E * uSunScale * ndl / PI + skyFill * (0.6 + 0.4 * dot(wn, up)));
+  vSunT = sunTransmittance(pKm + up * 0.05, L) * winter.x * SUN_E * uSunScale / PI;
+  vSky = vec3(0.05, 0.075, 0.11) * smoothstep(-0.15, 0.25, dot(up, L)) * uSunScale * winter.x;
 
   vec4 mv = modelViewMatrix * vec4(rel4.xyz, 1.0);
   float dist = length(mv.xyz);
-  vColor = mix(radiance, uFogColor * winter.x, 1.0 - exp(-dist / 45000.0));
-  vColor = fxBlastFog(vColor, dist, fxBlastDust(fxAngle(up)), up, up, 0.0, uBlastDustColor);
+  // Toward the camera, from the precise view-space position (world positions are too large for float32).
+  vView = normalize(transpose(mat3(viewMatrix)) * -mv.xyz);
+  // Aerial haze and blast dust are both mixes toward a colour: affine in the lit colour.
+  float k = 1.0 - exp(-dist / 45000.0);
+  float bd = fxBlastDust(fxAngle(up));
+  vec3 f0 = fxBlastFog(uFogColor * winter.x * k, dist, bd, up, up, 0.0, uBlastDustColor);
+  vec3 f1 = fxBlastFog(mix(vec3(1.0), uFogColor * winter.x, k), dist, bd, up, up, 0.0, uBlastDustColor);
+  vFogB = f0;
+  vFogA = f1 - f0;
   vFade = 1.0 - smoothstep(0.8, 1.0, dist / 9000.0);
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>
@@ -160,13 +191,78 @@ void main() {
 const fragmentShader = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_fragment>
-varying vec3 vColor;
+uniform vec3 uSunDir;
+varying vec3 vN;
+varying vec3 vUp;
+varying vec3 vPat;
+varying vec3 vBase;
+varying float vTint;
+varying vec3 vSunT;
+varying vec3 vSky;
+varying vec3 vFogA;
+varying vec3 vFogB;
+varying vec3 vView;
 varying float vFade;
+
+float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float n3(vec3 p) {
+  vec3 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h3(i), h3(i + vec3(1, 0, 0)), f.x), mix(h3(i + vec3(0, 1, 0)), h3(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(h3(i + vec3(0, 0, 1)), h3(i + vec3(1, 0, 1)), f.x), mix(h3(i + vec3(0, 1, 1)), h3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+// Scales: distance to the nearest cell point, so each scale is a small dome with darker edges.
+float scales(vec3 p) {
+  vec3 i = floor(p), f = fract(p);
+  float d = 1.0;
+  for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec3 o = vec3(float(x), float(y), float(z));
+    vec3 r = o + vec3(h3(i + o), h3(i + o + 17.0), h3(i + o + 31.0)) - f;
+    d = min(d, dot(r, r));
+  }
+  return sqrt(d);
+}
+
 void main() {
   #include <logdepthbuf_fragment>
-  float d = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
-  if (d > vFade) discard;
-  gl_FragColor = vec4(vColor, 1.0);
+  float dither = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
+  if (dither > vFade) discard;
+  vec3 n = normalize(vN);
+  vec3 V = normalize(vView);
+  float m = floor(vTint + 0.5);
+  float under = smoothstep(0.45, -0.55, dot(n, vUp));
+  // Countershading (darker back, paler belly) and broad blotches; colours are chosen, patterns unknown.
+  float blotch = n3(vPat * 1.6) * 0.65 + n3(vPat * 4.1) * 0.35;
+  vec3 c = vBase * mix(0.82, 1.4, under) * (0.82 + 0.36 * blotch);
+  float wrap = 0.0, spec = 0.0, rough = 32.0;
+  // Fine texture: only where it is bigger than a pixel.
+  float px = length(fwidth(vPat));
+  if (m < 0.5 || m > 4.5) {
+    float sc = scales(vPat * 34.0);
+    c *= mix(1.0, 0.82 + 0.3 * smoothstep(0.15, 0.75, sc), 1.0 - smoothstep(0.01, 0.03, px));
+    if (m > 4.5) c = mix(c, vBase * 1.7, 0.6);
+    spec = 0.04;
+  } else if (m < 1.5) {
+    c = mix(vec3(0.42, 0.37, 0.29), vec3(0.62, 0.57, 0.48), n3(vPat * 9.0)) * 0.85;   // horn, beak, claws
+    spec = 0.12; rough = 48.0;
+  } else if (m < 2.5) {
+    // Feathers: streaks running along the body, a soft sheen, light wrapping round.
+    float streak = n3(vec3(vPat.x * 40.0, vPat.y * 40.0, vPat.z * 7.0));
+    c *= 0.85 + 0.3 * mix(1.0, streak, 1.0 - smoothstep(0.01, 0.04, px));
+    wrap = 0.35; spec = 0.03; rough = 12.0;
+  } else if (m < 3.5) {
+    c = vBase * vec3(1.15, 0.9, 0.8) * 0.8; wrap = 0.5;                           // wing membrane
+  } else {
+    c = vec3(0.025, 0.02, 0.015); spec = 0.6; rough = 220.0;                   // eye
+  }
+  vec3 L = uSunDir;
+  float ndl = max(0.0, (dot(n, L) + wrap) / (1.0 + wrap));
+  vec3 H = normalize(L + V);
+  float sp = spec * pow(max(0.0, dot(n, H)), rough) * step(0.0, dot(n, L));
+  // Sky fill from above, a little bounce from the ground below.
+  float skyAmt = 0.55 + 0.45 * dot(n, vUp);
+  vec3 radiance = c * (vSunT * ndl + vSky * skyAmt + vSunT * 0.02 * under) + vSunT * sp;
+  gl_FragColor = vec4(radiance * vFogA + vFogB, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
@@ -236,11 +332,14 @@ export class Herds {
     this.cells.clear();
   }
 
-  private geometry(s: SpeciesDef): BufferGeometry {
-    let g = this.geoms.get(s.id);
+  private geometry(s: SpeciesDef, lod: Lod): BufferGeometry {
+    const key = `${s.id}/${lod}`;
+    let g = this.geoms.get(key);
     if (!g) {
-      g = bodyGeometry({ group: s.group, lengthM: s.lengthM, hipHeightM: s.hipHeightM });
-      this.geoms.set(s.id, g);
+      g = bodyGeometry({ group: s.group, lengthM: s.lengthM, hipHeightM: s.hipHeightM, variant: s.id }, lod);
+      const inv = 1 / Math.max(0.02, s.hipHeightM || s.lengthM * 0.25);
+      g.setAttribute('aInvH', new BufferAttribute(new Float32Array(g.attributes.position.count).fill(inv), 1));
+      this.geoms.set(key, g);
     }
     return g;
   }
@@ -361,26 +460,30 @@ export class Herds {
     const group = new Group();
     group.position.copy(centerPos);
     const meshes: Cell['meshes'] = new Map();
-    const bySpecies = new Map<string, { herd: Herd; a: Animal }[]>();
+    const bySpecies = new Map<string, Item[]>();
     for (const h of herds) for (const a of h.animals) {
       let l = bySpecies.get(h.species.id);
       if (!l) bySpecies.set(h.species.id, (l = []));
-      l.push({ herd: h, a });
+      l.push({ herd: h, a, pos: new Vector3() });
     }
     for (const [id, items] of bySpecies) {
       const sp = this.speciesById.get(id)!;
-      const geo = this.geometry(sp).clone();
-      const anim = new InstancedBufferAttribute(new Float32Array(items.length * 4), 4);
-      const look = new InstancedBufferAttribute(new Float32Array(items.length * 4), 4);
-      items.forEach((it, i) => look.setXYZW(i, ...it.a.look));
-      geo.setAttribute('aAnim', anim);
-      geo.setAttribute('aLook', look);
-      const mesh = new InstancedMesh(geo, this.material, items.length);
-      mesh.frustumCulled = false;
-      mesh.renderOrder = 3;
-      mesh.name = `herd-${id}`;
-      group.add(mesh);
-      meshes.set(id, { mesh, anim, look, items });
+      const lods = (['hi', 'lo'] as const).map((lod) => {
+        // The geometry is shared; only the per-instance attributes belong to this mesh.
+        const geo = this.geometry(sp, lod).clone();
+        const anim = new InstancedBufferAttribute(new Float32Array(items.length * 4), 4);
+        const look = new InstancedBufferAttribute(new Float32Array(items.length * 4), 4);
+        geo.setAttribute('aAnim', anim);
+        geo.setAttribute('aLook', look);
+        const mesh = new InstancedMesh(geo, this.material, items.length);
+        mesh.count = 0;
+        mesh.frustumCulled = false;
+        mesh.renderOrder = 3;
+        mesh.name = `herd-${id}`;
+        group.add(mesh);
+        return { mesh, anim, look };
+      });
+      meshes.set(id, { lods, items });
       this.animals += items.length;
     }
     group.updateMatrixWorld(true);
@@ -389,7 +492,10 @@ export class Herds {
 
   private dropCell(c: Cell): void {
     this.group.remove(c.group);
-    for (const m of c.meshes.values()) { m.mesh.geometry.dispose(); this.animals -= m.items.length; }
+    for (const m of c.meshes.values()) {
+      for (const l of m.lods) { l.mesh.geometry.dispose(); l.mesh.dispose(); }
+      this.animals -= m.items.length;
+    }
   }
 
   private readonly _m = new Matrix4();
@@ -433,7 +539,7 @@ export class Herds {
       // Far cells (animals a few pixels tall) animate every fourth frame, staggered.
       // (A new cell always animates at once: until then its instances all sit at the cell centre.)
       const far = cell.centerPos.distanceTo(camera.position) > 3000;
-      if (!far || !cell.animated || (this.frame + c.x + c.y) % 4 === 0) this.animateCell(cell, t, rate);
+      if (!far || !cell.animated || (this.frame + c.x + c.y) % 4 === 0) this.animateCell(cell, t, rate, camera.position);
     }
     for (const [key, cell] of this.cells) {
       if (cell.lastUsed === this.frame) continue;
@@ -442,13 +548,17 @@ export class Herds {
     }
   }
 
-  private animateCell(cell: Cell, t: number, rate: number): void {
+  private animateCell(cell: Cell, t: number, rate: number, cam: Vector3): void {
     cell.animated = true;
     // At time-lapse speeds, motion would only be jitter: hold animals still.
     const live = Math.abs(rate) < 40;
     const ta = live ? t : 0;
-    for (const { mesh, anim, items } of cell.meshes.values()) {
-      items.forEach(({ herd, a }, i) => {
+    for (const { lods, items } of cell.meshes.values()) {
+      const counts = [0, 0];
+      // Detailed bodies while an animal would be more than ~30 px long; simple ones beyond.
+      const near = 30 * items[0].herd.species.lengthM + 20;
+      items.forEach((item) => {
+        const { herd, a } = item;
         const sp = herd.species;
         const [A, w1, p1, w2, p2] = herd.wander;
         const reborn = a.rebornAt !== undefined && t >= a.rebornAt;
@@ -492,24 +602,27 @@ export class Herds {
         const sc = hidden ? 0.0001 : a.scale;
         this._s.set(sc, sc, sc);
         this._m.compose(this._p, this._q, this._s);
+        item.pos.copy(this._p).add(cell.centerPos);
+        if (hidden) return;
+        const li = item.pos.distanceTo(cam) < near ? 0 : 1;
+        const { mesh, anim, look } = lods[li];
+        const i = counts[li]++;
         mesh.setMatrixAt(i, this._m);
+        look.setXYZW(i, ...a.look);
         const stride = sp.lengthM * 0.9;
         const fallen = dead ? Math.min(1, (t - a.dieAt) / 2.5) : 0;
         anim.setXYZW(i, live ? (tm * Math.max(speed, sp.walkSpeed * walking)) / stride + a.phase : a.phase,
           live ? walking : 0, 1 - walking, fallen);
       });
-      mesh.instanceMatrix.needsUpdate = true;
-      anim.needsUpdate = true;
+      lods.forEach(({ mesh, anim, look }, li) => {
+        mesh.count = counts[li];
+        mesh.instanceMatrix.needsUpdate = true;
+        anim.needsUpdate = true;
+        look.needsUpdate = true;
+      });
     }
   }
 
-  /** Current world position (metres, feet on the ground) of an animal, from its instance matrix. */
-  private livePosition(cell: Cell, meshId: string, index: number): Vector3 | null {
-    const m = cell.meshes.get(meshId);
-    if (!m || index >= m.mesh.count) return null;
-    m.mesh.getMatrixAt(index, this._m);
-    return this._p.setFromMatrixPosition(this._m).add(cell.centerPos).clone();
-  }
 
   /** The nearest living herd of large animals (mass ≥ minMass) to a direction, or null. */
   nearestHerd(dir: Vector3, t: number, minMassKg = 500): { dir: Vector3; pos: Vector3; species: SpeciesDef; entry?: FaunaEntry; size: number } | null {
@@ -518,9 +631,8 @@ export class Herds {
       const sp = this.speciesById.get(id)!;
       if (sp.massKg < minMassKg) continue;
       const i = m.items.findIndex((it) => isAlive(it.a, t));
-      if (i < 0) continue;
-      const pos = this.livePosition(c, id, i);
-      if (!pos) continue;
+      if (i < 0 || !c.animated) continue;
+      const pos = m.items[i].pos.clone();
       const p = pos.clone().normalize();
       const d = p.dot(dir);
       if (d > bestDot) { bestDot = d; best = { dir: p, pos, species: sp, entry: c.entries.get(id), size: m.items[i].herd.animals.length }; }
@@ -531,7 +643,7 @@ export class Herds {
   /** The animal under a ray, if any. Instance bounds are recomputed first: animals move every frame. */
   pick(raycaster: Raycaster): { species: SpeciesDef; entry?: FaunaEntry } | undefined {
     if (!this.group.visible) return undefined;
-    for (const c of this.cells.values()) for (const m of c.meshes.values()) m.mesh.boundingSphere = null;
+    for (const c of this.cells.values()) for (const m of c.meshes.values()) for (const l of m.lods) l.mesh.boundingSphere = null;
     const hit = raycaster.intersectObject(this.group, true)[0];
     if (!hit) return undefined;
     const id = hit.object.name.replace(/^herd-/, '');

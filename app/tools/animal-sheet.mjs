@@ -41,11 +41,11 @@ for (const hd of herds.slice(0, Number(maxN))) {
     for (const c of k.herds.cells.values()) for (const [id, m] of c.meshes) {
       const i = id === hd.id ? m.items.findIndex((x) => live(x.a, t)) : -1;
       if (i < 0) continue;
-      const p = k.herds.livePosition(c, id, i);
+      const p = m.items[i].pos.clone();
       const up = p.clone().normalize();
       const lat = Math.asin(up.y) * 180 / Math.PI, lon = Math.atan2(up.x, up.z) * 180 / Math.PI;
       k.clock.playing = false;
-      k.controls.setPose({ lat, lon, range: Math.max(6, hd.len * 4.5), heading: 40, tilt: 72 });
+      k.controls.setPose({ lat, lon, range: Math.max(4, hd.len * 2.6), heading: 40, tilt: 74 });
       k.panel.close?.();
       return true;
     }
