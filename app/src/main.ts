@@ -449,6 +449,7 @@ function renderNow(dt = 0): void {
   fx.updateCamera(camera.position, sun, 1);
   sky.update(camera, sun, fx.meanLight, 0, renderer.getPixelRatio());
   globe.update(camera, sun, 1, 0, renderer.domElement.height);
+  gu.uTime.value = (performance.now() / 1000) % 3600;
   {
     // Haze colour for plants: sky blue scaled by how high the Sun is here and how much light gets through.
     const up = camera.position.clone().normalize();

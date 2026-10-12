@@ -16,7 +16,7 @@ import { makeDetailTexture } from '../terrain/detail';
 import { Heightfield } from '../terrain/heightfield';
 import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
 import { FACE_NAMES } from './cube';
-import { CLOUD_SAMPLE_GLSL } from './clouds';
+import { CLOUD_SAMPLE_GLSL, SIMPLEX_GLSL } from './clouds';
 import { atmosphereChunk } from './shaders/atmosphere';
 import { effectsChunk } from './shaders/effects';
 
@@ -74,11 +74,15 @@ uniform samplerCube uVeg;
 uniform float uHasVeg;
 uniform samplerCube uClouds;
 uniform float uCloudsOn;
+uniform float uTime;            // wall-clock seconds (waves)
 varying vec2 vDetail;
 varying vec3 vDir;
 varying vec3 vViewPos;
 varying vec3 vGeoNormal;
 varying float vHeight;
+
+// Simplex noise (render/clouds.ts) for the landscape mosaic seen from mid altitudes.
+${SIMPLEX_GLSL}
 
 // Clouds (render/clouds.ts): drift with the zonal winds for the first days, then hold.
 ${CLOUD_SAMPLE_GLSL}
@@ -147,6 +151,19 @@ void main() {
     nrm = normalize(nrm + (east * dn.x + north * dn.y) * 1.2 * close);
   }
 
+  // From a few km to a few hundred km up, vegetated land is a mosaic of forest stands (darker) and open
+  // fern and horsetail ground (paler), finer than the map can show.
+  float mosaicK = (1.0 - smoothstep(80.0, 500.0, distKm0)) * smoothstep(0.5, 6.0, distKm0) * (1.0 - water);
+  if (mosaicK > 0.0) {
+    float trees = uHasVeg > 0.5 ? textureCube(uVeg, n).r : 0.5;
+    vec3 P = n * PR;
+    float f = snoise(P / 16.0) * 0.5 + snoise(P / 5.0 + 7.0) * 0.32 + snoise(P / 1.5 + 3.0) * 0.18;
+    float stand = smoothstep(-0.25, 0.3, f) * smoothstep(0.05, 0.4, trees);
+    vec3 forest = albedo * vec3(0.72, 0.8, 0.68);
+    vec3 open = albedo * vec3(1.18, 1.12, 0.95);
+    albedo = mix(albedo, mix(open, forest, stand), mosaicK * smoothstep(0.03, 0.2, trees));
+  }
+
   // Impact effects on the surface (crater, ejecta blanket, flooding).
   float fxAng = fxAngle(n);
   float rKm = fxAng * PR;
@@ -184,14 +201,37 @@ void main() {
   vec3 radiance = albedo * (sunT * SUN_E * uSunScale * ndl / PI + sky) + albedo * 0.0008;
 
   vec3 rd = normalize(uViewToWorld * vViewPos);
-  // Sun glint on water: a tight lobe (Blinn–Phong) plus Fresnel sky reflection.
+  // Water: wind waves as scrolling noise normals at five scales (two directions each, moving at the
+  // deep-water speed of their wavelength; all scales divide the detail period, so they tile), sun
+  // glitter that widens into a broad glint where waves are smaller than a pixel, and Fresnel reflection
+  // of the sky. Waves move in wall-clock time so they look right at any playback speed.
   if (water > 0.0) {
     vec3 V = -rd;
+    float pxM = length(vViewPos) * 0.0015;
+    vec3 gn = n;
+    vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), gn) + vec3(1e-5, 0.0, 0.0));
+    vec3 north = cross(gn, east);
+    vec2 slope = vec2(0.0);
+    for (int i = 0; i < 5; i++) {
+      float S = 512.0 / pow(4.0, float(i));
+      float c = sqrt(9.81 * S * 0.2 / 6.2831853);           // speed of waves ~S/5 long
+      vec2 d1 = vec2(0.8, 0.6), d2 = vec2(-0.45, 0.9);
+      vec4 a = texture2D(uDetail, (vDetail + d1 * c * uTime) / S);
+      vec4 b = texture2D(uDetail, (vDetail + d2 * c * uTime * 0.8) / S + 0.31);
+      float amp = 0.4 * (1.0 - smoothstep(S * 0.02, S * 0.15, pxM));
+      slope += (vec2(a.g, a.b) + vec2(b.g, b.b) - 1.0) * amp;
+    }
+    vec3 wn = normalize(gn - east * slope.x - north * slope.y);
+    float rough = smoothstep(0.5, 40.0, pxM);
     vec3 H = normalize(L + V);
-    float nh = max(0.0, dot(n, H));
-    float spec = pow(nh, 2500.0) * 0.6 + pow(nh, 200.0) * 0.012;
-    float fres = 0.02 + 0.98 * pow(1.0 - max(0.0, dot(n, V)), 5.0);
-    radiance += water * sunT * SUN_E * uSunScale * (spec * smoothstep(0.0, 0.1, dot(n, L)) + fres * 0.01 * ndl);
+    float nh = max(0.0, dot(wn, H));
+    float spec = mix(pow(nh, 1500.0) * 0.8, pow(nh, 160.0) * 0.022, rough) + pow(nh, 40.0) * 0.002;
+    float fres = 0.02 + 0.98 * pow(1.0 - max(0.0, dot(wn, V)), 5.0);
+    vec3 R = reflect(rd, wn);
+    float elev = clamp(dot(R, gn), 0.0, 1.0);
+    vec3 skyC = mix(vec3(0.13, 0.16, 0.2), vec3(0.04, 0.07, 0.14), sqrt(elev)) * dayness * sunT * SUN_E * uSunScale / PI;
+    radiance = mix(radiance, skyC, water * fres * 0.6);
+    radiance += water * sunT * SUN_E * uSunScale * spec * smoothstep(0.0, 0.1, dot(n, L));
   }
 
   // Tsunami crest and churned water (only on the sea).
@@ -261,7 +301,7 @@ void main() {
   }
   // Haze is scaled down a little from the physical value so the ground stays readable from orbit.
   // Under a soot layer the lower atmosphere is dark too; only the air above it stays lit.
-  vec3 col = radiance * T + ins * 0.4 * mix(0.2, 1.0, winter.x);
+  vec3 col = radiance * T + ins * 0.33 * mix(0.2, 1.0, winter.x);
   if (camAlt < 2000.0) col = fxBlastFog(col, length(vViewPos), bdHere, rd, n, camAlt, uBlastDustColor);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
@@ -308,6 +348,7 @@ export class Globe {
         uHasVeg: { value: 0 },
         uClouds: { value: placeholderCube() },
         uCloudsOn: { value: 0 },
+        uTime: { value: 0 },
         uSunDir: { value: new Vector3(1, 0, 0) },
         uSunScale: { value: 1 },
         uHaze: { value: 0 },
