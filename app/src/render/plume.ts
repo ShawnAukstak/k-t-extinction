@@ -23,6 +23,7 @@ import { CRATER_OBSERVED } from '../effects/impact-effects';
 
 const TRANSIENT_RADIUS_KM = CRATER_OBSERVED.transientRadiusKm;
 import { latLonToVec } from '../core/geo';
+import { fetchBinary } from '../core/packed';
 import { atmosphereChunk } from './shaders/atmosphere';
 
 interface PlumeMeta {
@@ -230,7 +231,9 @@ export class Plume {
   async load(baseUrl: string): Promise<boolean> {
     try {
       this.meta = (await (await fetch(`${baseUrl}/plume.json`)).json()) as PlumeMeta;
-      const buf = new Uint8Array(await (await fetch(`${baseUrl}/plume.bin`)).arrayBuffer());
+      const bin = await fetchBinary(`${baseUrl}/plume.bin`);
+      if (!bin) return false;
+      const buf = new Uint8Array(bin);
       const tex = new DataTexture(buf, this.meta.width, this.meta.tileHeight * this.meta.tiles.length, RedFormat);
       tex.minFilter = tex.magFilter = LinearFilter;
       tex.wrapS = tex.wrapT = ClampToEdgeWrapping;

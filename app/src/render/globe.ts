@@ -12,6 +12,7 @@ import {
   CubeTexture, CubeTextureLoader, DataTexture, Group, LinearFilter, LinearMipmapLinearFilter, Matrix3,
   NoColorSpace, type PerspectiveCamera, RGBAFormat, SRGBColorSpace, ShaderMaterial, Vector3,
 } from 'three';
+import { fetchBinary } from '../core/packed';
 import { makeDetailTexture } from '../terrain/detail';
 import { Heightfield } from '../terrain/heightfield';
 import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
@@ -393,9 +394,8 @@ export class Globe {
     const m = this.manifest;
     this.material.uniforms.uHeightDecode.value = [m.height.offset, m.height.step];
     if (m.elevationGrid) {
-      fetch(`${baseUrl}/${m.elevationGrid.file}`)
-        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.statusText))))
-        .then((b) => { this.elevation = new Int16Array(b); })
+      fetchBinary(`${baseUrl}/${m.elevationGrid.file}`)
+        .then((b) => { if (!b) throw new Error('not found'); this.elevation = new Int16Array(b); })
         .catch((e) => console.warn('elevation grid unavailable', e));
     }
     const sizes = m.sizes.filter((s) => s <= targetSize);

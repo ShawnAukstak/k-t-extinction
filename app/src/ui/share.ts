@@ -3,6 +3,7 @@
  * the frame. Opening the sheet freezes the moment (playback pauses until it closes), so the link, the
  * picture and the screen all show the same thing.
  */
+import { track } from '../core/analytics';
 
 export interface ShareMoment {
   /** "T+1 h 00 min" */
@@ -123,9 +124,9 @@ export class ShareSheet {
     this.root.addEventListener('pointerdown', (e) => { if (e.target === this.root) this.close(); });
     for (const b of this.modes) b.addEventListener('click', () => this.setPlaying(b.dataset.play === '1'));
     this.input.addEventListener('focus', () => this.input.select());
-    this.copyBtn.addEventListener('click', () => void this.copy());
-    this.nativeBtn.addEventListener('click', () => void this.native());
-    this.root.querySelector('[data-act="image"]')!.addEventListener('click', () => this.saveImage());
+    this.copyBtn.addEventListener('click', () => { track('share', { method: 'copy' }); void this.copy(); });
+    this.nativeBtn.addEventListener('click', () => { track('share', { method: 'native' }); void this.native(); });
+    this.root.querySelector('[data-act="image"]')!.addEventListener('click', () => { track('share', { method: 'image' }); this.saveImage(); });
   }
 
   /**

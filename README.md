@@ -124,6 +124,15 @@ The app is a static site, deployed to Render from `render.yaml` (a Blueprint) on
 The generated data is not in git. Deploys fetch it from a release of this repo:
 - `app/tools/publish-data.sh data-vN` packages `app/public/data` into release `data-vN` and records its name and checksum in `app/data-bundle.json`. Commit that file.
 - The Render build (`app/tools/render-build.sh`) downloads that bundle, checks it, and runs `npm run build` into `app/dist`. It needs `GH_DATA_TOKEN`: a fine-grained GitHub token with read-only **Contents** access to this repository.
+- The build packs the binary data files (`app/src/core/packed.ts`), because static hosts send them uncompressed: 11.8 MB becomes 4.1 MB, and the app unpacks them as they load.
+
+The build reads a few optional settings from the environment (`app/vite.config.ts`):
+
+| Variable | What it does |
+|---|---|
+| `SITE_URL` | The site's address, for link previews, the canonical link, `robots.txt` and `sitemap.xml`. On Render, `RENDER_EXTERNAL_URL` is used when this is unset. |
+| `GA_ID` | Google Analytics measurement ID (`G-…`). Adds `gtag.js`, with analytics cookies off in the EEA, UK and Switzerland, and a few events: `moment_open`, `place_open`, `share_open`, `share`. |
+| `GSC_VERIFICATION` | Search Console's HTML-tag token, if not verifying through Analytics. |
 
 To test a production build locally:
 

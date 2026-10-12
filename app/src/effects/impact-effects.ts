@@ -10,6 +10,7 @@
 import { ClampToEdgeWrapping, Data3DTexture, DataTexture, DataUtils, HalfFloatType, LinearFilter, RepeatWrapping, RGFormat, RGBAFormat, UnsignedByteType, Vector3, Vector4 } from 'three';
 import { IMPACT } from '../config';
 import { DEG, enuBasis, latLonToVec } from '../core/geo';
+import { fetchBinary } from '../core/packed';
 import { atDistance, crater, type CraterResult } from '../physics/eiep';
 
 const BINS = 256;
@@ -142,9 +143,9 @@ export class ImpactEffects {
   async loadTsunami(baseUrl: string): Promise<boolean> {
     try {
       const meta = await (await fetch(`${baseUrl}/tsunami.json`)).json() as { width: number; height: number; timeUnitS: number };
-      const res = await fetch(`${baseUrl}/tsunami.bin`);
-      if (!res.ok) return false;
-      const raw = new Uint16Array(await res.arrayBuffer());
+      const buf = await fetchBinary(`${baseUrl}/tsunami.bin`);
+      if (!buf) return false;
+      const raw = new Uint16Array(buf);
       const n = meta.width * meta.height;
       this.tsunamiRaw = { data: raw, width: meta.width, height: meta.height, unit: meta.timeUnitS };
       if (raw.length !== 2 * n) throw new Error('tsunami.bin size mismatch');
@@ -172,9 +173,9 @@ export class ImpactEffects {
   async loadWinter(baseUrl: string, scenario: WinterScenario): Promise<boolean> {
     try {
       const meta = await (await fetch(`${baseUrl}/winter_${scenario}.json`)).json() as { width: number; height: number; layers: number; times: number[] };
-      const res = await fetch(`${baseUrl}/winter_${scenario}.bin`);
-      if (!res.ok) return false;
-      const data = new Uint8Array(await res.arrayBuffer());
+      const buf = await fetchBinary(`${baseUrl}/winter_${scenario}.bin`);
+      if (!buf) return false;
+      const data = new Uint8Array(buf);
       if (data.length !== meta.width * meta.height * meta.layers * 2) throw new Error('winter file size mismatch');
       const tex = new Data3DTexture(data, meta.width, meta.height, meta.layers);
       tex.format = RGFormat;

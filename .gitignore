@@ -37,5 +37,14 @@ __pycache__/
 app/public/data/
 
 # Test output
-app/test-results/
-app/playwright-report/
+test-results/
+playwright-report/
+coverage/
+
+# Secrets and local settings
+.env
+.env.*
+*.pem
+*.key
+.claude/
+CLAUDE.local.md

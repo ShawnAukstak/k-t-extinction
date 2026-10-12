@@ -5,6 +5,7 @@ import { EARTH_RADIUS, IMPACT, SKY } from './config';
 import { Soundscape } from './audio/soundscape';
 import { Cinematic } from './camera/cinematic';
 import { frameToPose, GlobeControls } from './camera/globe-controls';
+import { replaceUrl, track } from './core/analytics';
 import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
 import { latLonToVec, vecToLatLon, type LatLon } from './core/geo';
@@ -136,7 +137,7 @@ function writeHash(): void {
   lastHashWrite = performance.now();
   if (hash !== lastHash) {
     lastHash = hash;
-    history.replaceState(null, '', hash);
+    replaceUrl(hash);
   }
 }
 function scheduleHashUpdate(): void {
@@ -254,7 +255,7 @@ function goToPlace(p: Poi, fly = true): void {
   panel.showPlace(p);
   scheduleHashUpdate();
 }
-markers.onSelect = (p) => goToPlace(p);
+markers.onSelect = (p) => { track('place_open', { place_id: p.id, action: 'marker' }); goToPlace(p); };
 topbar.onPlaces = () => panel.showExplore(MOMENTS, POIS);
 
 // ── moments ──────────────────────────────────────────────────────────────────
@@ -273,10 +274,16 @@ function goMoment(m: Moment): void {
   }
   writeHash();
 }
-panel.onMoment = (id) => { const m = MOMENTS.find((x) => x.id === id); if (m) goMoment(m); };
+panel.onMoment = (id) => {
+  const m = MOMENTS.find((x) => x.id === id);
+  if (!m) return;
+  track('moment_open', { moment_id: m.id });
+  goMoment(m);
+};
 panel.onPlaceAction = (action, id) => {
   const p = poiById(id);
   if (!p) return;
+  track('place_open', { place_id: p.id, action });
   if (action === 'fly') goToPlace(p);
   else if (action === 'animals') void findAnimals(p);
   else { setQuery(p.paleo); void ensureEffectData(true).then(() => showQuery()); }
@@ -333,6 +340,7 @@ const share = new ShareSheet(document.body);
 let resumeAfterShare = false;
 topbar.onShare = timeline.onShare = () => {
   if (share.isOpen) return;
+  track('share_open');
   resumeAfterShare = clock.playing;
   clock.setPlaying(false);
   renderNow(0);
@@ -424,7 +432,7 @@ globe
       setTimeout(() => boot.remove(), 700);
     }
   });
-// Small effect data loads up front; the tsunami (~2 MB) and impact winter (~1 MB) load when
+// Small effect data loads up front; the tsunami and impact winter (~1 MB each, packed) load when
 // playback gets near them or someone asks about a location, so the first view stays light.
 const earlyEffects = Promise.all([fx.loadDust(`${DATA}/effects/dust.json`), plume.load(`${DATA}/effects`)]);
 let tsunamiLoad: Promise<boolean> | null = null;
