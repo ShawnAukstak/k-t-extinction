@@ -191,6 +191,15 @@ void main() {
   radiance += fxOverlay(rKm, fxAng, pxKm) * 3.0;
   radiance += fxPickRing(n, pxKm);
 
+  // Dust raised by the air blast, over land (see fxBlastDust). Seen from above the ~2 km layer it
+  // sits under the haze and is lit where it is; from inside it, it is the nearest thing to the eye.
+  float bdHere = fxBlastDust(fxAng) * (1.0 - water);
+  float camAlt = length(uCamPosKm) * 1000.0 - 6371000.0;
+  if (camAlt >= 2000.0 && bdHere > 0.0) {
+    vec3 blastLit = vec3(0.34, 0.27, 0.2) * sunTransmittance(n * (PR + 1.0), L) * SUN_E * uSunScale * max(0.0, dot(n, L) + 0.05) / PI;
+    radiance = fxBlastFog(radiance, length(vViewPos), bdHere, rd, n, camAlt, blastLit);
+  }
+
   // Aerial perspective between the camera and this point. End the integral where the view ray
   // meets the true sphere: the flat triangles of a coarse mesh dip up to ~1 km below it, and
   // integrating that far into the densest air draws the mesh grid into the haze.
@@ -207,7 +216,9 @@ void main() {
   }
   // Haze is scaled down a little from the physical value so the ground stays readable from orbit.
   // Under a soot layer the lower atmosphere is dark too; only the air above it stays lit.
-  gl_FragColor = vec4(radiance * T + ins * 0.4 * mix(0.2, 1.0, winter.x), 1.0);
+  vec3 col = radiance * T + ins * 0.4 * mix(0.2, 1.0, winter.x);
+  if (camAlt < 2000.0) col = fxBlastFog(col, length(vViewPos), bdHere, rd, n, camAlt, uBlastDustColor);
+  gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }

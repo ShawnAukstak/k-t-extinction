@@ -171,6 +171,7 @@ void main() {
   // Simple aerial perspective for the short distances plants are drawn at.
   float haze = 1.0 - exp(-dist / 45000.0);
   vColor = mix(radiance, uFogColor * winter.x, haze);
+  vColor = fxBlastFog(vColor, dist, fxBlastDust(fxAngle(up)), up, up, 0.0, uBlastDustColor);
   vFade = 1.0 - smoothstep(0.75, 1.0, dist / 1800.0);
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>

@@ -54,6 +54,11 @@ const camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight,
 const sky = new Sky(settings.stars);
 scene.add(sky.stars, sky.atmosphere);
 const fx = new ImpactEffects();
+// The sky browns out inside blast-raised dust (shares the effects' uniforms).
+sky.skyMaterial.uniforms.uBlastDustCam = fx.uniforms.uBlastDustCam;
+sky.skyMaterial.uniforms.uBlastDustColor = fx.uniforms.uBlastDustColor;
+sky.skyMaterial.uniforms.uBlastFront = fx.uniforms.uBlastFront;
+sky.skyMaterial.uniforms.uBlastWall = fx.uniforms.uBlastWall;
 const globe = new Globe(settings.terrain, fx.uniforms);
 scene.add(globe.group);
 const gu = globe.material.uniforms;
@@ -393,6 +398,7 @@ function renderNow(dt = 0): void {
   updateSun(sun);
   asteroid.update(clock.t, sun);
   fx.update(clock.t);
+  fx.updateCamera(camera.position, sun, 1);
   sky.update(camera, sun, fx.meanLight, 0, renderer.getPixelRatio());
   globe.update(camera, sun, 1, 0, renderer.domElement.height);
   {

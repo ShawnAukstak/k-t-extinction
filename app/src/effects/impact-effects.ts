@@ -7,12 +7,13 @@
  *   B log10(air-blast overpressure, bar)   A effective seismic magnitude
  * Rows 1…N hold the dust-cloud column (log10 kg/m²) at each keyframe time of dust.json.
  */
-import { ClampToEdgeWrapping, Data3DTexture, DataTexture, DataUtils, HalfFloatType, LinearFilter, RepeatWrapping, RGFormat, RGBAFormat, UnsignedByteType, Vector3 } from 'three';
+import { ClampToEdgeWrapping, Data3DTexture, DataTexture, DataUtils, HalfFloatType, LinearFilter, RepeatWrapping, RGFormat, RGBAFormat, UnsignedByteType, Vector3, Vector4 } from 'three';
 import { IMPACT } from '../config';
 import { DEG, enuBasis, latLonToVec } from '../core/geo';
 import { atDistance, crater, type CraterResult } from '../physics/eiep';
 
 const BINS = 256;
+const _up = new Vector3(), _c = new Vector3();
 const MAX_DUST_ROWS = 31;
 
 interface DustFile {
@@ -103,6 +104,10 @@ export class ImpactEffects {
       uVeil: { value: new Vector3(...WINTER_LOOK.soot.veil) },
       uLife: { value: new Vector3(0, 0, 0) },   // x die-off, y fern cover, z forest recovery
       uPick: { value: [0, 0, 0, 0] },
+      uBlastDustCam: { value: 0 },
+      uBlastDustColor: { value: new Vector3() },
+      uBlastFront: { value: new Vector4(0, 0, 0, 0) },   // xyz toward the crater (horizontal at the camera), w distance to the front (m)
+      uBlastWall: { value: 0 },                          // dust strength just behind the front
     };
   }
 
@@ -246,6 +251,43 @@ export class ImpactEffects {
       tempC.push(r.data[k + 1] / 2.55 - 60);
     }
     return { times: this.winterTimes, light, tempC };
+  }
+
+  /**
+   * Blast-raised dust at the camera (same rule as fxBlastDust in the shader) and its sunlit colour,
+   * for the sky and the haze near the camera. Only near the ground: the layer is ~2 km deep.
+   */
+  updateCamera(camPos: Vector3, sunDir: Vector3, sunScale: number): void {
+    const up = _up.copy(camPos).normalize();
+    const imp = this.uniforms.uImpactDir.value as Vector3;
+    const ang = Math.atan2(_c.crossVectors(up, imp).length(), up.dot(imp));
+    const rKm = ang * 6371;
+    const t = this.uniforms.uT.value as number;
+    const since = t - rKm / 0.33;
+    const alt = camPos.length() - 6_371_000;
+    let dust = 0;
+    if (since > 0 && t > 0 && alt < 6000) {
+      const lp = Math.log10(Math.max(1e-9, atDistance(this.crater, Math.max(1, rKm)).overpressureBar));
+      const ss = (a: number, b: number, x: number) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+      dust = ss(-0.9, -0.4, lp) * ss(0, 4, since) * Math.exp(-since / 600) * (1 - ss(2000, 6000, alt));
+    }
+    this.uniforms.uBlastDustCam.value = dust;
+    // The front still on its way: distance to it, and which way it comes from.
+    const front = this.uniforms.uBlastFront.value as Vector4;
+    const ahead = (0.33 * t - rKm) * -1000;
+    if (t > 0 && ahead > 0 && ahead < 60_000 && alt < 6000) {
+      const lp = Math.log10(Math.max(1e-9, atDistance(this.crater, Math.max(1, rKm)).overpressureBar));
+      const k = Math.min(1, Math.max(0, (lp + 0.9) / 0.5));
+      _c.copy(imp).addScaledVector(up, -imp.dot(up)).normalize();
+      front.set(_c.x, _c.y, _c.z, ahead);
+      this.uniforms.uBlastWall.value = k * k * (3 - 2 * k);
+    } else {
+      front.w = 0;
+      this.uniforms.uBlastWall.value = 0;
+    }
+    // Brown dust lit by the sun (radiance units of the shaders: SUN_E = 22).
+    const light = (22 * sunScale * (0.08 + 0.6 * Math.max(0, up.dot(sunDir)))) / Math.PI * this.meanLight;
+    (this.uniforms.uBlastDustColor.value as Vector3).set(0.34, 0.27, 0.2).multiplyScalar(light);
   }
 
   update(t: number): void {

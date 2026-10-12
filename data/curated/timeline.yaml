@@ -195,7 +195,10 @@ events:
   - id: blast-1000km
     t: 3000
     title: Air blast 1,000 km out
-    detail: Around 1.5 atmospheres of overpressure and hurricane-force winds (order of magnitude only).
+    detail: >-
+      Around 1.5 atmospheres of overpressure and hurricane-force winds (order of magnitude only). At ground
+      level the app draws the dust such winds would raise as a brown wall sweeping past; that wall is an
+      illustration, not a model output.
     magnitude: ~1.5 bar
     confidence: contested
     sources: [collins2005]

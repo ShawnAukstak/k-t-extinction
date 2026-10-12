@@ -150,6 +150,7 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(rel4.xyz, 1.0);
   float dist = length(mv.xyz);
   vColor = mix(radiance, uFogColor * winter.x, 1.0 - exp(-dist / 45000.0));
+  vColor = fxBlastFog(vColor, dist, fxBlastDust(fxAngle(up)), up, up, 0.0, uBlastDustColor);
   vFade = 1.0 - smoothstep(0.8, 1.0, dist / 9000.0);
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>
@@ -460,7 +461,15 @@ export class Herds {
         // Graze/walk cycle (minutes long), offset per animal.
         const cycle = 0.5 + 0.5 * Math.sin(tm * 0.01 + a.phase * 6.28);
         const walking = sp.diet === 'carnivore' ? 0.8 : cycle > 0.55 ? 1 : 0.15;
-        const e = ce + a.offE + 3 * Math.sin(tm * 0.05 + a.phase * 9), nn = cn + a.offN + 3 * Math.cos(tm * 0.04 + a.phase * 7);
+        let e = ce + a.offE + 3 * Math.sin(tm * 0.05 + a.phase * 9), nn = cn + a.offN + 3 * Math.cos(tm * 0.04 + a.phase * 7);
+        if (dead && a.fallAway) {
+          // Blast victims are thrown downwind as they fall: further in stronger wind and for lighter
+          // animals (drag on a 6 t hadrosaur at ~115 m/s is close to its weight). Distances chosen.
+          const throwM = Math.min(30, Math.max(0, ((herd.wind - 50) / 60) * 8 / Math.cbrt(sp.massKg / 1000)));
+          const k = Math.min(1, (t - a.dieAt) / 2.5);
+          const d = throwM * k * (2 - k);
+          e += Math.sin(herd.away) * d; nn += Math.cos(herd.away) * d;
+        }
         this._d.copy(herd.base).multiplyScalar(EARTH_RADIUS).addScaledVector(herd.e, e).addScaledVector(herd.n, nn).normalize();
         // Swimmers ride at the waterline (the sea surface is opaque, so only their backs and heads show).
         // Ground height is resampled only once an animal has moved half a metre.

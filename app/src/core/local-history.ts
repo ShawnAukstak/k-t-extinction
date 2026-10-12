@@ -119,7 +119,7 @@ export function localHistory(point: LatLon, d: LocalData): LocalHistory {
 
   rows.push({
     id: 'blast', label: 'Air blast', arrivalS: fx.blastArrivalS,
-    value: `${fmtPressure(fx.overpressureBar)}, winds ${fx.windMs >= 1000 ? (fx.windMs / 1000).toFixed(1) + ' km/s' : Math.round(fx.windMs * 3.6) + ' km/h'} (scaling law, may be 2–5× too high)`,
+    value: `${fmtPressure(fx.overpressureBar)}, winds ${fx.windMs >= 1000 ? (fx.windMs / 1000).toFixed(1) + ' km/s' : Math.round(fx.windMs * 3.6) + ' km/h'} (scaling law, may be 2–5× too high)${fx.overpressureBar > 0.126 ? '; the dust wall drawn at ground level is an illustration' : ''}`,
     confidence: 'contested', sources: ['collins2005'],
   });
 

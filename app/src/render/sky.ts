@@ -5,7 +5,7 @@
  */
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CustomBlending, Matrix3, Mesh, OneFactor,
-  type PerspectiveCamera, Points, ShaderMaterial, SrcAlphaFactor, Vector3,
+  type PerspectiveCamera, Points, ShaderMaterial, SrcAlphaFactor, Vector3, Vector4,
 } from 'three';
 import { atmosphereChunk } from './shaders/atmosphere';
 
@@ -23,6 +23,10 @@ ${atmosphereChunk}
 uniform mat3 uViewToWorld;
 uniform vec3 uCamPosKm;
 uniform vec2 uTanHalf;   // tan(fov/2)·aspect, tan(fov/2)
+uniform float uBlastDustCam;   // blast-raised dust around the camera (0–1): the sky browns out
+uniform vec3 uBlastDustColor;
+uniform vec4 uBlastFront;      // xyz toward the crater (horizontal), w distance to the approaching front (m)
+uniform float uBlastWall;      // dust strength behind that front
 varying vec2 vNdc;
 void main() {
   vec3 rdView = normalize(vec3(vNdc * uTanHalf, -1.0));
@@ -47,6 +51,22 @@ void main() {
     ins += sunDisc * 40.0 * uSunScale * T;
   }
   float avgT = dot(T, vec3(1.0 / 3.0));
+  float bd = min(0.97, uBlastDustCam * 1.5);
+  // The approaching dust wall: rays that reach the front below the top of the ~2 km dust layer.
+  if (uBlastFront.w > 0.0 && uBlastWall > 0.0) {
+    vec3 up = normalize(uCamPosKm);
+    float camAlt = length(uCamPosKm) * 1000.0 - 6371000.0;
+    float c = dot(rd, uBlastFront.xyz);
+    if (c > 0.0) {
+      float sf = uBlastFront.w / c;                       // ray length to the front
+      float sv = dot(rd, up);
+      float sTop = sv > 0.0 ? (2000.0 - camAlt) / sv : 1e9;
+      float path = clamp(min(sTop, sf + 20000.0) - sf, 0.0, 20000.0);
+      bd = max(bd, (1.0 - exp(-path * uBlastWall / 1600.0)) * 0.97);
+    }
+  }
+  ins = mix(ins, uBlastDustColor, bd);
+  avgT *= 1.0 - bd;
   gl_FragColor = vec4(ins, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -91,7 +111,7 @@ export class Sky {
   readonly atmosphere: Mesh;
   private readonly viewToWorld = new Matrix3();
   private readonly camKm = new Vector3();
-  private readonly skyMaterial: ShaderMaterial;
+  readonly skyMaterial: ShaderMaterial;
   private readonly starMaterial: ShaderMaterial;
 
   constructor(starCount = 6000) {
@@ -126,6 +146,8 @@ export class Sky {
       uniforms: {
         uSunDir: { value: new Vector3(1, 0, 0) }, uSunScale: { value: 1 }, uHaze: { value: 0 },
         uViewToWorld: { value: this.viewToWorld }, uCamPosKm: { value: this.camKm }, uTanHalf: { value: [1, 1] },
+        uBlastDustCam: { value: 0 }, uBlastDustColor: { value: new Vector3() },
+        uBlastFront: { value: new Vector4() }, uBlastWall: { value: 0 },
       },
       depthTest: false, depthWrite: false, transparent: false,
       blending: CustomBlending, blendSrc: OneFactor, blendDst: SrcAlphaFactor,

@@ -26,6 +26,8 @@ uniform float uWinterOn;
 uniform vec3 uVeil;               // colour of the darkening aerosol seen from space
 uniform vec3 uLife;               // x die-off, y fern cover, z forest recovery
 uniform vec4 uPick;               // xyz unit vector of the "what happened here?" point, w = on
+uniform float uBlastDustCam;      // blast-raised dust at the camera (0–1)
+uniform vec3 uBlastDustColor;     // its sunlit colour (radiance), from the CPU
 
 float fxRow(float r) { return (r + 0.5) / uFxRows; }
 
@@ -198,6 +200,25 @@ vec3 fxPickRing(vec3 n, float pxKm) {
   float r = 9.0 * pxKm, w = 1.6 * pxKm;
   float ring = exp(-pow((dKm - r) / w, 2.0)) + 0.8 * exp(-pow(dKm / (2.0 * w), 2.0));
   return vec3(1.0, 0.75, 0.35) * ring * 4.0;
+}
+
+// Dust raised by the air blast (a chosen visualisation of the wind, not a model output): from the
+// front's arrival (speed of sound, EIEP eq. 64) for ~10 minutes, thicker where the overpressure was
+// higher (table row 0, B = log10 bar).
+float fxBlastDust(float ang) {
+  float since = uT - ang * 6371.0 / 0.330;
+  if (since <= 0.0 || uT <= 0.0) return 0.0;
+  float lp = texture2D(uFxTable, vec2(ang / PI, fxRow(0.0))).b;
+  return smoothstep(-0.9, -0.4, lp) * smoothstep(0.0, 4.0, since) * exp(-since / 600.0);
+}
+
+// Haze through that dust: averaged between the camera and the point, over the path through a
+// ~2 km deep layer; about 1 km visibility at full strength.
+vec3 fxBlastFog(vec3 c, float distM, float dustHere, vec3 viewDir, vec3 up, float camAltM, vec3 dustColor) {
+  float d = 0.5 * (uBlastDustCam + dustHere);
+  if (d <= 0.0) return c;
+  float path = camAltM < 2000.0 ? distM : min(distM, 2000.0 / max(0.03, abs(dot(viewDir, up))));
+  return mix(c, dustColor, 1.0 - exp(-path * d / 800.0));
 }
 
 // Thin rings for the science overlay: air blast, seismic surface waves, ballistic ejecta front.
