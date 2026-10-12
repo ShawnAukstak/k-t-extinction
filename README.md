@@ -6,26 +6,32 @@ An explorable, scientifically grounded 3D simulation of the Chicxulub impact and
 
 - **The 66 Ma globe:** the PALEOMAP 65 Ma elevation model (with a cited correction at the impact site), coloured from a 66 Ma climate run, with a physically based atmosphere.
 - **Timeline:** a non-linear scrubber from 1 hour before impact to 1 million years after, with event markers and cards.
+- **The asteroid:** a cratered, boulder-strewn carbonaceous body lit by the Sun and earthshine, with a bow shock and a streaming entry trail.
 - **Impact effects:**
-  - fireball, crater, ejecta, the Artemieva & Morgan dust cloud, the Range et al. tsunami, and the scaling-law air blast;
+  - a fireball that rises out of the atmosphere, the ejecta curtain, the crater, the Artemieva & Morgan dust cloud, the Range et al. tsunami, and the scaling-law air blast;
   - impact winter from the Tabor et al. model runs, switchable between soot, SO₂ and dust.
 - **Camera:** cinematic, fixed and free modes, plus procedural audio.
 - **"What happened here?":** tap anywhere for that place's local history.
 - **Places:** fossil sites, and "Where was my city?", which reconstructs modern cities to their 65 Ma positions.
+- **Sky and sea:** illustrative clouds that follow the general circulation (seen from above and below), wind waves with sun glitter and sky reflection, stars and a faint Milky Way.
 - **Ground level:**
-  - terrain down to ~5 m, with procedural plants and animal herds from curated, sourced species cards for 19 land and sea regions;
+  - terrain down to ~5 m on a Cretaceous forest floor (litter, ferns, horsetails; no grass), with sun shadows;
+  - plants with leaf, needle and frond cut-outs (angiosperms, Metasequoia-like and araucarian conifers, fan palms, tree ferns, cycads);
+  - animal herds with procedural reconstructions of each group (frills, horns, armour, crests, feathers where evidence supports them), from curated, sourced species cards for 19 land and sea regions;
   - animals burn, are thrown by the blast, or starve in the winter; plants die, ferns take over, and forests return;
   - surviving lineages rebound, and early Paleocene mammals arrive on their published dates.
 - **Confidence labels:** every claim is labelled **known**, **model**, **contested** or **chosen**, and links to its sources.
 
-Next: better animal models, the licensed climate source (PhanDA) before any public sharing, then the discoveries index.
+- **Share:** a Share button freezes the moment and gives a link to that exact time, view and panel, plus a captioned image.
+
+Next: the licensed climate source (PhanDA) before any public sharing, then the discoveries index.
 
 ## Requirements
 
 - **Node.js** 20.19+ or 22.12+ (needed by Vite 8; developed on 23.6).
 - **Python** 3.12 (for the data scripts).
 - **About 2 GB of disk** for the downloaded source data.
-- macOS or Linux. On macOS the browser tests use the real GPU (ANGLE/Metal). ImageMagick is needed only for the screenshot tools in `app/tools/`.
+- macOS or Linux. On macOS the browser tests use the real GPU (ANGLE/Metal). ImageMagick is needed only for the screenshot tools in `app/tools/` (`contact-sheet`, `ground-shot`, `animal-sheet`, `model-sheet` for every species' body, `perf-probe` for frame times, `og-image` for the link-preview picture).
 
 ## Run it locally
 

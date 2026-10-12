@@ -51,7 +51,7 @@ Exit: the first thing worth posting.
 
 ## Phase 3 — Cinematic — **done** (3a, 3b)
 
-Built: asteroid with entry glow, a scripted ride → hold → aftermath → global camera, a raymarched 3-D plume from Artemieva & Morgan 2020, and a procedural soundtrack (Web Audio, delays from distance). Not built: a GSAP keyframe panel (shots are authored in `camera/cinematic.ts`); particle ejecta curtain (the ejecta are a shaded field on the globe instead). Time of day: 10:00 local solar time, boreal spring, labelled "chosen".
+Built: asteroid with entry glow, a scripted ride → hold → aftermath → global camera, a raymarched 3-D plume from Artemieva & Morgan 2020, and a procedural soundtrack (Web Audio, delays from distance). Not built: a GSAP keyframe panel (shots are authored in `camera/cinematic.ts`). The ejecta curtain (2026-10-12) is an analytic inverted cone in the raymarched plume rather than particles, handing over to the Artemieva & Morgan field. Time of day: 10:00 local solar time, boreal spring, labelled "chosen".
 
 Goal: the main event on first load.
 
@@ -76,6 +76,10 @@ Built: procedural low-poly bodies by body plan (D10 placeholders), herds placed 
 - 3–6 POIs with curated species lists, group sizes and behaviours from the species cards; densities from Damuth scaling.
 - Die-off and recovery over the timeline (fern spike, mammal radiation at Corral Bluffs).
 - Model-accuracy decision (see open questions) determines what the animals look like.
+
+## Graphics pass (2026-10-12) — **done**
+
+Asteroid (cratered body, earthshine, entry trail); clouds (baked general-circulation field, seen from above and below, drifting with the winds, casting shadows); fireball and ejecta curtain; animal models (5d); plants with foliage cut-outs and a fern/horsetail ground cover on a litter floor; sun shadows near the ground; ocean waves, glitter and sky reflection; a forest mosaic from mid altitudes; stars and Milky Way; Share; an Open Graph image. Perf: adaptive aerial-perspective steps, LODs for plants and animals. Review tools in `app/tools/` (model-sheet, perf-probe, og-image).
 
 ## Phase 6 — Discoveries
 

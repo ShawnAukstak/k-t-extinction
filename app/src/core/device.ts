@@ -14,7 +14,7 @@ export const TIER_SETTINGS = {
   mobile: {
     maxPixelRatio: 2, faceSize: 512, stars: 5000, plumeScale: 0.25, plumeSteps: 24,
     terrain: { segments: 24, maxLevel: 16, pixelError: 14, maxTiles: 600, buildsPerFrame: 3 },
-    vegetation: { radiusCells: 1, spacing: 20, maxAltitude: 1500, buildsPerFrame: 1, coverCells: 2, coverPerCell: 50 },
+    vegetation: { radiusCells: 1, spacing: 20, maxAltitude: 1500, buildsPerFrame: 1, coverCells: 1, coverPerCell: 60 },
     herds: { radiusCells: 1, maxAltitude: 4000, buildsPerFrame: 1, maxPerCell: 60 },
     shadows: { size: 1024, maxAltitude: 400 },
   },
