@@ -17,6 +17,7 @@ import { Heightfield } from '../terrain/heightfield';
 import { Quadtree, type QuadtreeOptions } from '../terrain/quadtree';
 import { FACE_NAMES } from './cube';
 import { CLOUD_SAMPLE_GLSL, SIMPLEX_GLSL } from './clouds';
+import { SHADOW_FRAG, SHADOW_VERT } from './shadows';
 import { atmosphereChunk } from './shaders/atmosphere';
 import { effectsChunk } from './shaders/effects';
 
@@ -45,6 +46,7 @@ varying vec3 vDir;
 varying vec3 vViewPos;
 varying vec3 vGeoNormal;
 varying float vHeight;
+${SHADOW_VERT}
 void main() {
   vDir = dir;
   vGeoNormal = normal;   // world space (tiles are only translated)
@@ -52,6 +54,7 @@ void main() {
   vDetail = detail;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vViewPos = mv.xyz;
+  shadowCoords(mv);
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>
 }
@@ -80,6 +83,8 @@ varying vec3 vDir;
 varying vec3 vViewPos;
 varying vec3 vGeoNormal;
 varying float vHeight;
+
+${SHADOW_FRAG}
 
 // Simplex noise (render/clouds.ts) for the landscape mosaic seen from mid altitudes.
 ${SIMPLEX_GLSL}
@@ -194,6 +199,8 @@ void main() {
     vec3 sp = normalize(n + (L - n * dot(n, L)) * (CLOUD_KM / PR) / sl);
     sunT *= 1.0 - 0.75 * clouds * cloudAt(sp).r;
   }
+  // Shadows of plants and animals near the camera.
+  sunT *= sunShadow(0.0006);
   float ndl = max(0.0, dot(nrm, L));
   // Sky fill: a little blue light on the day side, fading through twilight.
   float dayness = smoothstep(-0.15, 0.25, dot(n, L));

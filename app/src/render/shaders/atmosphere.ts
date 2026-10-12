@@ -69,13 +69,16 @@ vec3 sunTransmittance(vec3 p, vec3 sunDir) {
 }
 
 // In-scattered light along ro + rd*t for t in [t0, t1]; transmittance over the segment returned in T.
+// Steps scale with the path: a few km near the ground needs two (the air barely changes over it),
+// long paths through the whole atmosphere ten.
 vec3 inscatter(vec3 ro, vec3 rd, float t0, float t1, vec3 sunDir, out vec3 T) {
-  const int N = 10;
   float len = max(0.0, t1 - t0);
+  int N = int(clamp(ceil(len / 6.0), 2.0, 10.0));
   float seg = len / float(N);
   float odR = 0.0, odM = 0.0;
   vec3 sumR = vec3(0.0), sumM = vec3(0.0);
-  for (int i = 0; i < N; i++) {
+  for (int i = 0; i < 10; i++) {
+    if (i >= N) break;
     vec3 p = ro + rd * (t0 + seg * (float(i) + 0.5));
     float h = max(0.0, length(p) - PR);
     float dR = exp(-h / H_R) * seg;

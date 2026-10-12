@@ -20,6 +20,7 @@ import { atDistance, type CraterResult } from '../physics/eiep';
 import { cellsAround, directionToFace, faceDirection } from '../render/cube';
 import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
+import { SHADOW_FRAG, SHADOW_VERT } from '../render/shadows';
 import type { Heightfield } from '../terrain/heightfield';
 import { clearing, type VegetationMap } from '../terrain/vegetation';
 import { bodyGeometry, type Lod } from './bodies';
@@ -111,6 +112,7 @@ varying vec3 vFogA;     // fog as an affine map: colour·A + B
 varying vec3 vFogB;
 varying vec3 vView;     // world direction from the animal toward the camera
 varying float vFade;
+${SHADOW_VERT}
 
 vec3 rotX(vec3 v, float a) { float c = cos(a), s = sin(a); return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z); }
 vec3 rotY(vec3 v, float a) { float c = cos(a), s = sin(a); return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z); }
@@ -183,6 +185,11 @@ void main() {
   vFogB = f0;
   vFogA = f1 - f0;
   vFade = 1.0 - smoothstep(0.8, 1.0, dist / 9000.0);
+#ifdef SHADOW_PASS
+  vFade = 1.0;
+#else
+  shadowCoords(mv);
+#endif
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>
 }
@@ -203,6 +210,9 @@ varying vec3 vFogA;
 varying vec3 vFogB;
 varying vec3 vView;
 varying float vFade;
+#ifndef SHADOW_PASS
+${SHADOW_FRAG}
+#endif
 
 float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
 float n3(vec3 p) {
@@ -227,6 +237,10 @@ void main() {
   #include <logdepthbuf_fragment>
   float dither = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
   if (dither > vFade) discard;
+#ifdef SHADOW_PASS
+  gl_FragColor = vec4(1.0);
+  return;
+#endif
   vec3 n = normalize(vN);
   vec3 V = normalize(vView);
   float m = floor(vTint + 0.5);
@@ -261,7 +275,12 @@ void main() {
   float sp = spec * pow(max(0.0, dot(n, H)), rough) * step(0.0, dot(n, L));
   // Sky fill from above, a little bounce from the ground below.
   float skyAmt = 0.55 + 0.45 * dot(n, vUp);
-  vec3 radiance = c * (vSunT * ndl + vSky * skyAmt + vSunT * 0.02 * under) + vSunT * sp;
+#ifndef SHADOW_PASS
+  float sh = sunShadow(0.0012);
+#else
+  float sh = 1.0;
+#endif
+  vec3 radiance = c * (vSunT * sh * ndl + vSky * skyAmt + vSunT * 0.02 * under) + vSunT * sh * sp;
   gl_FragColor = vec4(radiance * vFogA + vFogB, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -295,6 +314,8 @@ const PALETTES: [number, number, number][] = [
 export class Herds {
   readonly group = new Group();
   readonly material: ShaderMaterial;
+  /** Depth-only variant for the sun's shadow map. */
+  readonly shadowMaterial: ShaderMaterial;
   private readonly geoms = new Map<string, BufferGeometry>();
   private readonly cells = new Map<string, Cell>();
   private readonly speciesById = new Map<string, SpeciesDef>();
@@ -321,6 +342,7 @@ export class Herds {
       vertexShader, fragmentShader,
       uniforms: { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) } },
     });
+    this.shadowMaterial = new ShaderMaterial({ vertexShader, fragmentShader, uniforms: this.material.uniforms, defines: { SHADOW_PASS: '' } });
   }
 
   /** Replace who lives where (e.g. when the curated roster arrives); cells rebuild on the next update. */
@@ -616,6 +638,7 @@ export class Herds {
       });
       lods.forEach(({ mesh, anim, look }, li) => {
         mesh.count = counts[li];
+        mesh.visible = counts[li] > 0; // an empty instanced mesh still costs a draw call
         mesh.instanceMatrix.needsUpdate = true;
         anim.needsUpdate = true;
         look.needsUpdate = true;

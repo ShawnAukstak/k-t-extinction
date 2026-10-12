@@ -19,6 +19,7 @@ import { atDistance, type CraterResult } from '../physics/eiep';
 import { cellsAround, directionToFace, faceDirection, FACE_NAMES } from '../render/cube';
 import { atmosphereChunk } from '../render/shaders/atmosphere';
 import { effectsChunk } from '../render/shaders/effects';
+import { SHADOW_FRAG, SHADOW_VERT } from '../render/shadows';
 import type { Heightfield } from './heightfield';
 import { simplex3 } from './noise';
 import { makeFoliageAtlas } from './foliage-atlas';
@@ -117,6 +118,7 @@ varying vec3 vFogA;
 varying vec3 vFogB;
 varying vec3 vView;
 varying float vFade;
+${SHADOW_VERT}
 
 vec3 rotateAxis(vec3 v, vec3 k, float a) {
   return v * cos(a) + cross(k, v) * sin(a) + k * dot(k, v) * (1.0 - cos(a));
@@ -205,6 +207,11 @@ void main() {
   vFogB = f0;
   vFogA = f1 - f0;
   vFade = 1.0 - smoothstep(0.75, 1.0, dist / uFadeM);
+#ifdef SHADOW_PASS
+  vFade = 1.0;
+#else
+  shadowCoords(mv);
+#endif
   gl_Position = projectionMatrix * mv;
   #include <logdepthbuf_vertex>
 }
@@ -229,12 +236,21 @@ varying vec3 vFogA;
 varying vec3 vFogB;
 varying vec3 vView;
 varying float vFade;
+#ifndef SHADOW_PASS
+${SHADOW_FRAG}
+#endif
 
 void main() {
   #include <logdepthbuf_fragment>
   // Dithered fade at the edge of the planted area, so cells don't pop.
   float d = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
   if (d > vFade) discard;
+#ifdef SHADOW_PASS
+  // Depth only: foliage casts the shadow of its cut-out.
+  if (vFoliage > 0.5 && texture2D(uAtlas, vUv).a < 0.5 + 0.45 * vLeafLoss) discard;
+  gl_FragColor = vec4(1.0);
+  return;
+#endif
   vec3 V = normalize(vView);
   vec3 n = normalize(vN);
   if (dot(n, V) < 0.0) n = -n;
@@ -261,7 +277,12 @@ void main() {
     N = n;
   }
   float ndl = max(0.0, (dot(N, uSunDir) + 0.3) / 1.3);
-  vec3 radiance = col * (vSunT * (ndl * mix(0.45, 1.0, vAO) + trans) + vSky * (0.45 + 0.55 * max(0.0, dot(N, vUp))) * vAO);
+#ifndef SHADOW_PASS
+  vec3 sunT = vSunT * sunShadow(0.0015);
+#else
+  vec3 sunT = vSunT;
+#endif
+  vec3 radiance = col * (sunT * (ndl * mix(0.45, 1.0, vAO) + trans) + vSky * (0.45 + 0.55 * max(0.0, dot(N, vUp))) * vAO);
   gl_FragColor = vec4(radiance * vFogA + vFogB, alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -289,6 +310,8 @@ export class Vegetation {
   readonly group = new Group();
   readonly material: ShaderMaterial;
   private readonly coverMaterial: ShaderMaterial;
+  /** Depth-only variant for the sun's shadow map (same shapes, foliage cut-outs). */
+  readonly shadowMaterial: ShaderMaterial;
   readonly map = new VegetationMap();
   private readonly geoms = new Map<string, BufferGeometry>();
   private readonly cells = new Map<string, Cell>();
@@ -316,6 +339,9 @@ export class Vegetation {
     const uniforms = { ...sharedUniforms, uFogColor: { value: new Vector3(0.35, 0.45, 0.6) }, uAtlas: { value: makeFoliageAtlas() } };
     this.material = new ShaderMaterial({
       vertexShader, fragmentShader, uniforms: { ...uniforms, uFadeM: { value: 1800 } }, side: DoubleSide, alphaToCoverage: true,
+    });
+    this.shadowMaterial = new ShaderMaterial({
+      vertexShader, fragmentShader, uniforms: this.material.uniforms, side: DoubleSide, defines: { SHADOW_PASS: '' },
     });
     // Ground cover shares everything but its (short) drawing distance.
     this.coverMaterial = new ShaderMaterial({
@@ -390,6 +416,8 @@ export class Vegetation {
         return geo;
       });
       const mesh = new InstancedMesh(hi, material, list.length);
+      // Shadows don't need every leaf: the shadow pass draws the simpler geometry.
+      mesh.userData.shadowGeometry = lo;
       list.forEach((e, i) => { mesh.setMatrixAt(i, e.m); inst.set(e.inst, i * 4); });
       mesh.instanceMatrix.needsUpdate = true;
       mesh.frustumCulled = false;

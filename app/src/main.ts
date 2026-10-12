@@ -17,6 +17,7 @@ import { formatHash, parseHash, type CameraPose, type ViewState } from './core/u
 import { CRATER_OBSERVED, ImpactEffects, type WinterScenario } from './effects/impact-effects';
 import { Asteroid } from './render/asteroid';
 import { Clouds } from './render/clouds';
+import { SunShadows } from './render/shadows';
 import { Globe } from './render/globe';
 import { Plume } from './render/plume';
 import { Vegetation } from './terrain/vegetation';
@@ -62,7 +63,10 @@ sky.skyMaterial.uniforms.uBlastDustCam = fx.uniforms.uBlastDustCam;
 sky.skyMaterial.uniforms.uBlastDustColor = fx.uniforms.uBlastDustColor;
 sky.skyMaterial.uniforms.uBlastFront = fx.uniforms.uBlastFront;
 sky.skyMaterial.uniforms.uBlastWall = fx.uniforms.uBlastWall;
-const globe = new Globe(settings.terrain, fx.uniforms);
+// Sun shadows near the ground (plants and animals cast, ground/plants/animals receive).
+const shadows = new SunShadows(settings.shadows);
+shadows.init(renderer);
+const globe = new Globe(settings.terrain, { ...fx.uniforms, ...shadows.uniforms });
 scene.add(globe.group);
 const gu = globe.material.uniforms;
 // Sharp ground at grazing angles (most of what you see from a low camera).
@@ -78,11 +82,11 @@ sky.skyMaterial.uniforms.uClouds.value = clouds.target.texture;
 sky.skyMaterial.uniforms.uCloudsOn.value = 1;
 sky.skyMaterial.uniforms.uT = fx.uniforms.uT;
 const vegetation = new Vegetation(globe.heights, fx.crater, {
-  ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
+  ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, { ...settings.vegetation, baseUrl: `${import.meta.env.BASE_URL}data/globe`, mapSize: 512 });
 scene.add(vegetation.group);
 const herds = new Herds(globe.heights, vegetation.map, fx.crater, {
-  ...fx.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
+  ...fx.uniforms, ...shadows.uniforms, uSunDir: gu.uSunDir, uSunScale: gu.uSunScale, uHaze: gu.uHaze, uCamPosKm: gu.uCamPosKm,
 }, settings.herds, [], []);
 // The species cards load the first time the camera is low enough for animals.
 herds.requestRoster = () => void loadRoster().then((r) => herds.setRoster(r.species, r.regions));
@@ -458,6 +462,14 @@ function renderNow(dt = 0): void {
   }
   vegetation.update(camera, fogColor);
   herds.update(camera, clock.t, clock.rate(), fogColor);
+  {
+    const camDir = _up.copy(camera.position).normalize();
+    const groundAlt = camera.position.length() - EARTH_RADIUS - Math.max(0, globe.heights.height(camDir, 200));
+    shadows.render(renderer, camera, sun, groundAlt, [
+      { group: vegetation.group, shadowMaterial: vegetation.shadowMaterial, cellRadius: 450 },
+      { group: herds.group, shadowMaterial: herds.shadowMaterial, cellRadius: 3500 },
+    ]);
+  }
   renderer.render(scene, camera);
   if (plume.update(clock.t, camera, sun, fx.meanLight)) plume.render(renderer, camera);
   timeline.update();
@@ -510,13 +522,13 @@ declare global {
   interface Window {
     __kt: {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
-      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; share: ShareSheet; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
+      fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; share: ShareSheet; shadows: SunShadows; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
       mode: () => 'cine' | 'free';
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
     };
   }
 }
 window.__kt = {
-  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, share, tier, asteroid, vegetation, herds, mode: () => mode,
+  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, share, shadows, tier, asteroid, vegetation, herds, mode: () => mode,
   renderNow, setQuery, effectsReady: () => ensureEffectData(true),
 };
