@@ -13,6 +13,7 @@ const ICONS = {
   pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>',
   prev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h2v12H6zM9.5 12 18 18V6z"/></svg>',
   next: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>',
+  resume: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.7 9h2.1A5 5 0 1 0 12 7v3L7.5 6 12 2z"/></svg>',
 };
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, html?: string): HTMLElementTagNameMap[K] {
@@ -30,11 +31,14 @@ export class TimelineBar {
   onUserInput: (() => void) | null = null;
   /** The bar's own Share button (phones, where the top bar has no room for it). */
   onShare: (() => void) | null = null;
+  /** "Back to the cinematic", offered after the user drags the camera away from it. */
+  onResumeCinematic: (() => void) | null = null;
 
   private readonly rel = el('div', 'kt-rel');
   private readonly age = el('span', 'kt-age');
   private readonly rate = el('span', 'kt-rate');
   private readonly caption = el('button', 'kt-caption');
+  private readonly resume = el('button', 'kt-resume', `${ICONS.resume}<span>Back to the cinematic</span>`);
   private readonly playBtn = el('button', 'kt-btn kt-play', ICONS.play);
   private readonly track = el('div', 'kt-track');
   private readonly fill = el('div', 'kt-fill');
@@ -56,7 +60,13 @@ export class TimelineBar {
     readout.append(this.rel, sub);
     this.caption.type = 'button';
     this.caption.setAttribute('aria-live', 'polite');
-    top.append(readout, this.caption);
+    this.resume.type = 'button';
+    this.resume.hidden = true;
+    this.resume.setAttribute('data-testid', 'resume-cinematic');
+    this.resume.addEventListener('click', () => this.onResumeCinematic?.());
+    const side = el('div', 'kt-top-side');
+    side.append(this.resume, this.caption);
+    top.append(readout, side);
 
     const bar = el('div', 'kt-bar');
     const transport = el('div', 'kt-transport');
@@ -135,6 +145,10 @@ export class TimelineBar {
     window.addEventListener('keydown', this.onKey);
 
     this.update();
+  }
+
+  setResumeCinematic(on: boolean): void {
+    if (this.resume.hidden === on) this.resume.hidden = !on;
   }
 
   jumpTo(e: TimelineEvent): void {

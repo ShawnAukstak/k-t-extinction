@@ -39,19 +39,66 @@ test('the asteroid is on its trajectory and gone after impact', async ({ page })
   expect((await at(5)).visible).toBe(false);
 });
 
-test('dragging takes over the camera without a jump, and the button returns to the cinematic', async ({ page }) => {
-  await page.goto('/#t=600&p=1&m=cine&v=1');
+test('a tap during the opening asks what happened there and leaves the cinematic running', async ({ page }) => {
+  await page.goto('/#t=-1800&p=1&m=cine&v=1');
   await waitForGlobe(page);
+  const box = (await page.locator('canvas').boundingBox())!;
+  await page.mouse.click(box.width / 2, box.height / 2);
+  await expect.poll(() => page.evaluate(() => (window as any).__kt.panel.kind)).toBe('location');
+  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
+  await expect(page.getByTestId('resume-cinematic')).toBeHidden();
+});
+
+test('dragging takes over the camera without a jump or a turn, and offers the way back', async ({ page }) => {
+  await page.goto('/#t=-1800&p=1&m=cine&v=1');
+  await waitForGlobe(page);
+  const north = () => page.evaluate(() => {
+    // Which way north points on screen at the ground below the camera (degrees from up).
+    const k = (window as any).__kt;
+    k.renderNow();
+    const cam = k.camera;
+    const ground = cam.position.clone().setLength(6_371_000);
+    const u = ground.clone().normalize();
+    const n = u.clone().set(0, 1, 0).addScaledVector(u, -u.y).normalize();
+    const a = ground.clone().project(cam), b = ground.clone().addScaledVector(n, 50_000).project(cam);
+    return Math.atan2((b.x - a.x) * cam.aspect, b.y - a.y) * 180 / Math.PI;
+  });
   const before = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
+  const n0 = await north();
   const box = (await page.locator('canvas').boundingBox())!;
   await page.mouse.move(box.width / 2, box.height / 2);
   await page.mouse.down();
+  await page.mouse.move(box.width / 2 + 3, box.height / 2); // within a tap's slop: still the cinematic
+  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
+  await page.mouse.move(box.width / 2 + 12, box.height / 2, { steps: 4 });
   await page.mouse.up();
+  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('free');
+  const after = await page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return k.camera.position.toArray(); });
+  // The view is kept: the globe the same size, north still up.
+  const r = (p: number[]) => Math.hypot(p[0], p[1], p[2]);
+  expect(r(after) / r(before)).toBeGreaterThan(0.85);
+  expect(r(after) / r(before)).toBeLessThan(1.15);
+  expect(Math.abs(n0)).toBeLessThan(30);
+  expect(Math.abs(await north())).toBeLessThan(30);
+  await expect.poll(() => page.evaluate(() => location.hash)).toContain('m=free');
+  const resume = page.getByTestId('resume-cinematic');
+  await expect(resume).toBeVisible();
+  await resume.click();
+  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
+  await expect(resume).toBeHidden();
+  await expect(page.getByTestId('cinematic-toggle')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the cinematic button switches between the cinematic and a free camera', async ({ page }) => {
+  await page.goto('/#t=600&p=1&m=cine&v=1');
+  await waitForGlobe(page);
+  const before = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
+  await page.getByTestId('cinematic-toggle').click();
   const after = await page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return { mode: k.mode(), pos: k.camera.position.toArray() }; });
   expect(after.mode).toBe('free');
   const d = Math.hypot(after.pos[0] - before[0], after.pos[1] - before[1], after.pos[2] - before[2]);
-  expect(d).toBeLessThan(50_000); // metres; continuity when taking over
-  await expect.poll(() => page.evaluate(() => location.hash)).toContain('m=free');
+  expect(d).toBeLessThan(1000); // metres: the free camera starts where the cinematic was
+  await expect(page.getByTestId('resume-cinematic')).toBeHidden(); // chosen, not grabbed
   await page.getByTestId('cinematic-toggle').click();
   expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
 });

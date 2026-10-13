@@ -79,7 +79,8 @@ Tap any animal to see its species card. Press Play to watch the impact arrive.
 | Right-drag, or Ctrl/Shift-drag | Turn (left/right) and tilt (up/down) |
 | Wheel or pinch | Zoom |
 | Two-finger twist / vertical drag | Turn / tilt |
-| Tap or click | "What happened here?" for that spot, or the species card for an animal |
+| Tap or click | "What happened here?" for that spot, or the species card for an animal (the cinematic keeps playing) |
+| Drag, pinch or wheel during the cinematic | Take the camera from there, north still up; **Back to the cinematic** returns |
 | Space | Play / pause |
 | ← / → (Shift for bigger steps) | Step along the timeline |
 | `[` / `]` | Previous / next event |

@@ -43,28 +43,38 @@ export function poseToFrame(p: CameraPose, targetAltitude = 0): PoseFrame {
   return { position, quaternion: new Quaternion().setFromRotationMatrix(_m), target };
 }
 
-/** The pose that best reproduces a camera's current view (used when leaving the cinematic). */
+/**
+ * The pose that best reproduces a camera's current view (used when leaving the cinematic). A pose has
+ * no roll, so a rolled camera can't be matched exactly: this keeps the point at the centre of the
+ * screen and which way is up on screen (the cinematic keeps north up), and gives up the viewing angle,
+ * swinging the camera around that point. A camera that looks past the planet orbits the point below it.
+ */
 export function frameToPose(position: Vector3, quaternion: Quaternion): CameraPose {
   const forward = new Vector3(0, 0, -1).applyQuaternion(quaternion);
+  const screenUp = new Vector3(0, 1, 0).applyQuaternion(quaternion);
   const hit = new Vector3();
   const ray = new Ray(position, forward);
-  if (!ray.intersectSphere(new Sphere(new Vector3(), EARTH_RADIUS), hit)) {
-    // Looking past the planet: orbit the point below the camera instead.
-    hit.copy(position).setLength(EARTH_RADIUS);
-  }
+  if (!ray.intersectSphere(new Sphere(new Vector3(), EARTH_RADIUS), hit)) hit.copy(position).setLength(EARTH_RADIUS);
   const ll = vecToLatLon(hit);
   const { e, n, u } = enuBasis(ll.lat, ll.lon);
   const offset = position.clone().sub(hit);
   const range = offset.length();
-  const tilt = Math.acos(MathUtils.clamp(offset.normalize().dot(u), -1, 1)) / DEG;
-  const h = forward.clone().addScaledVector(u, -forward.dot(u));
-  const heading = h.lengthSq() < 1e-12 ? 0 : Math.atan2(h.dot(e), h.dot(n)) / DEG;
+  offset.normalize();
+  // Heading: screen-up along the ground (looking straight along the vertical, the view direction instead).
+  const look = screenUp.addScaledVector(u, -screenUp.dot(u));
+  if (look.lengthSq() < 1e-4) look.copy(forward).addScaledVector(u, -forward.dot(u));
+  look.normalize();
+  const heading = Math.atan2(look.dot(e), look.dot(n)) / DEG;
+  const tilt = Math.max(0, Math.atan2(-offset.dot(look), offset.dot(u))) / DEG;
   return { lat: ll.lat, lon: ll.lon, range, heading: (heading + 360) % 360, tilt };
 }
 
 export function maxTiltFor(range: number): number {
   return 85 - 50 * MathUtils.smoothstep(range, 2e5, 1.2e7);
 }
+
+/** A press that moves less than this (px) is a tap, not a drag. */
+const TAP_SLOP = 6;
 
 interface PointerInfo {
   x: number;
@@ -75,9 +85,14 @@ export class GlobeControls {
   pose: CameraPose;
   enabled = true;
   minRange = 10;
-  maxRange = 6e7;
-  /** Called after any user interaction (for deep-link updates, cinematic interruption, etc.). */
+  maxRange = 1e8; // past the cinematic's opening shot, ~70,000 km out
+  /** Called after any user interaction (for deep-link updates, etc.). */
   onUserInput: (() => void) | null = null;
+  /**
+   * Called just before input first moves the camera: a drag past the tap threshold, a second finger, or
+   * the wheel. A tap never calls it, so a tap can leave the cinematic running.
+   */
+  onGrab: (() => void) | null = null;
   /** A click/tap that didn't drag: client coordinates. */
   onTap: ((x: number, y: number) => void) | null = null;
   /** Terrain height (m) under a unit direction; keeps the target on the ground and the camera above it. */
@@ -226,6 +241,7 @@ export class GlobeControls {
     else this.down.moved = Infinity;
     this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
     if (this.pointers.size === 2) {
+      this.onGrab?.();
       this.mode = 'pinch';
       const [a, b] = [...this.pointers.values()];
       this.pinchStart = {
@@ -250,6 +266,7 @@ export class GlobeControls {
     const now = performance.now();
     const dt = Math.max(1, now - this.lastMoveTime) / 1000;
     this.lastMoveTime = now;
+    if (this.down.moved >= TAP_SLOP) this.onGrab?.();
 
     if (this.mode === 'pan') this.pan(dx, dy, dt);
     else if (this.mode === 'orbit') this.orbit(dx, dy, dt);
@@ -269,7 +286,7 @@ export class GlobeControls {
   };
 
   private onPointerUp = (e: PointerEvent): void => {
-    const wasTap = this.pointers.size === 1 && this.pointers.has(e.pointerId) && this.down.moved < 6 &&
+    const wasTap = this.pointers.size === 1 && this.pointers.has(e.pointerId) && this.down.moved < TAP_SLOP &&
       performance.now() - this.down.t < 400 && e.button === 0;
     this.pointers.delete(e.pointerId);
     if (wasTap && e.type === 'pointerup') {
@@ -287,6 +304,7 @@ export class GlobeControls {
     if (!this.enabled) return;
     e.preventDefault();
     this.cancelFlight();
+    this.onGrab?.();
     const delta = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY; // lines → pixels
     this.pose.range *= Math.exp(delta * 0.0015);
     this.clamp();

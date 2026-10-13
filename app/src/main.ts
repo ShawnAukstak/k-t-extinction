@@ -165,18 +165,20 @@ window.addEventListener('hashchange', () => {
 });
 
 // ── camera mode ──────────────────────────────────────────────────────────────
-function setMode(m: 'cine' | 'free'): void {
+/** `grabbed`: the user took the camera by dragging, so offer the way back until they take it or go elsewhere. */
+function setMode(m: 'cine' | 'free', grabbed = false): void {
+  timeline.setResumeCinematic(m === 'free' && grabbed);
   if (m === mode) return;
   if (m === 'free') controls.setPose(frameToPose(camera.position, camera.quaternion));
   mode = m;
   topbar.setCinematic(m === 'cine');
   scheduleHashUpdate();
 }
-// Any grab of the globe hands the camera to the user, continuing from the current view.
-for (const type of ['pointerdown', 'wheel'] as const) {
-  renderer.domElement.addEventListener(type, () => { if (mode === 'cine') setMode('free'); }, { capture: true });
-}
+// Dragging, pinching or scrolling hands the camera to the user, continuing from the current view.
+// A tap doesn't: it asks "what happened here?" and the cinematic plays on.
+controls.onGrab = () => { if (mode === 'cine') setMode('free', true); };
 topbar.onCinematic = () => setMode(mode === 'cine' ? 'free' : 'cine');
+timeline.onResumeCinematic = () => setMode('cine');
 const sound = new Soundscape();
 topbar.onSound = (on) => { if (on) void sound.enable(); else sound.disable(); };
 
