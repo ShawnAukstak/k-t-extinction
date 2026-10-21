@@ -51,7 +51,7 @@ Exit: the first thing worth posting.
 
 ## Phase 3 — Cinematic — **done** (3a, 3b)
 
-Built: asteroid with entry glow, a scripted ride → hold → aftermath → global camera, a raymarched 3-D plume from Artemieva & Morgan 2020, and a procedural soundtrack (Web Audio, delays from distance). Not built: a GSAP keyframe panel (shots are authored in `camera/cinematic.ts`). The ejecta curtain (2026-10-12) is an analytic inverted cone in the raymarched plume rather than particles, handing over to the Artemieva & Morgan field. Time of day: 10:00 local solar time, boreal spring, labelled "chosen".
+Built: asteroid with entry glow, a scripted ride → hold → aftermath → global camera, a raymarched 3-D plume from Artemieva & Morgan 2020, and a procedural soundtrack (Web Audio, delays from distance). Not built: a GSAP keyframe panel (shots are authored in `camera/cinematic.ts`). The ejecta curtain (2026-10-12) is an analytic inverted cone in the raymarched plume rather than particles, handing over to the Artemieva & Morgan field. Time of day: 10:00 local solar time, boreal spring, labelled "chosen". The cinematic can be turned and zoomed around each shot's subject without leaving it (2026-10-21), so a first drag doesn't lose the asteroid.
 
 Goal: the main event on first load.
 

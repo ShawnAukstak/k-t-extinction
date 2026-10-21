@@ -10,7 +10,7 @@ An explorable, scientifically grounded 3D simulation of the Chicxulub impact and
 - **Impact effects:**
   - a fireball that rises out of the atmosphere, the ejecta curtain, the crater, the Artemieva & Morgan dust cloud, the Range et al. tsunami, and the scaling-law air blast;
   - impact winter from the Tabor et al. model runs, switchable between soot, SO₂ and dust.
-- **Camera:** cinematic, fixed and free modes, plus procedural audio.
+- **Camera:** a cinematic you can turn around and zoom while it follows the asteroid, plus a free camera and procedural audio.
 - **"What happened here?":** tap anywhere for that place's local history.
 - **Explore:** picture cards of moments worth seeing (a place, a time and a view, from "Watch from the start" to the fireball, the Tanis surge, the dark planet, the fern spike and the mammals' world; `data/curated/moments.yaml`), fossil sites, and "Where was my city?", which reconstructs modern cities to their 65 Ma positions.
 - **Sky and sea:** illustrative clouds that follow the general circulation (seen from above and below), wind waves with sun glitter and sky reflection, stars and a faint Milky Way.
@@ -80,7 +80,7 @@ Tap any animal to see its species card. Press Play to watch the impact arrive.
 | Wheel or pinch | Zoom |
 | Two-finger twist / vertical drag | Turn / tilt |
 | Tap or click | "What happened here?" for that spot, or the species card for an animal (the cinematic keeps playing) |
-| Drag, pinch or wheel during the cinematic | Take the camera from there, north still up; **Back to the cinematic** returns |
+| Drag, pinch or wheel during the cinematic | Turn around and zoom toward what it's following (the asteroid, then the impact, the crater, the planet), which stays in view; **Reset** returns to the scripted framing, **Free camera** leaves the cinematic and **Back to the cinematic** returns |
 | Space | Play / pause |
 | ← / → (Shift for bigger steps) | Step along the timeline |
 | `[` / `]` | Previous / next event |

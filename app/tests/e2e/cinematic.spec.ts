@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { expectNoErrors, pixelAt, trackErrors, waitForGlobe } from './helpers';
 
 test('lands in the cinematic, an hour out, playing, with Earth in view', async ({ page }) => {
@@ -46,10 +46,55 @@ test('a tap during the opening asks what happened there and leaves the cinematic
   await page.mouse.click(box.width / 2, box.height / 2);
   await expect.poll(() => page.evaluate(() => (window as any).__kt.panel.kind)).toBe('location');
   expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
+  expect(await page.evaluate(() => ({ ...(window as any).__kt.follow }))).toEqual({ yaw: 0, pitch: 0, zoom: 1 }); // not nudged
   await expect(page.getByTestId('resume-cinematic')).toBeHidden();
 });
 
-test('dragging takes over the camera without a jump or a turn, and offers the way back', async ({ page }) => {
+/** Where the asteroid is on screen (normalised device coordinates) and how far the camera is from it, m. */
+async function onAsteroid(page: Page): Promise<{ x: number; y: number; dist: number }> {
+  return page.evaluate(() => {
+    const k = (window as any).__kt;
+    k.renderNow();
+    const p = k.asteroid.group.position.clone();
+    const dist = p.distanceTo(k.camera.position);
+    p.project(k.camera);
+    return { x: p.x, y: p.y, dist };
+  });
+}
+
+async function dragAcross(page: Page, fx: number, fy: number): Promise<void> {
+  const box = (await page.locator('canvas').boundingBox())!;
+  await page.mouse.move(box.width / 2, box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.width / 2 + 3, box.height / 2); // within a tap's slop: nothing turns yet
+  await page.mouse.move(box.width * (0.5 + fx), box.height * (0.5 + fy), { steps: 6 });
+  await page.mouse.up();
+}
+
+test('dragging and zooming in the cinematic turn around the asteroid without losing it', async ({ page }) => {
+  await page.goto('/#t=-1800&p=1&m=cine&v=1');
+  await waitForGlobe(page);
+  const a0 = await onAsteroid(page);
+  const cam0 = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
+  await dragAcross(page, -0.3, 0.1);
+  await page.locator('canvas').dispatchEvent('wheel', { deltaY: -400, deltaMode: 0 }); // zoom in
+  await page.waitForTimeout(400); // the flick's coast settles
+  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
+  const f = await page.evaluate(() => ({ ...(window as any).__kt.follow }));
+  expect(Math.abs(f.yaw)).toBeGreaterThan(10);
+  expect(f.zoom).toBeLessThan(0.9);
+  const a1 = await onAsteroid(page);
+  expect(Math.hypot(a1.x - a0.x, a1.y - a0.y)).toBeLessThan(0.01); // the rock stays put on screen
+  expect(a1.dist).toBeLessThan(a0.dist * 0.9);
+  const cam1 = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
+  expect(Math.hypot(cam1[0] - cam0[0], cam1[1] - cam0[1], cam1[2] - cam0[2])).toBeGreaterThan(1000);
+  // Reset glides back to the scripted framing.
+  await page.getByTestId('follow-reset').click();
+  await expect.poll(() => page.evaluate(() => { const o = (window as any).__kt.follow; return o.yaw === 0 && o.pitch === 0 && o.zoom === 1; })).toBe(true);
+  await expect(page.getByTestId('follow-reset')).toBeHidden();
+});
+
+test('Free camera leaves the cinematic with north up, and the way back returns to it', async ({ page }) => {
   await page.goto('/#t=-1800&p=1&m=cine&v=1');
   await waitForGlobe(page);
   const north = () => page.evaluate(() => {
@@ -63,28 +108,19 @@ test('dragging takes over the camera without a jump or a turn, and offers the wa
     const a = ground.clone().project(cam), b = ground.clone().addScaledVector(n, 50_000).project(cam);
     return Math.atan2((b.x - a.x) * cam.aspect, b.y - a.y) * 180 / Math.PI;
   });
-  const before = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
-  const n0 = await north();
-  const box = (await page.locator('canvas').boundingBox())!;
-  await page.mouse.move(box.width / 2, box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.width / 2 + 3, box.height / 2); // within a tap's slop: still the cinematic
-  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
-  await page.mouse.move(box.width / 2 + 12, box.height / 2, { steps: 4 });
-  await page.mouse.up();
+  await dragAcross(page, 0.1, 0);
+  await page.getByTestId('free-camera').click();
   expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('free');
-  const after = await page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return k.camera.position.toArray(); });
-  // The view is kept: the globe the same size, north still up.
-  const r = (p: number[]) => Math.hypot(p[0], p[1], p[2]);
-  expect(r(after) / r(before)).toBeGreaterThan(0.85);
-  expect(r(after) / r(before)).toBeLessThan(1.15);
-  expect(Math.abs(n0)).toBeLessThan(30);
   expect(Math.abs(await north())).toBeLessThan(30);
   await expect.poll(() => page.evaluate(() => location.hash)).toContain('m=free');
   const resume = page.getByTestId('resume-cinematic');
   await expect(resume).toBeVisible();
+  // Dragging now moves the free camera.
+  await dragAcross(page, 0.1, 0);
+  expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('free');
   await resume.click();
   expect(await page.evaluate(() => (window as any).__kt.mode())).toBe('cine');
+  expect(await page.evaluate(() => ({ ...(window as any).__kt.follow }))).toEqual({ yaw: 0, pitch: 0, zoom: 1 });
   await expect(resume).toBeHidden();
   await expect(page.getByTestId('cinematic-toggle')).toHaveAttribute('aria-pressed', 'true');
 });

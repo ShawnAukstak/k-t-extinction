@@ -4,7 +4,7 @@ import catalog from '../../data/catalog.yaml';
 import { EARTH_RADIUS, IMPACT, SKY } from './config';
 import { Soundscape } from './audio/soundscape';
 import { Cinematic } from './camera/cinematic';
-import { frameToPose, GlobeControls } from './camera/globe-controls';
+import { type FollowOffset, frameToPose, GlobeControls } from './camera/globe-controls';
 import { replaceUrl, track } from './core/analytics';
 import { Clock } from './core/clock';
 import { detectTier, TIER_SETTINGS } from './core/device';
@@ -145,7 +145,7 @@ function scheduleHashUpdate(): void {
   window.clearTimeout(hashTimer);
   hashTimer = window.setTimeout(writeHash, 300);
 }
-controls.onUserInput = scheduleHashUpdate;
+controls.onUserInput = () => { followEasing = false; scheduleHashUpdate(); };
 timeline.onUserInput = scheduleHashUpdate;
 /** Go to a view (a link opened in this tab, or a moment). */
 function applyView(v: ViewState): void {
@@ -165,20 +165,43 @@ window.addEventListener('hashchange', () => {
 });
 
 // ── camera mode ──────────────────────────────────────────────────────────────
-/** `grabbed`: the user took the camera by dragging, so offer the way back until they take it or go elsewhere. */
-function setMode(m: 'cine' | 'free', grabbed = false): void {
-  timeline.setResumeCinematic(m === 'free' && grabbed);
+/**
+ * In the cinematic, gestures turn and zoom around its subject (the asteroid, then the impact, the
+ * crater, the planet) without losing it; a tap still asks "what happened here?".
+ */
+const follow: FollowOffset = { yaw: 0, pitch: 0, zoom: 1 };
+let followEasing = false;
+controls.follow = mode === 'cine' ? follow : null;
+const followMoved = () => Math.abs(follow.yaw) > 1 || Math.abs(follow.pitch) > 1 || Math.abs(Math.log(follow.zoom)) > 0.02;
+/** Glide a turned or zoomed cinematic back to the scripted framing. */
+function easeFollow(dt: number): void {
+  if (!followEasing) return;
+  const k = 1 - Math.exp(-dt * 5);
+  follow.yaw -= follow.yaw * k;
+  follow.pitch -= follow.pitch * k;
+  follow.zoom = Math.exp(Math.log(follow.zoom) * (1 - k));
+  if (Math.abs(follow.yaw) + Math.abs(follow.pitch) < 0.05 && Math.abs(Math.log(follow.zoom)) < 1e-3) resetFollow();
+}
+function resetFollow(): void {
+  Object.assign(follow, { yaw: 0, pitch: 0, zoom: 1 });
+  followEasing = false;
+  controls.stop();
+}
+/** `left`: the user left the cinematic from its own controls, so offer the way back until they take it or go elsewhere. */
+function setMode(m: 'cine' | 'free', left = false): void {
+  timeline.setResumeCinematic(m === 'free' && left);
+  if (m === 'cine') resetFollow(); // (re)starting the cinematic, as from a moment: the scripted framing
   if (m === mode) return;
   if (m === 'free') controls.setPose(frameToPose(camera.position, camera.quaternion));
+  controls.follow = m === 'cine' ? follow : null;
   mode = m;
   topbar.setCinematic(m === 'cine');
   scheduleHashUpdate();
 }
-// Dragging, pinching or scrolling hands the camera to the user, continuing from the current view.
-// A tap doesn't: it asks "what happened here?" and the cinematic plays on.
-controls.onGrab = () => { if (mode === 'cine') setMode('free', true); };
 topbar.onCinematic = () => setMode(mode === 'cine' ? 'free' : 'cine');
 timeline.onResumeCinematic = () => setMode('cine');
+timeline.onResetFollow = () => { followEasing = true; controls.stop(); };
+timeline.onFreeCamera = () => setMode('free', true);
 const sound = new Soundscape();
 topbar.onSound = (on) => { if (on) void sound.enable(); else sound.disable(); };
 
@@ -492,8 +515,12 @@ const sun = new Vector3();
 const fogColor = new Vector3();
 /** Bring every time-dependent system up to the clock and draw one frame. */
 function renderNow(dt = 0): void {
-  if (mode === 'cine') cine.apply(clock.t, camera);
-  else controls.update(dt);
+  controls.update(dt);
+  if (mode === 'cine') {
+    easeFollow(dt);
+    cine.apply(clock.t, camera, follow);
+  }
+  timeline.setFollowControls(mode === 'cine' && followMoved());
   updateSun(sun);
   updateMoon();
   asteroid.update(clock.t, sun);
@@ -571,14 +598,14 @@ declare global {
     __kt: {
       renderer: WebGLRenderer; scene: Scene; camera: PerspectiveCamera; controls: GlobeControls; globe: Globe; sky: Sky;
       fx: ImpactEffects; clock: Clock; timeline: TimelineBar; panel: InfoPanel; share: ShareSheet; shadows: SunShadows; tier: string; asteroid: Asteroid; vegetation: Vegetation; herds: Herds;
-      mode: () => 'cine' | 'free';
+      mode: () => 'cine' | 'free'; follow: FollowOffset;
       renderNow: (dt?: number) => void; setQuery: (p: LatLon | null) => void; effectsReady: () => Promise<unknown>;
       goMoment: (id: string) => void;
     };
   }
 }
 window.__kt = {
-  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, share, shadows, tier, asteroid, vegetation, herds, mode: () => mode,
+  renderer, scene, camera, controls, globe, sky, fx, clock, timeline, panel, share, shadows, tier, asteroid, vegetation, herds, mode: () => mode, follow,
   renderNow, setQuery, effectsReady: () => ensureEffectData(true),
   goMoment: (id) => { const m = MOMENTS.find((x) => x.id === id); if (m) goMoment(m); },
 };

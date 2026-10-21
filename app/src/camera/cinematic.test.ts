@@ -61,4 +61,40 @@ describe('cinematic camera', () => {
       }
     }
   });
+
+  it('turns and zooms around the subject without losing it or going below the ground', () => {
+    const offsets = [
+      { yaw: 120, pitch: 30, zoom: 0.4 },
+      { yaw: -90, pitch: -60, zoom: 3 },
+      { yaw: 180, pitch: -500, zoom: 0.001 }, // past every limit
+      { yaw: 0, pitch: 500, zoom: 1000 },
+    ];
+    for (const t of TIMES) {
+      for (const aspect of ASPECTS) {
+        const base = new PerspectiveCamera(45, aspect, 1, 1e9);
+        cine.apply(t, base);
+        const pivot = cine.frame(t, aspect).pivot;
+        const p0 = pivot.clone().project(base);
+        const baseAlt = base.position.length() - EARTH_RADIUS;
+        for (const o0 of offsets) {
+          const o = { ...o0 };
+          const cam = new PerspectiveCamera(45, aspect, 1, 1e9);
+          cine.apply(t, cam, o);
+          const at = `t = ${t}, aspect ${aspect}, offset ${JSON.stringify(o0)}`;
+          const p1 = pivot.clone().project(cam);
+          expect(Math.hypot(p1.x - p0.x, p1.y - p0.y), `${at}: the subject moved on screen`).toBeLessThan(1e-3);
+          expect(cam.position.length() - EARTH_RADIUS, at).toBeGreaterThan(Math.min(5_000, baseAlt) - 1);
+          expect(cam.position.distanceTo(pivot), at).toBeGreaterThan(2 * 5_000);
+          // The offset is limited in place, so applying it again changes nothing (no wind-up past a limit).
+          const again = { ...o };
+          cine.apply(t, cam, again);
+          expect(again.pitch, at).toBeCloseTo(o.pitch, 6);
+          expect(again.zoom, at).toBeCloseTo(o.zoom, 6);
+        }
+        const still = new PerspectiveCamera(45, aspect, 1, 1e9);
+        cine.apply(t, still, { yaw: 0, pitch: 0, zoom: 1 });
+        expect(still.position.distanceTo(base.position)).toBeLessThan(1e-6);
+      }
+    }
+  });
 });

@@ -7,6 +7,9 @@
  *   wheel / pinch                       zoom
  *   two-finger twist / vertical drag    heading / tilt
  *
+ * While following a scripted camera (the cinematic), the same gestures turn and zoom around its
+ * subject instead (`follow`).
+ *
  * The camera position is computed in float64 (three's Vector3 uses JS numbers), which keeps
  * model-view matrices precise near the ground; see docs/plan/decisions.md D5.
  */
@@ -73,8 +76,17 @@ export function maxTiltFor(range: number): number {
   return 85 - 50 * MathUtils.smoothstep(range, 2e5, 1.2e7);
 }
 
+/** A turn and zoom on top of a scripted camera: degrees around the subject and up over it, and a distance factor. */
+export interface FollowOffset {
+  yaw: number;
+  pitch: number;
+  zoom: number;
+}
+
 /** A press that moves less than this (px) is a tap, not a drag. */
 const TAP_SLOP = 6;
+/** Fastest a flick keeps turning a followed view after release, degrees per second. */
+const FLICK_MAX = 90;
 
 interface PointerInfo {
   x: number;
@@ -88,11 +100,8 @@ export class GlobeControls {
   maxRange = 1e8; // past the cinematic's opening shot, ~70,000 km out
   /** Called after any user interaction (for deep-link updates, etc.). */
   onUserInput: (() => void) | null = null;
-  /**
-   * Called just before input first moves the camera: a drag past the tap threshold, a second finger, or
-   * the wheel. A tap never calls it, so a tap can leave the cinematic running.
-   */
-  onGrab: (() => void) | null = null;
+  /** While set, gestures turn and zoom this offset around a followed subject, and the pose is left alone. */
+  follow: FollowOffset | null = null;
   /** A click/tap that didn't drag: client coordinates. */
   onTap: ((x: number, y: number) => void) | null = null;
   /** Terrain height (m) under a unit direction; keeps the target on the ground and the camera above it. */
@@ -105,8 +114,9 @@ export class GlobeControls {
   private readonly pointers = new Map<number, PointerInfo>();
   private mode: 'none' | 'pan' | 'orbit' | 'pinch' = 'none';
   private velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+  private followVelocity = { yaw: 0, pitch: 0 };
   private lastMoveTime = 0;
-  private pinchStart = { dist: 0, angle: 0, midY: 0, range: 0, heading: 0, tilt: 0 };
+  private pinchStart = { dist: 0, angle: 0, midY: 0, range: 0, heading: 0, tilt: 0, yaw: 0, pitch: 0, zoom: 1 };
   private dirty = true;
 
   constructor(private readonly camera: PerspectiveCamera, private readonly dom: HTMLElement, initial: CameraPose) {
@@ -130,9 +140,15 @@ export class GlobeControls {
 
   setPose(p: CameraPose): void {
     this.pose = { ...p };
-    this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+    this.stop();
     this.clamp();
     this.dirty = true;
+  }
+
+  /** Stop any coasting after a flick. */
+  stop(): void {
+    this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+    this.followVelocity = { yaw: 0, pitch: 0 };
   }
 
   getPose(): CameraPose {
@@ -152,7 +168,7 @@ export class GlobeControls {
     const bump = Math.max(0, Math.log(peak) - Math.max(Math.log(from.range), Math.log(to.range)));
     return new Promise((resolve) => {
       this.flight = { from, to: { ...to }, elapsed: 0, duration: Math.max(0.3, seconds), bump, resolve };
-      this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+      this.stop();
     });
   }
 
@@ -197,6 +213,16 @@ export class GlobeControls {
 
   /** Apply inertia and write the pose to the camera. Returns true if the camera moved. */
   update(dt: number): boolean {
+    if (this.follow) {
+      // The scripted camera writes the camera; only the follow offset's inertia runs here.
+      const v = this.followVelocity;
+      if (this.mode === 'none' && Math.abs(v.yaw) + Math.abs(v.pitch) > 1e-3) {
+        this.turn(v.yaw * dt, v.pitch * dt);
+        const decay = Math.exp(-dt * 4);
+        v.yaw *= decay; v.pitch *= decay;
+      }
+      return false;
+    }
     if (this.flight) this.stepFlight(dt);
     const v = this.velocity;
     if (this.mode === 'none') {
@@ -239,14 +265,14 @@ export class GlobeControls {
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 1) this.down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 };
     else this.down.moved = Infinity;
-    this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+    this.stop();
     if (this.pointers.size === 2) {
-      this.onGrab?.();
       this.mode = 'pinch';
       const [a, b] = [...this.pointers.values()];
+      const f = this.follow ?? { yaw: 0, pitch: 0, zoom: 1 };
       this.pinchStart = {
         dist: Math.hypot(b.x - a.x, b.y - a.y), angle: Math.atan2(b.y - a.y, b.x - a.x), midY: (a.y + b.y) / 2,
-        range: this.pose.range, heading: this.pose.heading, tilt: this.pose.tilt,
+        range: this.pose.range, heading: this.pose.heading, tilt: this.pose.tilt, yaw: f.yaw, pitch: f.pitch, zoom: f.zoom,
       };
     } else {
       this.mode = e.button === 2 || e.ctrlKey || e.shiftKey || e.metaKey ? 'orbit' : 'pan';
@@ -266,7 +292,10 @@ export class GlobeControls {
     const now = performance.now();
     const dt = Math.max(1, now - this.lastMoveTime) / 1000;
     this.lastMoveTime = now;
-    if (this.down.moved >= TAP_SLOP) this.onGrab?.();
+    if (this.follow) {
+      this.followGesture(dx, dy, dt);
+      return;
+    }
 
     if (this.mode === 'pan') this.pan(dx, dy, dt);
     else if (this.mode === 'orbit') this.orbit(dx, dy, dt);
@@ -290,12 +319,12 @@ export class GlobeControls {
       performance.now() - this.down.t < 400 && e.button === 0;
     this.pointers.delete(e.pointerId);
     if (wasTap && e.type === 'pointerup') {
-      this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+      this.stop();
       this.onTap?.(e.clientX, e.clientY);
     }
     if (this.dom.hasPointerCapture(e.pointerId)) this.dom.releasePointerCapture(e.pointerId);
     // Stop inertia if the pointer rested before release.
-    if (performance.now() - this.lastMoveTime > 80) this.velocity = { lat: 0, lon: 0, heading: 0, tilt: 0, zoom: 0 };
+    if (performance.now() - this.lastMoveTime > 80) this.stop();
     if (this.pointers.size === 0) this.mode = 'none';
     else if (this.pointers.size === 1) this.mode = 'pan';
   };
@@ -304,13 +333,43 @@ export class GlobeControls {
     if (!this.enabled) return;
     e.preventDefault();
     this.cancelFlight();
-    this.onGrab?.();
     const delta = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY; // lines → pixels
+    if (this.follow) {
+      this.follow.zoom *= Math.exp(delta * 0.0015);
+      this.onUserInput?.();
+      return;
+    }
     this.pose.range *= Math.exp(delta * 0.0015);
     this.clamp();
     this.dirty = true;
     this.onUserInput?.();
   };
+
+  /** Following: a drag turns around the subject (a tap's small wobble doesn't); two fingers zoom, twist and tilt. */
+  private followGesture(dx: number, dy: number, dt: number): void {
+    const f = this.follow!;
+    if (this.mode === 'pinch' && this.pointers.size === 2) {
+      const [a, b] = [...this.pointers.values()];
+      const s = this.pinchStart;
+      f.zoom = s.zoom * (s.dist / Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)));
+      f.yaw = s.yaw + (Math.atan2(b.y - a.y, b.x - a.x) - s.angle) / DEG;
+      f.pitch = s.pitch - (s.midY - (a.y + b.y) / 2) * 0.25;
+    } else if (this.down.moved >= TAP_SLOP) {
+      // The scene turns with the pointer: drag right, the camera swings left around the subject.
+      const dYaw = -dx * 0.3, dPitch = dy * 0.3;
+      this.turn(dYaw, dPitch);
+      // A flick coasts a little, at most a quarter turn a second.
+      const cap = (v: number) => MathUtils.clamp(v, -FLICK_MAX, FLICK_MAX);
+      this.followVelocity = { yaw: cap(dYaw / dt), pitch: cap(dPitch / dt) };
+    } else return;
+    this.onUserInput?.();
+  }
+
+  private turn(dYaw: number, dPitch: number): void {
+    const f = this.follow!;
+    f.yaw = ((f.yaw + dYaw + 540) % 360) - 180;
+    f.pitch += dPitch;
+  }
 
   /** Move the target so the ground follows the pointer (approximately, for any tilt). */
   private pan(dx: number, dy: number, dt: number): void {

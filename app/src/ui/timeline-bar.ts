@@ -31,14 +31,18 @@ export class TimelineBar {
   onUserInput: (() => void) | null = null;
   /** The bar's own Share button (phones, where the top bar has no room for it). */
   onShare: (() => void) | null = null;
-  /** "Back to the cinematic", offered after the user drags the camera away from it. */
+  /** "Back to the cinematic", offered after the user leaves it with "Free camera". */
   onResumeCinematic: (() => void) | null = null;
+  /** Offered while the user has turned or zoomed the cinematic: back to its framing, or leave it. */
+  onResetFollow: (() => void) | null = null;
+  onFreeCamera: (() => void) | null = null;
 
   private readonly rel = el('div', 'kt-rel');
   private readonly age = el('span', 'kt-age');
   private readonly rate = el('span', 'kt-rate');
   private readonly caption = el('button', 'kt-caption');
   private readonly resume = el('button', 'kt-resume', `${ICONS.resume}<span>Back to the cinematic</span>`);
+  private readonly followBar = el('div', 'kt-follow');
   private readonly playBtn = el('button', 'kt-btn kt-play', ICONS.play);
   private readonly track = el('div', 'kt-track');
   private readonly fill = el('div', 'kt-fill');
@@ -64,8 +68,19 @@ export class TimelineBar {
     this.resume.hidden = true;
     this.resume.setAttribute('data-testid', 'resume-cinematic');
     this.resume.addEventListener('click', () => this.onResumeCinematic?.());
+    const reset = el('button', '', `${ICONS.resume}<span>Reset<span class="kt-wide"> view</span></span>`);
+    const free = el('button', '', '<span>Free camera</span>');
+    reset.type = free.type = 'button';
+    reset.setAttribute('data-testid', 'follow-reset');
+    free.setAttribute('data-testid', 'free-camera');
+    reset.title = 'Back to the cinematic framing';
+    free.title = 'Leave the cinematic and move the camera anywhere';
+    reset.addEventListener('click', () => this.onResetFollow?.());
+    free.addEventListener('click', () => this.onFreeCamera?.());
+    this.followBar.hidden = true;
+    this.followBar.append(reset, free);
     const side = el('div', 'kt-top-side');
-    side.append(this.resume, this.caption);
+    side.append(this.resume, this.followBar, this.caption);
     top.append(readout, side);
 
     const bar = el('div', 'kt-bar');
@@ -149,6 +164,10 @@ export class TimelineBar {
 
   setResumeCinematic(on: boolean): void {
     if (this.resume.hidden === on) this.resume.hidden = !on;
+  }
+
+  setFollowControls(on: boolean): void {
+    if (this.followBar.hidden === on) this.followBar.hidden = !on;
   }
 
   jumpTo(e: TimelineEvent): void {
