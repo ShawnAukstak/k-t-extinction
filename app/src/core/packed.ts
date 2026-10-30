@@ -1,5 +1,5 @@
 /**
- * Binary data files, packed for the wire. Static hosts send .bin files uncompressed (Render compresses
+ * Binary data files, packed for the wire. Static hosts send .bin files uncompressed (they compress
  * text, not application/octet-stream), so the production build (vite.config.ts) gzips each one after a
  * reversible filter that makes smooth fields compress much better: per-element differences, split into
  * byte planes (all low bytes, then all high bytes). The tsunami grid goes from 4.1 MB to about 1 MB.

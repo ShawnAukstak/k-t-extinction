@@ -23,47 +23,47 @@ const DESCRIPTION = 'The Chicxulub impact and the end of the dinosaurs, minute b
 const CONSENT_REGIONS = 'AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE IS LI NO GB CH'.split(' ');
 
 /**
- * What the page tells search engines, link unfurlers and analytics. Absolute URLs need the site's
- * address: on Render the build knows it (RENDER_EXTERNAL_URL; SITE_URL overrides); elsewhere the
- * image is a relative path, which most unfurlers resolve, and there is no canonical link or sitemap.
+ * The site's address, including the path it is served under (GitHub Pages). SITE_URL overrides it,
+ * e.g. for a custom domain; the production build is served from its path.
+ */
+const SITE = (process.env.SITE_URL || 'https://shawnaukstak.github.io/k-t-extinction').replace(/\/+$/, '');
+const SITE_PATH = `${new URL(SITE).pathname.replace(/\/+$/, '')}/`;
+
+/**
+ * What the page tells search engines, link unfurlers and analytics: link previews, the canonical
+ * link, structured data, robots.txt and sitemap.xml, all at SITE.
  *
- *   SITE_URL          The site's address including any base path, e.g. https://user.github.io/repo.
  *   GA_ID             Google Analytics measurement ID (G-…): adds gtag.js (src/core/analytics.ts).
  *   GSC_VERIFICATION  Search Console's HTML-tag token, if verifying that way rather than through Analytics.
  */
 function sitePlugin(): Plugin {
-  const site = (process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL ?? '').replace(/\/$/, '');
   const ga = process.env.GA_ID?.trim();
   const gsc = process.env.GSC_VERIFICATION?.trim();
   return {
     name: 'kt-site',
     transformIndexHtml(html) {
-      const img = site ? `${site}/og.jpg` : 'og.jpg';
+      const img = `${SITE}/og.jpg`;
       const tags = [
         `<meta property="og:image" content="${img}" />`,
         '<meta property="og:image:width" content="1200" />',
         '<meta property="og:image:height" content="630" />',
         '<meta property="og:image:alt" content="An asteroid approaching the Earth of 66 million years ago" />',
         `<meta name="twitter:image" content="${img}" />`,
+        `<meta property="og:url" content="${SITE}/" />`,
+        `<link rel="canonical" href="${SITE}/" />`,
+        `<script type="application/ld+json">${JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebApplication',
+          name: TITLE,
+          url: `${SITE}/`,
+          description: DESCRIPTION,
+          image: img,
+          applicationCategory: 'EducationalApplication',
+          operatingSystem: 'Any (a web browser with WebGL 2)',
+          isAccessibleForFree: true,
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        })}</script>`,
       ];
-      if (site) {
-        tags.push(
-          `<meta property="og:url" content="${site}/" />`,
-          `<link rel="canonical" href="${site}/" />`,
-          `<script type="application/ld+json">${JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: TITLE,
-            url: `${site}/`,
-            description: DESCRIPTION,
-            image: img,
-            applicationCategory: 'EducationalApplication',
-            operatingSystem: 'Any (a web browser with WebGL 2)',
-            isAccessibleForFree: true,
-            offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-          })}</script>`,
-        );
-      }
       if (gsc) tags.push(`<meta name="google-site-verification" content="${gsc}" />`);
       if (ga) {
         // The URL follows playback (src/core/analytics.ts replaceUrl), which gtag.js would count as page
@@ -84,13 +84,12 @@ function sitePlugin(): Plugin {
       return html.replace('</head>', `    ${tags.join('\n    ')}\n  </head>`);
     },
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\n${site ? `\nSitemap: ${site}/sitemap.xml\n` : ''}` });
-      if (!site) return;
+      this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n` });
       const day = new Date().toISOString().slice(0, 10);
       this.emitFile({
         type: 'asset',
         fileName: 'sitemap.xml',
-        source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${site}/</loc><lastmod>${day}</lastmod></url>\n</urlset>\n`,
+        source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE}/</loc><lastmod>${day}</lastmod></url>\n</urlset>\n`,
       });
     },
   };
@@ -128,15 +127,12 @@ function packDataPlugin(): Plugin {
   };
 }
 
-/** Where the site is served from: `/` on Render, `/k-t-extinction/` on GitHub Pages (BASE_PATH). */
-const basePath = (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '');
-const base = basePath ? `/${basePath}/` : '/';
-
-export default defineConfig({
-  base,
+// The dev server stays at the root so local links and the browser tests' default address work.
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === 'build' || isPreview ? SITE_PATH : '/',
   plugins: [yamlPlugin(), sitePlugin(), packDataPlugin()],
   server: { port: 5173, strictPort: true, host: '127.0.0.1', fs: { allow: ['..'] } },
   preview: { port: 4173, strictPort: true, host: '127.0.0.1' },
   build: { target: 'es2022', sourcemap: true },
   test: { include: ['src/**/*.test.ts'] },
-});
+}));
