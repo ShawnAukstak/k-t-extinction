@@ -53,22 +53,22 @@ python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 # 2. App
 cd app
 npm install
-npm run dev                                  # → http://127.0.0.1:5173
+npm run dev                                  # local dev server → http://127.0.0.1:5173
 ```
 
 `scripts/fetch.py` skips files it already has, so it is safe to re-run. `--list` shows every source. See [`data/README.md`](data/README.md).
 
 ### Try these links
 
-With the dev server running:
+On the live site (to open one on your local dev server instead, swap `https://shawnaukstak.github.io/k-t-extinction/` for `http://127.0.0.1:5173/`):
 
 | Link | What |
 |---|---|
-| http://127.0.0.1:5173/#m=cine | The cinematic tour from the asteroid's approach |
-| http://127.0.0.1:5173/#t=3600&c=28,-78,4500000,0,0&p=1&v=1 | One hour after impact: the ejecta cloud over North America |
-| http://127.0.0.1:5173/#k=tanis | Tanis, North Dakota, the site of the seismic-surge deposit |
-| http://127.0.0.1:5173/#t=-60&p=1&k=corral-bluffs&v=1 | Corral Bluffs, Colorado, one minute before impact. Press **Find dinosaurs nearby** to fly down to a herd |
-| http://127.0.0.1:5173/#t=2.84e13&p=1&k=corral-bluffs&v=1 | The same place 900,000 years later. The forest has regrown, and **Find dinosaurs nearby** now finds the early mammals |
+| <https://shawnaukstak.github.io/k-t-extinction/#m=cine> | The cinematic tour from the asteroid's approach |
+| <https://shawnaukstak.github.io/k-t-extinction/#t=3600&c=28,-78,4500000,0,0&p=1&v=1> | One hour after impact: the ejecta cloud over North America |
+| <https://shawnaukstak.github.io/k-t-extinction/#k=tanis> | Tanis, North Dakota, the site of the seismic-surge deposit |
+| <https://shawnaukstak.github.io/k-t-extinction/#t=-60&p=1&k=corral-bluffs&v=1> | Corral Bluffs, Colorado, one minute before impact. Press **Find dinosaurs nearby** to fly down to a herd |
+| <https://shawnaukstak.github.io/k-t-extinction/#t=2.84e13&p=1&k=corral-bluffs&v=1> | The same place 900,000 years later. The forest has regrown, and **Find dinosaurs nearby** now finds the early mammals |
 
 Tap any animal to see its species card. Press Play to watch the impact arrive.
 
@@ -139,8 +139,8 @@ The build reads a few optional settings from the environment (`app/vite.config.t
 To test a production build locally:
 
 ```sh
-cd app && npm run build && npx vite preview                                   # → http://127.0.0.1:4173/k-t-extinction/
-KT_BASE_URL=http://127.0.0.1:4173/k-t-extinction/ npx playwright test         # the browser tests, against the build
+cd app && npm run build && npx vite preview                                   # local preview → http://127.0.0.1:4173/k-t-extinction/
+KT_BASE_URL=http://127.0.0.1:4173/k-t-extinction/ npx playwright test         # the browser tests, against the local build
 ```
 
 Keep the trailing slash in `KT_BASE_URL`. It also works with the deployed URL.
