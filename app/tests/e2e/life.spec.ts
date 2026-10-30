@@ -3,7 +3,7 @@ import { expectNoErrors, trackErrors, waitForGlobe } from './helpers';
 
 test('"Find dinosaurs nearby" flies down to a herd and opens its species card', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-60&p=1&k=tanis&v=1');
+  await page.goto('./#t=-60&p=1&k=tanis&v=1');
   await waitForGlobe(page);
   const panel = page.getByTestId('panel');
   await panel.getByRole('button', { name: 'Find dinosaurs nearby' }).click();
@@ -17,7 +17,7 @@ test('"Find dinosaurs nearby" flies down to a herd and opens its species card', 
 
 test('tapping an animal opens its species card', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-60&p=1&c=51.686,-79.748,2500,150,60&v=1');
+  await page.goto('./#t=-60&p=1&c=51.686,-79.748,2500,150,60&v=1');
   await waitForGlobe(page);
   await expect.poll(() => page.evaluate(() => (window as any).__kt.herds.animals), { timeout: 30_000 }).toBeGreaterThan(50);
   // Drop the camera next to the nearest big herd and freeze time so the animals hold still.

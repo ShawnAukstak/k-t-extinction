@@ -3,7 +3,7 @@ import { expectNoErrors, trackErrors, waitForGlobe } from './helpers';
 
 test('Places menu flies to a site and opens its card', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=0&p=1&c=20,-60,16000000,0,0&v=1');
+  await page.goto('./#t=0&p=1&c=20,-60,16000000,0,0&v=1');
   await waitForGlobe(page);
   await page.getByTestId('places').click();
   const panel = page.getByTestId('panel');
@@ -24,7 +24,7 @@ test('Places menu flies to a site and opens its card', async ({ page }) => {
 });
 
 test('a place link opens directly, and markers sit under the controls', async ({ page }) => {
-  await page.goto('/#t=0&p=1&k=el-kef&v=1');
+  await page.goto('./#t=0&p=1&k=el-kef&v=1');
   await waitForGlobe(page);
   await expect(page.getByTestId('panel')).toContainText('El Kef');
   const z = await page.evaluate(() => [

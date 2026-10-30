@@ -27,6 +27,7 @@ const CONSENT_REGIONS = 'AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU M
  * address: on Render the build knows it (RENDER_EXTERNAL_URL; SITE_URL overrides); elsewhere the
  * image is a relative path, which most unfurlers resolve, and there is no canonical link or sitemap.
  *
+ *   SITE_URL          The site's address including any base path, e.g. https://user.github.io/repo.
  *   GA_ID             Google Analytics measurement ID (G-…): adds gtag.js (src/core/analytics.ts).
  *   GSC_VERIFICATION  Search Console's HTML-tag token, if verifying that way rather than through Analytics.
  */
@@ -127,7 +128,12 @@ function packDataPlugin(): Plugin {
   };
 }
 
+/** Where the site is served from: `/` on Render, `/k-t-extinction/` on GitHub Pages (BASE_PATH). */
+const basePath = (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '');
+const base = basePath ? `/${basePath}/` : '/';
+
 export default defineConfig({
+  base,
   plugins: [yamlPlugin(), sitePlugin(), packDataPlugin()],
   server: { port: 5173, strictPort: true, host: '127.0.0.1', fs: { allow: ['..'] } },
   preview: { port: 4173, strictPort: true, host: '127.0.0.1' },

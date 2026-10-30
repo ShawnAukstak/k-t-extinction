@@ -7,7 +7,7 @@ const shareButton = (page: import('@playwright/test').Page) =>
 
 test('Share freezes the moment and gives a link that reopens the same time and view', async ({ page, context }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=900&c=40.5,-95.25,1800000,20,35&v=1');
+  await page.goto('./#t=900&c=40.5,-95.25,1800000,20,35&v=1');
   await waitForGlobe(page);
   expect(await page.evaluate(() => (window as any).__kt.clock.playing)).toBe(true);
 
@@ -52,7 +52,7 @@ test('Share freezes the moment and gives a link that reopens the same time and v
 });
 
 test('sharing from the cinematic keeps the scripted camera', async ({ page }) => {
-  await page.goto('/#t=-20&m=cine&p=1&v=1');
+  await page.goto('./#t=-20&m=cine&p=1&v=1');
   await waitForGlobe(page);
   await shareButton(page).click();
   await expect(page.getByTestId('share-sheet')).toContainText('the cinematic camera');

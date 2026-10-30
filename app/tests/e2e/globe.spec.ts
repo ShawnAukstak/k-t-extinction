@@ -3,7 +3,7 @@ import { expectNoErrors, pixelAt, trackErrors, waitForGlobe } from './helpers';
 
 test('boots, loads the 66 Ma globe and renders it without errors', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#c=25.1149,-71.5823,16000000,0,0&t=-60&p=1&v=1');
+  await page.goto('./#c=25.1149,-71.5823,16000000,0,0&t=-60&p=1&v=1');
   await waitForGlobe(page);
   // Centre of the screen is the globe (lit, not black); a corner is space (dark).
   const centre = await pixelAt(page, 0.5, 0.5);
@@ -15,7 +15,7 @@ test('boots, loads the 66 Ma globe and renders it without errors', async ({ page
 
 test('a deep link sets the camera, and moving the camera updates the link', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#c=46,-79,2500000,15,20&t=120&v=1');
+  await page.goto('./#c=46,-79,2500000,15,20&t=120&v=1');
   await waitForGlobe(page);
   const pose = await page.evaluate(() => (window as any).__kt.controls.getPose());
   expect(pose.lat).toBeCloseTo(46, 5);
@@ -38,7 +38,7 @@ test('a deep link sets the camera, and moving the camera updates the link', asyn
 });
 
 test('the impact site is under the sea (DEM correction applied)', async ({ page }) => {
-  await page.goto('/#c=25.1149,-71.5823,60000,0,0&v=1');
+  await page.goto('./#c=25.1149,-71.5823,60000,0,0&v=1');
   await waitForGlobe(page);
   const [r, , b] = await pixelAt(page, 0.5, 0.5);
   expect(b).toBeGreaterThan(r); // water, not the PaleoDEM's raw +800 m land

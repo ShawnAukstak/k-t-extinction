@@ -3,7 +3,7 @@ import { expectNoErrors, pixelAt, trackErrors, waitForGlobe } from './helpers';
 
 test('zooming into the paleo-Rockies refines the terrain to fine tiles, camera above ground', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-60&p=1&c=46.8,-95,4000,30,70&v=1');
+  await page.goto('./#t=-60&p=1&c=46.8,-95,4000,30,70&v=1');
   await waitForGlobe(page);
   await page.waitForFunction(() => (window as any).__kt.globe.heights.ready);
   await expect.poll(() => page.evaluate(() => (window as any).__kt.globe.terrain.maxLevelDrawn), { timeout: 15_000 }).toBeGreaterThanOrEqual(11);
@@ -23,7 +23,7 @@ test('zooming into the paleo-Rockies refines the terrain to fine tiles, camera a
 
 test('plants grow near the ground and only there', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-60&p=1&c=51.674,-79.599,500,150,80&v=1'); // Tanis, Hell Creek floodplain forest
+  await page.goto('./#t=-60&p=1&c=51.674,-79.599,500,150,80&v=1'); // Tanis, Hell Creek floodplain forest
   await waitForGlobe(page);
   await expect.poll(() => page.evaluate(() => (window as any).__kt.vegetation.instances), { timeout: 20_000 }).toBeGreaterThan(1000);
   expect(await page.evaluate(() => (window as any).__kt.vegetation.group.visible)).toBe(true);
@@ -35,7 +35,7 @@ test('plants grow near the ground and only there', async ({ page }) => {
 
 test('dinosaurs live around Tanis before the impact and are gone within the impact winter', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-60&p=1&c=51.686,-79.748,2500,150,60&v=1');
+  await page.goto('./#t=-60&p=1&c=51.686,-79.748,2500,150,60&v=1');
   await waitForGlobe(page);
   await expect.poll(() => page.evaluate(() => (window as any).__kt.herds.animals), { timeout: 30_000 }).toBeGreaterThan(50);
   // (One evaluate, so all three counts see the same cells.)
@@ -55,7 +55,7 @@ test('dinosaurs live around Tanis before the impact and are gone within the impa
 
 test('plant cells continue across a cube-face edge', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-60&p=1&c=-10,-45,400,0,75&v=1'); // Amazonian forest on the +Z/−X face edge
+  await page.goto('./#t=-60&p=1&c=-10,-45,400,0,75&v=1'); // Amazonian forest on the +Z/−X face edge
   await waitForGlobe(page);
   await expect.poll(() => page.evaluate(() => {
     const k = (window as any).__kt;

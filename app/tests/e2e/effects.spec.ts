@@ -5,7 +5,7 @@ const lum = ([r, g, b]: number[]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
 test('the fireball appears at impact and not before', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-10&p=1&c=25.1149,-71.5823,3000000,0,0&v=1');
+  await page.goto('./#t=-10&p=1&c=25.1149,-71.5823,3000000,0,0&v=1');
   await waitForGlobe(page);
   const before = lum(await pixelAt(page, 0.5, 0.5));
   await page.evaluate(() => (window as any).__kt.clock.seek(4));
@@ -16,7 +16,7 @@ test('the fireball appears at impact and not before', async ({ page }) => {
 });
 
 test('the dust cloud has spread over North America by one hour', async ({ page }) => {
-  await page.goto('/#t=-10&p=1&c=40,-80,7000000,0,0&v=1');
+  await page.goto('./#t=-10&p=1&c=40,-80,7000000,0,0&v=1');
   await waitForGlobe(page);
   await page.waitForFunction(() => (window as any).__kt.fx.uniforms.uDustOn.value === 1);
   const clear = await pixelAt(page, 0.5, 0.5);
@@ -28,7 +28,7 @@ test('the dust cloud has spread over North America by one hour', async ({ page }
 });
 
 test('tsunami data loads and the wave has left the Gulf by two hours', async ({ page }) => {
-  await page.goto('/?overlay=1#t=7200&p=1&c=27.5,-66.5,1500000,0,0&v=1');
+  await page.goto('./?overlay=1#t=7200&p=1&c=27.5,-66.5,1500000,0,0&v=1');
   await waitForGlobe(page);
   await page.waitForFunction(() => (window as any).__kt.fx.uniforms.uTsunamiOn.value === 1);
   const arrived = await pixelAt(page, 0.5, 0.5);
@@ -39,7 +39,7 @@ test('tsunami data loads and the wave has left the Gulf by two hours', async ({ 
 });
 
 test('impact winter darkens the planet in the first year (soot scenario)', async ({ page }) => {
-  await page.goto('/#t=-10&p=1&c=30,-40,18000000,0,0&v=1');
+  await page.goto('./#t=-10&p=1&c=30,-40,18000000,0,0&v=1');
   await waitForGlobe(page);
   await page.evaluate(() => (window as any).__kt.effectsReady()); // loaded lazily otherwise
   await page.waitForFunction(() => (window as any).__kt.fx.uniforms.uWinterOn.value === 1);

@@ -3,7 +3,7 @@ import { expectNoErrors, pixelAt, trackErrors, waitForGlobe } from './helpers';
 
 test('lands in the cinematic, an hour out, playing, with Earth in view', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/');
+  await page.goto('./');
   await waitForGlobe(page);
   const k = () => page.evaluate(() => { const k = (window as any).__kt; return { mode: k.mode(), t: k.clock.t, playing: k.clock.playing }; });
   const s = await k();
@@ -22,7 +22,7 @@ test('lands in the cinematic, an hour out, playing, with Earth in view', async (
 });
 
 test('the asteroid is on its trajectory and gone after impact', async ({ page }) => {
-  await page.goto('/#t=-10&p=1&m=cine&v=1');
+  await page.goto('./#t=-10&p=1&m=cine&v=1');
   await waitForGlobe(page);
   const at = (t: number) => page.evaluate((tt) => {
     const k = (window as any).__kt;
@@ -40,7 +40,7 @@ test('the asteroid is on its trajectory and gone after impact', async ({ page })
 });
 
 test('a tap during the opening asks what happened there and leaves the cinematic running', async ({ page }) => {
-  await page.goto('/#t=-1800&p=1&m=cine&v=1');
+  await page.goto('./#t=-1800&p=1&m=cine&v=1');
   await waitForGlobe(page);
   const box = (await page.locator('canvas').boundingBox())!;
   await page.mouse.click(box.width / 2, box.height / 2);
@@ -72,7 +72,7 @@ async function dragAcross(page: Page, fx: number, fy: number): Promise<void> {
 }
 
 test('dragging and zooming in the cinematic turn around the asteroid without losing it', async ({ page }) => {
-  await page.goto('/#t=-1800&p=1&m=cine&v=1');
+  await page.goto('./#t=-1800&p=1&m=cine&v=1');
   await waitForGlobe(page);
   const a0 = await onAsteroid(page);
   const cam0 = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
@@ -95,7 +95,7 @@ test('dragging and zooming in the cinematic turn around the asteroid without los
 });
 
 test('Free camera leaves the cinematic with north up, and the way back returns to it', async ({ page }) => {
-  await page.goto('/#t=-1800&p=1&m=cine&v=1');
+  await page.goto('./#t=-1800&p=1&m=cine&v=1');
   await waitForGlobe(page);
   const north = () => page.evaluate(() => {
     // Which way north points on screen at the ground below the camera (degrees from up).
@@ -126,7 +126,7 @@ test('Free camera leaves the cinematic with north up, and the way back returns t
 });
 
 test('the cinematic button switches between the cinematic and a free camera', async ({ page }) => {
-  await page.goto('/#t=600&p=1&m=cine&v=1');
+  await page.goto('./#t=600&p=1&m=cine&v=1');
   await waitForGlobe(page);
   const before = await page.evaluate(() => (window as any).__kt.camera.position.toArray());
   await page.getByTestId('cinematic-toggle').click();
@@ -142,7 +142,7 @@ test('the cinematic button switches between the cinematic and a free camera', as
 test('the first view does not download the large effect files', async ({ page }) => {
   const big: string[] = [];
   page.on('request', (r) => { if (/tsunami\.bin|winter_.*\.bin/.test(r.url())) big.push(r.url()); });
-  await page.goto('/#t=-3600&p=1&m=cine&v=1');
+  await page.goto('./#t=-3600&p=1&m=cine&v=1');
   await waitForGlobe(page);
   await page.waitForTimeout(1500);
   expect(big).toEqual([]);
@@ -152,7 +152,7 @@ test('the first view does not download the large effect files', async ({ page })
 
 test('sound toggles on and off without errors', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-3&p=0&m=cine&v=1');
+  await page.goto('./#t=-3&p=0&m=cine&v=1');
   await waitForGlobe(page);
   const btn = page.getByTestId('sound-toggle');
   await btn.click();
