@@ -29,7 +29,7 @@
 **Answer:** phones are a launch requirement. Mobile and desktop can render differently; plants and animals only appear when zoomed in.
 
 8. **Hosting account.** Cloudflare (recommended, free tier fits), or an existing account; and a domain?
-**Answer:** Render, once it runs locally; no domain for now (D8).
+**Answer:** GitHub Pages; no domain for now (D8).
 
 
 ## Blocking Phase 3–5 (look and feel)

@@ -2,7 +2,7 @@
 
 > Phases, not dates. Each phase ends with something runnable or shareable. Decisions are in `decisions.md`.
 >
-> **Status (2026-10-12):** Phases 0–5 done, plus a graphics pass (asteroid, clouds, animal models) Share, Explore → Moments and a night fill. All tested (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit; `npm run check`). Live at https://k-t-extinction.onrender.com (D8), with the land coloured from PhanDA (CC BY 4.0; D4).
+> **Status (2026-10-12):** Phases 0–5 done, plus a graphics pass (asteroid, clouds, animal models) Share, Explore → Moments and a night fill. All tested (unit + Playwright on desktop Chromium, Pixel 7, iPhone 15 WebKit; `npm run check`). Live at https://shawnaukstak.github.io/k-t-extinction/ (D8), with the land coloured from PhanDA (CC BY 4.0; D4).
 
 ## Phase 0 — Data foundation *(the big initial task)* — **core done**
 

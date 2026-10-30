@@ -2,7 +2,7 @@
 
 An explorable, scientifically grounded 3D simulation of the Chicxulub impact and the end-Cretaceous (K-Pg, "K-T") extinction, for the web. Orbit a 66-million-year-old Earth, scrub a non-linear timeline from the asteroid's last hour through the first seconds, days and years to the recovery a million years later, fly down to the ground among the plants and animals, and share any moment as a link.
 
-**Live:** <https://k-t-extinction.onrender.com>, deployed from `main` (see [Deploy](#deploy)). Built so far (phases 0–5 in [`docs/plan/roadmap.md`](docs/plan/roadmap.md)):
+**Live:** <https://shawnaukstak.github.io/k-t-extinction/>, deployed from `main` (see [Deploy](#deploy)). Built so far (phases 0–5 in [`docs/plan/roadmap.md`](docs/plan/roadmap.md)):
 
 - **The 66 Ma globe:** the PALEOMAP 65 Ma elevation model (with a cited correction at the impact site), coloured from a 66 Ma climate run (BRIDGE's HadCM3L `texyn`, via the PhanDA model priors), with a physically based atmosphere.
 - **Timeline:** a non-linear scrubber from 1 hour before impact to 1 million years after, with event markers and cards.
@@ -35,7 +35,8 @@ Next: the discoveries index (Phase 6).
 
 ## Run it locally
 
-The app's data is generated from public scientific datasets and is not stored in git. Build it once:
+The app's data is generated from public scientific datasets and is not stored in git. Build it once
+(or skip step 1 and download the published bundle with `node tools/fetch-data.mjs` from `app/`; see [Deploy](#deploy)):
 
 ```sh
 git clone https://github.com/ShawnAukstak/k-t-extinction.git
@@ -120,32 +121,29 @@ npm run check                            # types + unit tests (Vitest) + browser
 
 ## Deploy
 
-The app is a static site, built on every push to `main` and deployed to:
-- **Render**, from `render.yaml` (a Blueprint);
-- **GitHub Pages** at <https://shawnaukstak.github.io/k-t-extinction/>, by `.github/workflows/pages.yml`. Pages must be enabled with **Source: GitHub Actions** (Settings → Pages). The site is served under `/k-t-extinction/`, so the workflow sets `BASE_PATH` and `SITE_URL` from the Pages configuration.
+The app is a static site, deployed to GitHub Pages at <https://shawnaukstak.github.io/k-t-extinction/> by `.github/workflows/pages.yml` on every push to `main`. Pages is set to **Source: GitHub Actions** (Settings → Pages).
 
 The generated data is not in git. Deploys fetch it from a release of this repo:
 - `app/tools/publish-data.sh data-vN` packages `app/public/data` into release `data-vN` and records its name and checksum in `app/data-bundle.json`. Commit that file.
-- The build (`app/tools/render-build.sh` on Render, the workflow on Pages) downloads that bundle with `app/tools/fetch-data.mjs`, checks it, and runs `npm run build` into `app/dist`. It needs `GH_DATA_TOKEN`: on Render, a fine-grained GitHub token with read-only **Contents** access to this repository; on Pages, the workflow's own `GITHUB_TOKEN`.
+- The workflow downloads that bundle with `app/tools/fetch-data.mjs` (no token needed: the release is public), checks it, and runs `npm run build` into `app/dist`. The same command fetches the data for local development.
 - The build packs the binary data files (`app/src/core/packed.ts`), because static hosts send them uncompressed: 11.8 MB becomes 4.1 MB, and the app unpacks them as they load.
 
 The build reads a few optional settings from the environment (`app/vite.config.ts`):
 
 | Variable | What it does |
 |---|---|
-| `BASE_PATH` | The path the site is served under, e.g. `/k-t-extinction` on GitHub Pages. Defaults to `/`. |
-| `SITE_URL` | The site's address including any base path, for link previews, the canonical link, `robots.txt` and `sitemap.xml`. On Render, `RENDER_EXTERNAL_URL` is used when this is unset. |
+| `SITE_URL` | The site's address, by default `https://shawnaukstak.github.io/k-t-extinction`, for link previews, the canonical link, `robots.txt` and `sitemap.xml`. The build is served from its path (`/k-t-extinction/`); the dev server stays at `/`. The workflow sets it from the Pages configuration, so a custom domain needs no code change. |
 | `GA_ID` | Google Analytics measurement ID (`G-…`). Adds `gtag.js`, with analytics cookies off in the EEA, UK and Switzerland, and a few events: `moment_open`, `place_open`, `share_open`, `share`. |
 | `GSC_VERIFICATION` | Search Console's HTML-tag token, if not verifying through Analytics. |
 
 To test a production build locally:
 
 ```sh
-cd app && npm run build && npx vite preview                       # → http://127.0.0.1:4173
-KT_BASE_URL=http://127.0.0.1:4173 npx playwright test             # the browser tests, against the build
+cd app && npm run build && npx vite preview                                   # → http://127.0.0.1:4173/k-t-extinction/
+KT_BASE_URL=http://127.0.0.1:4173/k-t-extinction/ npx playwright test         # the browser tests, against the build
 ```
 
-To test it under the GitHub Pages path, build with `BASE_PATH=/k-t-extinction` and use `KT_BASE_URL=http://127.0.0.1:4173/k-t-extinction/` (keep the trailing slash). `KT_BASE_URL` also works with the deployed URL.
+Keep the trailing slash in `KT_BASE_URL`. It also works with the deployed URL.
 
 ## Layout
 
