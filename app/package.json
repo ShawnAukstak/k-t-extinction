@@ -5,6 +5,7 @@
   "type": "module",
   "description": "K\u2013T Extinction Simulator \u2014 the Chicxulub impact, minute by minute",
   "license": "MIT",
+  "homepage": "https://shawnaukstak.github.io/k-t-extinction/",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

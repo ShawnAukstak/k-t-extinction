@@ -1,6 +1,6 @@
 # Build the app and deploy it to GitHub Pages on every push to main.
 # The generated data is not in git; app/tools/fetch-data.mjs downloads the bundle named in
-# app/data-bundle.json from this repo's releases using the workflow's own GITHUB_TOKEN.
+# app/data-bundle.json from this repo's public releases.
 name: Deploy to GitHub Pages
 
 on:
@@ -37,15 +37,12 @@ jobs:
 
       - name: Fetch app data
         run: node tools/fetch-data.mjs
-        env:
-          GH_DATA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - run: npm ci
 
       - name: Build
         run: npm run build
         env:
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
           SITE_URL: ${{ steps.pages.outputs.base_url }}
           # Public anyway: it appears in the page.
           GA_ID: G-93G9HMSBN0
