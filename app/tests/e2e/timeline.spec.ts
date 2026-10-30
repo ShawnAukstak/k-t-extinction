@@ -5,7 +5,7 @@ const t = (page: import('@playwright/test').Page) => page.evaluate(() => (window
 
 test('slows to near real time at the impact and pauses', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=-3&v=1');
+  await page.goto('./#t=-3&v=1');
   await waitForGlobe(page);
   const t0 = await t(page);
   await page.waitForTimeout(1500);
@@ -24,7 +24,7 @@ test('slows to near real time at the impact and pauses', async ({ page }) => {
 });
 
 test('scrubbing the bar jumps through non-linear time', async ({ page }) => {
-  await page.goto('/#t=0&p=1&v=1');
+  await page.goto('./#t=0&p=1&v=1');
   await waitForGlobe(page);
   const track = page.getByRole('slider', { name: 'Simulation time' });
   const box = (await track.boundingBox())!;
@@ -39,7 +39,7 @@ test('scrubbing the bar jumps through non-linear time', async ({ page }) => {
 });
 
 test('next/previous event buttons and keyboard', async ({ page }) => {
-  await page.goto('/#t=0&p=1&v=1');
+  await page.goto('./#t=0&p=1&v=1');
   await waitForGlobe(page);
   await page.getByRole('button', { name: 'Next event' }).click();
   expect(await t(page)).toBe(10); // transient cavity
@@ -57,7 +57,7 @@ test('next/previous event buttons and keyboard', async ({ page }) => {
 });
 
 test('the bar fits a phone screen without horizontal scroll', async ({ page }) => {
-  await page.goto('/#t=0&p=1&v=1');
+  await page.goto('./#t=0&p=1&v=1');
   await waitForGlobe(page);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);

@@ -3,7 +3,7 @@ import { expectNoErrors, trackErrors, waitForGlobe } from './helpers';
 
 test('Explore opens moments; a moment goes to its time and view with its card, and the start restarts the cinematic', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=30000&c=40,-90,3000000,0,0&p=1&v=1');
+  await page.goto('./#t=30000&c=40,-90,3000000,0,0&p=1&v=1');
   await waitForGlobe(page);
   await page.getByTestId('places').click();
   const strip = page.getByTestId('moments');

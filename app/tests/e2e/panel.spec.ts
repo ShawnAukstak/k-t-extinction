@@ -3,7 +3,7 @@ import { expectNoErrors, trackErrors, waitForGlobe } from './helpers';
 
 test('tapping the globe answers "what happened here?" and rows seek the timeline', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=0&p=1&c=45,-80,8000000,0,0&v=1');
+  await page.goto('./#t=0&p=1&c=45,-80,8000000,0,0&v=1');
   await waitForGlobe(page);
   await page.evaluate(() => (window as any).__kt.effectsReady());
   const canvas = page.locator('canvas');
@@ -28,14 +28,14 @@ test('tapping the globe answers "what happened here?" and rows seek the timeline
 });
 
 test('a shared location link opens the card', async ({ page }) => {
-  await page.goto('/#t=1200&p=1&c=40,-75,9000000,0,0&q=51.674,-79.599&v=1');
+  await page.goto('./#t=1200&p=1&c=40,-75,9000000,0,0&q=51.674,-79.599&v=1');
   await waitForGlobe(page);
   await expect(page.getByTestId('panel')).toContainText('3,0', { timeout: 15_000 });
   await expect(page.getByTestId('panel')).toContainText('Coldest');
 });
 
 test('event cards show confidence and link their sources', async ({ page }) => {
-  await page.goto('/#t=0&p=1&v=1');
+  await page.goto('./#t=0&p=1&v=1');
   await waitForGlobe(page);
   await page.getByRole('button', { name: 'Next event' }).click();
   const panel = page.getByTestId('panel');
@@ -46,7 +46,7 @@ test('event cards show confidence and link their sources', async ({ page }) => {
 });
 
 test('switching the darkening agent reloads the winter and is kept in the link', async ({ page }) => {
-  await page.goto('/#t=3e7&p=1&v=1');
+  await page.goto('./#t=3e7&p=1&v=1');
   await waitForGlobe(page);
   await page.evaluate(() => (window as any).__kt.effectsReady());
   const soot = await page.evaluate(() => { const k = (window as any).__kt; k.renderNow(); return k.fx.meanLight; });
@@ -58,7 +58,7 @@ test('switching the darkening agent reloads the winter and is kept in the link',
 });
 
 test('About lists data credits (CC BY attribution)', async ({ page }) => {
-  await page.goto('/#t=0&p=1&v=1');
+  await page.goto('./#t=0&p=1&v=1');
   await waitForGlobe(page);
   await page.getByTestId('about').click();
   const panel = page.getByTestId('panel');
@@ -68,7 +68,7 @@ test('About lists data credits (CC BY attribution)', async ({ page }) => {
 });
 
 test('top bar and panel fit a phone screen', async ({ page }) => {
-  await page.goto('/#t=1200&p=1&c=40,-75,9000000,0,0&q=51.674,-79.599&v=1');
+  await page.goto('./#t=1200&p=1&c=40,-75,9000000,0,0&q=51.674,-79.599&v=1');
   await waitForGlobe(page);
   await expect(page.getByTestId('panel')).toBeVisible({ timeout: 15_000 });
   const vw = page.viewportSize()!.width;

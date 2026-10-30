@@ -120,18 +120,21 @@ npm run check                            # types + unit tests (Vitest) + browser
 
 ## Deploy
 
-The app is a static site, deployed to Render from `render.yaml` (a Blueprint) on every push to `main`.
+The app is a static site, built on every push to `main` and deployed to:
+- **Render**, from `render.yaml` (a Blueprint);
+- **GitHub Pages** at <https://shawnaukstak.github.io/k-t-extinction/>, by `.github/workflows/pages.yml`. Pages must be enabled with **Source: GitHub Actions** (Settings → Pages). The site is served under `/k-t-extinction/`, so the workflow sets `BASE_PATH` and `SITE_URL` from the Pages configuration.
 
 The generated data is not in git. Deploys fetch it from a release of this repo:
 - `app/tools/publish-data.sh data-vN` packages `app/public/data` into release `data-vN` and records its name and checksum in `app/data-bundle.json`. Commit that file.
-- The Render build (`app/tools/render-build.sh`) downloads that bundle, checks it, and runs `npm run build` into `app/dist`. It needs `GH_DATA_TOKEN`: a fine-grained GitHub token with read-only **Contents** access to this repository.
+- The build (`app/tools/render-build.sh` on Render, the workflow on Pages) downloads that bundle with `app/tools/fetch-data.mjs`, checks it, and runs `npm run build` into `app/dist`. It needs `GH_DATA_TOKEN`: on Render, a fine-grained GitHub token with read-only **Contents** access to this repository; on Pages, the workflow's own `GITHUB_TOKEN`.
 - The build packs the binary data files (`app/src/core/packed.ts`), because static hosts send them uncompressed: 11.8 MB becomes 4.1 MB, and the app unpacks them as they load.
 
 The build reads a few optional settings from the environment (`app/vite.config.ts`):
 
 | Variable | What it does |
 |---|---|
-| `SITE_URL` | The site's address, for link previews, the canonical link, `robots.txt` and `sitemap.xml`. On Render, `RENDER_EXTERNAL_URL` is used when this is unset. |
+| `BASE_PATH` | The path the site is served under, e.g. `/k-t-extinction` on GitHub Pages. Defaults to `/`. |
+| `SITE_URL` | The site's address including any base path, for link previews, the canonical link, `robots.txt` and `sitemap.xml`. On Render, `RENDER_EXTERNAL_URL` is used when this is unset. |
 | `GA_ID` | Google Analytics measurement ID (`G-…`). Adds `gtag.js`, with analytics cookies off in the EEA, UK and Switzerland, and a few events: `moment_open`, `place_open`, `share_open`, `share`. |
 | `GSC_VERIFICATION` | Search Console's HTML-tag token, if not verifying through Analytics. |
 
@@ -142,7 +145,7 @@ cd app && npm run build && npx vite preview                       # → http://1
 KT_BASE_URL=http://127.0.0.1:4173 npx playwright test             # the browser tests, against the build
 ```
 
-`KT_BASE_URL` also works with the deployed URL.
+To test it under the GitHub Pages path, build with `BASE_PATH=/k-t-extinction` and use `KT_BASE_URL=http://127.0.0.1:4173/k-t-extinction/` (keep the trailing slash). `KT_BASE_URL` also works with the deployed URL.
 
 ## Layout
 

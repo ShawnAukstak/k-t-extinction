@@ -3,7 +3,7 @@ import { expectNoErrors, trackErrors, waitForGlobe } from './helpers';
 
 test('searching a city shows where it was 66 million years ago', async ({ page }) => {
   const errors = trackErrors(page);
-  await page.goto('/#t=0&p=1&c=20,-60,16000000,0,0&v=1');
+  await page.goto('./#t=0&p=1&c=20,-60,16000000,0,0&v=1');
   await waitForGlobe(page);
   await page.getByTestId('places').click();
   const search = page.getByLabel('Search a city');
@@ -20,7 +20,7 @@ test('searching a city shows where it was 66 million years ago', async ({ page }
 test('"Use my location" reconstructs the device position locally', async ({ browser }) => {
   const context = await browser.newContext({ geolocation: { latitude: 51.5074, longitude: -0.1278 }, permissions: ['geolocation'] });
   const page = await context.newPage();
-  await page.goto('/#t=0&p=1&c=20,-60,16000000,0,0&v=1');
+  await page.goto('./#t=0&p=1&c=20,-60,16000000,0,0&v=1');
   await waitForGlobe(page);
   await page.getByTestId('places').click();
   await page.getByRole('button', { name: 'Use my location' }).click();
